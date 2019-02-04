@@ -1,8 +1,13 @@
 plugins {
-    id 'java'
-    id 'java-gradle-plugin'
+    id "com.github.ben-manes.versions" version "0.20.0"
+
+    id "java"
+    id "java-gradle-plugin"
     id "com.gradle.plugin-publish" version "0.10.1"
-    id 'maven-publish' // local testing
+
+    id "maven-publish" // for local testing only
+
+    id "idea"
 }
 
 group 'me.qoomon'
@@ -15,13 +20,18 @@ repositories {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.4.0-RC2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.4.0-RC2'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 gradlePlugin {
     plugins {
-        simplePlugin {
-            id = 'me.qoomon.gitversioning'
+        gitVersioningPlugin {
+            id = 'me.qoomon.git-versioning'
             implementationClass = 'me.qoomon.gradle.gitversioning.GitVersioningPlugin'
         }
     }
@@ -30,13 +40,12 @@ gradlePlugin {
 pluginBundle {
     website = 'https://github.com/qoomon/gradle-git-versioning-plugin'
     vcsUrl = 'https://github.com/qoomon/gradle-git-versioning-plugin.git'
-    description = 'Greetings from here!'
-    tags = ['git', 'versioning', 'version', 'tag', 'branch', 'generated', '']
+    description = 'This extension will adjust the project version, based on current git branch or tag.'
+    tags = ['git', 'versioning', 'version', 'tag', 'branch', 'generated', 'plugin', 'artificial']
 
     plugins {
-        greetingsPlugin {
-            // id is captured from java-gradle-plugin configuration
-            displayName = 'Gradle Greeting plugin'
+        gitVersioningPlugin {
+            displayName = 'Git Versioning Plugin'
         }
     }
 }
