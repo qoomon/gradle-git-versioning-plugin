@@ -1,0 +1,9 @@
+plugins {
+    id 'me.qoomon.gitversioning' version '1.0-SNAPSHOT'
+}
+
+group 'me.qoomon'
+version '1.0.0-SNAPSHOT'
+
+
+

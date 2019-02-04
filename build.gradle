@@ -1,0 +1,42 @@
+plugins {
+    id 'java'
+    id 'java-gradle-plugin'
+    id "com.gradle.plugin-publish" version "0.10.1"
+    id 'maven-publish' // local testing
+}
+
+group 'me.qoomon'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+gradlePlugin {
+    plugins {
+        simplePlugin {
+            id = 'me.qoomon.gitversioning'
+            implementationClass = 'me.qoomon.gradle.gitversioning.GitVersioningPlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://github.com/qoomon/gradle-git-versioning-plugin'
+    vcsUrl = 'https://github.com/qoomon/gradle-git-versioning-plugin.git'
+    description = 'Greetings from here!'
+    tags = ['git', 'versioning', 'version', 'tag', 'branch', 'generated', '']
+
+    plugins {
+        greetingsPlugin {
+            // id is captured from java-gradle-plugin configuration
+            displayName = 'Gradle Greeting plugin'
+        }
+    }
+}
