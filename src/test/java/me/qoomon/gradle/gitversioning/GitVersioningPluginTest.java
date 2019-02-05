@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.File;
 import java.nio.file.Path;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.gradle.api.Project;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.testfixtures.ProjectBuilder;
@@ -21,27 +24,34 @@ class GitVersioningPluginTest {
     Path tempDir;
 
     @Test
-    void test() {
+    void test() throws GitAPIException {
         // given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+
         File buildFile = tempDir.resolve("build.gradle").toFile();
         writeFile("plugins { id 'me.qoomon.git-versioning' }", buildFile);
 
         // when
-        BuildResult result = GradleRunner.create()
+        BuildResult buildresult = GradleRunner.create()
                 .withProjectDir(tempDir.toFile())
                 .withPluginClasspath()
                 .withArguments("version")
                 .build();
+        TaskOutcome taskOutcome = buildresult.task(":version").getOutcome();
 
         // then
-        assertEquals(result.task(":version").getOutcome(), TaskOutcome.SUCCESS);
+        assertEquals(taskOutcome, TaskOutcome.SUCCESS);
     }
 
     @Test
-    void apply() {
+    void apply() throws GitAPIException {
         // given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        RevCommit commit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+//        git.tag().setObjectId(commit).setName("tag1").call();
+
         Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
-        project.setVersion("foo");
+        project.setVersion("1.0.0");
         project.getExtensions().add("me.qoomon.git-versioning", new GitVersioningPluginExtension(project));
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
@@ -49,7 +59,7 @@ class GitVersioningPluginTest {
         ((ProjectInternal) project).evaluate();
 
         // then
-        assertEquals("foo-GIT", project.getVersion());
+        assertEquals(commit.name(), project.getVersion());
 
     }
 }
