@@ -1,23 +1,20 @@
 package me.qoomon.gitversioning;
 
-import static org.junit.jupiter.api.Assertions.*;
+
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.Status;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.Status;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Constants;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
-import me.qoomon.gitversioning.GitUtil;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class GitUtilTest {
 
@@ -33,7 +30,7 @@ class GitUtilTest {
         Status status = GitUtil.status(git.getRepository());
 
         // then
-        assertTrue(status.isClean(), "is clean");
+        assertThat(status.isClean()).isTrue();
     }
 
     @Test
@@ -42,13 +39,13 @@ class GitUtilTest {
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
         boolean dummyFileCreated = new File(tempDir.toFile(), "README.md").createNewFile();
-        assertTrue(dummyFileCreated, "dummy file created");
+        assertThat(dummyFileCreated).isTrue();
 
         // when
         Status status = GitUtil.status(git.getRepository());
 
         // then
-        assertFalse(status.isClean(), "is clean");
+        assertThat(status.isClean()).isFalse();
     }
 
     @Test
@@ -60,7 +57,7 @@ class GitUtilTest {
         String branch = GitUtil.branch(git.getRepository());
 
         // then
-        assertEquals("master", branch, "branch");
+        assertThat(branch).isEqualTo("master");
     }
 
     @Test
@@ -76,7 +73,7 @@ class GitUtilTest {
         String branch = GitUtil.branch(git.getRepository());
 
         // then
-        assertEquals(givenBranchName, branch, "branch");
+        assertThat(branch).isEqualTo(givenBranchName);
     }
 
     @Test
@@ -88,7 +85,7 @@ class GitUtilTest {
         List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), Constants.HEAD);
 
         // then
-        assertEquals(0, tags.size(), "tag count");
+        assertThat(tags).isEmpty();
     }
 
     @Test
@@ -102,7 +99,7 @@ class GitUtilTest {
         List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), Constants.HEAD);
 
         // then
-        assertEquals(0, tags.size(), "tag count");
+        assertThat(tags).isEmpty();
     }
 
     @Test
@@ -118,7 +115,7 @@ class GitUtilTest {
         List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), Constants.HEAD);
 
         // then
-        assertEquals(1, tags.size(), "tag count");
+        assertThat(tags).containsExactly(givenTagName);
     }
 
     @Test
@@ -138,10 +135,7 @@ class GitUtilTest {
         List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), Constants.HEAD);
 
         // then
-        assertEquals(3, tags.size(), "tag count");
-        assertTrue(tags.contains(givenTagName1), "tag list contains giventag1");
-        assertTrue(tags.contains(givenTagName2), "tag list contains giventag2");
-        assertTrue(tags.contains(givenTagName3), "tag list contains giventag3");
+        assertThat(tags).containsExactlyInAnyOrder(givenTagName1, givenTagName2, givenTagName3);
     }
 
     @Test
@@ -153,7 +147,7 @@ class GitUtilTest {
         String ref = GitUtil.revParse(git.getRepository(), Constants.HEAD);
 
         // then
-        assertEquals("0000000000000000000000000000000000000000", ref, "ref name");
+        assertThat(ref).isEqualTo("0000000000000000000000000000000000000000");
     }
 
     @Test
@@ -167,6 +161,6 @@ class GitUtilTest {
         String ref = GitUtil.revParse(git.getRepository(), Constants.HEAD);
 
         // then
-        assertEquals(givenCommit.name(), ref, "ref name");
+        assertThat(ref).isEqualTo(givenCommit.name());
     }
 }

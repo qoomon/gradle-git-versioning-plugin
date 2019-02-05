@@ -1,11 +1,6 @@
 package me.qoomon.gradle.gitversioning;
 
-import static org.gradle.util.GFileUtils.writeFile;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.File;
-import java.nio.file.Path;
-
+import org.assertj.core.api.Assertions;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -17,6 +12,12 @@ import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import java.io.File;
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.gradle.util.GFileUtils.writeFile;
 
 class GitVersioningPluginTest {
 
@@ -40,7 +41,7 @@ class GitVersioningPluginTest {
         TaskOutcome taskOutcome = buildresult.task(":version").getOutcome();
 
         // then
-        assertEquals(taskOutcome, TaskOutcome.SUCCESS);
+        assertThat(taskOutcome).isEqualTo(TaskOutcome.SUCCESS);
     }
 
     @Test
@@ -48,7 +49,6 @@ class GitVersioningPluginTest {
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
         RevCommit commit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
-//        git.tag().setObjectId(commit).setName("tag1").call();
 
         Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
         project.setVersion("1.0.0");
@@ -59,7 +59,7 @@ class GitVersioningPluginTest {
         ((ProjectInternal) project).evaluate();
 
         // then
-        assertEquals(commit.name(), project.getVersion());
+        assertThat(project.getVersion()).isEqualTo(commit.name());
 
     }
 }
