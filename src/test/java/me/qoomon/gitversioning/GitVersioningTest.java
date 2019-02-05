@@ -31,6 +31,7 @@ class GitVersioningTest {
         assertThat(gitVersionDetails).isNotNull()
                 .satisfies(it -> assertSoftly(softly -> {
                     softly.assertThat(it.getDirectory()).isEqualTo(git.getRepository().getDirectory());
+                    softly.assertThat(it.isClean()).isTrue();
                     softly.assertThat(it.getCommit()).isEqualTo("0000000000000000000000000000000000000000");
                     softly.assertThat(it.getCommitRefType()).isEqualTo("commit");
                     softly.assertThat(it.getCommitRefName()).isEqualTo("0000000000000000000000000000000000000000");
@@ -55,6 +56,7 @@ class GitVersioningTest {
         assertThat(gitVersionDetails).isNotNull()
                 .satisfies(it -> assertSoftly(softly -> {
                     softly.assertThat(it.getDirectory()).isEqualTo(git.getRepository().getDirectory());
+                    softly.assertThat(it.isClean()).isTrue();
                     softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
                     softly.assertThat(it.getCommitRefType()).isEqualTo("commit");
                     softly.assertThat(it.getCommitRefName()).isEqualTo(givenCommit.getName());
