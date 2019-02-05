@@ -1,10 +1,11 @@
+
 plugins {
     id "com.github.ben-manes.versions" version "0.20.0"
-
+    
     id "java"
     id "java-gradle-plugin"
+    
     id "com.gradle.plugin-publish" version "0.10.1"
-
     id "maven-publish" // for local testing only
 
     id "idea"
@@ -13,7 +14,7 @@ plugins {
 group 'me.qoomon'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 1.8
+sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
     mavenCentral()
@@ -24,9 +25,9 @@ dependencies {
     implementation 'org.apache.maven:maven-artifact:3.6.0'
     implementation 'me.qoomon:unchecked-exceptions:1.0.0'
 
-    compile 'org.apache.maven:maven-artifact:3.6.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.4.0-RC2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.4.0-RC2'
+    testImplementation 'org.assertj:assertj-core:3.11.1'
 }
 
 test {

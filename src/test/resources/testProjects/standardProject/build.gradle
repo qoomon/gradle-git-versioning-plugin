@@ -1,5 +1,5 @@
 plugins {
-    id 'me.qoomon.gitversioning' version '1.0-SNAPSHOT'
+    id 'me.qoomon.git-versioning' version '1.0-SNAPSHOT'
 }
 
 group 'me.qoomon'
