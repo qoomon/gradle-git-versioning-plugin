@@ -37,7 +37,7 @@ public class GitVersioningPlugin implements Plugin<Project> {
         //            return;
         //        }
 
-        GitVersioning gitVersioning = new GitVersioning(project.getProjectDir());
+        GitVersioning gitVersioning = GitVersioning.build(project.getProjectDir());
 
         project.afterEvaluate(evaluatedProject -> {
             project.getAllprojects().forEach(p -> {

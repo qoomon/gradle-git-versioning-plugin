@@ -18,89 +18,16 @@ import static me.qoomon.gitversioning.StringUtil.*;
 
 public class GitVersioning {
 
-    private final Boolean providedClean = null; // TODO
-    private final String providedCommit = null; // TODO
-    private final String providedBranch = null; // TODO
-    private final String providedTag = null; // TODO
-    private final VersionFormatDescription commitVersionDescription = new VersionFormatDescription(); // TODO
-    private final List<VersionFormatDescription> branchVersionDescriptions = emptyList(); // TODO
-    private final List<VersionFormatDescription> tagVersionDescriptions = emptyList(); // TODO
+    final private GitVersionDetails defaultGitVersionDetails;
+    final private VersionFormatDescription versionFormatDescription;
 
-    private final File gitDir;
-
-    private GitVersionDetails defaultGitVersionDetails;
-    private VersionFormatDescription versionFormatDescription;
-
-    public GitVersioning(File gitDir) {
-        this.gitDir = gitDir;
+    public GitVersioning(final GitVersionDetails defaultGitVersionDetails,
+                         final VersionFormatDescription versionFormatDescription) {
+        this.defaultGitVersionDetails = defaultGitVersionDetails;
+        this.versionFormatDescription = versionFormatDescription;
     }
 
     public GitVersionDetails determineVersion(String currentVersion) {
-        if (defaultGitVersionDetails == null) {
-            GitRepoData gitRepoData = getGitRepoData(gitDir);
-            if (providedClean != null) {
-                gitRepoData.clean = providedClean;
-            }
-            if (providedCommit != null) {
-                gitRepoData.commit = providedCommit;
-            }
-            if (providedBranch != null) {
-                gitRepoData.branch = providedBranch.equals("") ? null : providedBranch;
-            }
-            if (providedTag != null) {
-                gitRepoData.tags = providedTag.equals("") ? emptyList() : singletonList(providedTag);
-            }
-
-            // default versioning
-            String gitRefType = "commit";
-            String gitRefName = gitRepoData.commit;
-            versionFormatDescription = commitVersionDescription;
-
-            // branch versioning
-            String gitRepoBranch = gitRepoData.branch;
-            if (gitRepoBranch != null) {
-                for (VersionFormatDescription versionFormatDescription : branchVersionDescriptions) {
-                    if (gitRepoBranch.matches(versionFormatDescription.pattern)) {
-                        gitRefType = "branch";
-                        gitRefName = gitRepoBranch;
-                        this.versionFormatDescription = versionFormatDescription;
-                        break;
-                    }
-                }
-            } else {
-                // tag versioning
-                List<String> gitRepoTags = gitRepoData.tags;
-                if (!gitRepoTags.isEmpty()) {
-                    for (VersionFormatDescription versionFormatDescription : tagVersionDescriptions) {
-                        String gitRepoVersionTag = gitRepoTags.stream().sequential()
-                                .filter(tag -> tag.matches(versionFormatDescription.pattern))
-                                .max((tagLeft, tagRight) -> {
-                                    String versionLeft = removePrefix(tagLeft, versionFormatDescription.prefix);
-                                    String versionRight = removePrefix(tagRight, versionFormatDescription.prefix);
-                                    DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(versionLeft);
-                                    DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(versionRight);
-                                    return tagVersionLeft.compareTo(tagVersionRight);
-                                }).orElse(null);
-                        if (gitRepoVersionTag != null) {
-                            gitRefType = "tag";
-                            gitRefName = gitRepoVersionTag;
-                            this.versionFormatDescription = versionFormatDescription;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            defaultGitVersionDetails = new GitVersionDetails(
-                    gitRepoData.directory,
-                    gitRepoData.clean,
-                    gitRepoData.commit,
-                    gitRefType,
-                    removePrefix(gitRefName, versionFormatDescription.prefix),
-                    valueGroupMap(versionFormatDescription.pattern, gitRefName),
-                    null
-            );
-        }
 
         Map<String, String> projectVersionDataMap = new HashMap<>();
         projectVersionDataMap.put("version", currentVersion);
@@ -123,7 +50,83 @@ public class GitVersioning {
         );
     }
 
-    private GitRepoData getGitRepoData(File directory) {
+    public static GitVersioning build(File directory) {
+        Boolean providedClean = null; // TODO
+        String providedCommit = null; // TODO
+        String providedBranch = null; // TODO
+        String providedTag = null; // TODO
+        VersionFormatDescription commitVersionDescription = new VersionFormatDescription(); // TODO
+        List<VersionFormatDescription> branchVersionDescriptions = emptyList(); // TODO
+        List<VersionFormatDescription> tagVersionDescriptions = emptyList(); // TODO
+
+        GitRepoData gitRepoData = getGitRepoData(directory);
+        if (providedClean != null) {
+            gitRepoData.clean = providedClean;
+        }
+        if (providedCommit != null) {
+            gitRepoData.commit = providedCommit;
+        }
+        if (providedBranch != null) {
+            gitRepoData.branch = providedBranch.equals("") ? null : providedBranch;
+        }
+        if (providedTag != null) {
+            gitRepoData.tags = providedTag.equals("") ? emptyList() : singletonList(providedTag);
+        }
+
+        // default versioning
+        String gitRefType = "commit";
+        String gitRefName = gitRepoData.commit;
+        VersionFormatDescription versionFormatDescription = commitVersionDescription;
+
+        // branch versioning
+        String gitRepoBranch = gitRepoData.branch;
+        if (gitRepoBranch != null) {
+            for (final VersionFormatDescription branchVersionFormatDescription : branchVersionDescriptions) {
+                if (gitRepoBranch.matches(branchVersionFormatDescription.pattern)) {
+                    gitRefType = "branch";
+                    gitRefName = gitRepoBranch;
+                    versionFormatDescription = branchVersionFormatDescription;
+                    break;
+                }
+            }
+        } else {
+            // tag versioning
+            List<String> gitRepoTags = gitRepoData.tags;
+            if (!gitRepoTags.isEmpty()) {
+                for (final VersionFormatDescription tagVersionFormatDescription : tagVersionDescriptions) {
+                    String gitRepoVersionTag = gitRepoTags.stream().sequential()
+                            .filter(tag -> tag.matches(tagVersionFormatDescription.pattern))
+                            .max((tagLeft, tagRight) -> {
+                                String versionLeft = removePrefix(tagLeft, tagVersionFormatDescription.prefix);
+                                String versionRight = removePrefix(tagRight, tagVersionFormatDescription.prefix);
+                                DefaultArtifactVersion tagVersionLeft = new DefaultArtifactVersion(versionLeft);
+                                DefaultArtifactVersion tagVersionRight = new DefaultArtifactVersion(versionRight);
+                                return tagVersionLeft.compareTo(tagVersionRight);
+                            }).orElse(null);
+                    if (gitRepoVersionTag != null) {
+                        gitRefType = "tag";
+                        gitRefName = gitRepoVersionTag;
+                        versionFormatDescription = tagVersionFormatDescription;
+                        break;
+                    }
+                }
+            }
+        }
+
+        GitVersionDetails defaultGitVersionDetails = new GitVersionDetails(
+                gitRepoData.directory,
+                gitRepoData.clean,
+                gitRepoData.commit,
+                gitRefType,
+                removePrefix(gitRefName, versionFormatDescription.prefix),
+                valueGroupMap(versionFormatDescription.pattern, gitRefName),
+                null
+        );
+
+        return new GitVersioning(defaultGitVersionDetails, versionFormatDescription);
+    }
+
+    private static GitRepoData getGitRepoData(File directory) {
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(directory);
         if (repositoryBuilder.getGitDir() == null) {
             throw new IllegalArgumentException(directory + " directory is not a git repository (or any of the parent directories)");
@@ -142,7 +145,7 @@ public class GitVersioning {
         return version.replace("/", "-");
     }
 
-    private class GitRepoData {
+    private static class GitRepoData {
 
         private File directory;
         private boolean clean;

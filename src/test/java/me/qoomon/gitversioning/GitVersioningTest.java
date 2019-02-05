@@ -24,7 +24,7 @@ class GitVersioningTest {
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
         // when
-        GitVersioning gitVersioning = new GitVersioning(git.getRepository().getDirectory());
+        GitVersioning gitVersioning = GitVersioning.build(git.getRepository().getDirectory());
         GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
 
         // then
@@ -37,8 +37,6 @@ class GitVersioningTest {
                     softly.assertThat(it.getCommitRefName()).isEqualTo("0000000000000000000000000000000000000000");
                     softly.assertThat(it.getVersion()).isEqualTo("0000000000000000000000000000000000000000");
                 }));
-
-
     }
 
     @Test
@@ -49,7 +47,7 @@ class GitVersioningTest {
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         // when
-        GitVersioning gitVersioning = new GitVersioning(git.getRepository().getDirectory());
+        GitVersioning gitVersioning = GitVersioning.build(git.getRepository().getDirectory());
         GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
 
         // then
@@ -62,7 +60,5 @@ class GitVersioningTest {
                     softly.assertThat(it.getCommitRefName()).isEqualTo(givenCommit.getName());
                     softly.assertThat(it.getVersion()).isEqualTo(givenCommit.getName());
                 }));
-
-
     }
 }
