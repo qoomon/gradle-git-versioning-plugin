@@ -36,7 +36,7 @@ test {
 
 gradlePlugin {
     plugins {
-        gitVersioningPlugin {
+        gitVersioning {
             id = 'me.qoomon.git-versioning'
             implementationClass = 'me.qoomon.gradle.gitversioning.GitVersioningPlugin'
         }
@@ -50,7 +50,7 @@ pluginBundle {
     tags = ['git', 'versioning', 'version', 'tag', 'branch', 'generated', 'plugin', 'artificial']
 
     plugins {
-        gitVersioningPlugin {
+        gitVersioning {
             displayName = 'Git Versioning Plugin'
         }
     }
