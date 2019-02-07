@@ -1,27 +1,19 @@
 package me.qoomon.gradle.gitversioning;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 import javax.annotation.Nonnull;
 
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 
-import me.qoomon.gitversioning.GitUtil;
 import me.qoomon.gitversioning.GitVersionDetails;
 import me.qoomon.gitversioning.GitVersioning;
-import me.qoomon.gitversioning.StringUtil;
+import me.qoomon.gitversioning.VersionDescription;
 
 public class GitVersioningPlugin implements Plugin<Project> {
 
@@ -30,30 +22,36 @@ public class GitVersioningPlugin implements Plugin<Project> {
     public void apply(@Nonnull Project project) {
 
         project.getTasks().create("version", VersionTask.class);
-
-        GitVersioningPluginExtension configuration = project.getExtensions().findByType(GitVersioningPluginExtension.class);
-        //        if (!configuration.isEnabled()) { // TODO
-        //            project.getLogger().info("disabled");
-        //            return;
-        //        }
-
-        GitVersioning gitVersioning = GitVersioning.build(project.getProjectDir());
+        GitVersioningPluginExtension config = project.getExtensions()
+                .create("gitVersioning", GitVersioningPluginExtension.class, project);
 
         project.afterEvaluate(evaluatedProject -> {
-            project.getAllprojects().forEach(p -> {
-                //                p.getLogger()   .info("--- " + BuildProperties.projectArtifactId() + ":" + BuildProperties.projectVersion() + " ---");
-                GitVersionDetails gitVersionDetails = gitVersioning.determineVersion(p.getVersion().toString());
-                //                p.getLogger().info(projectGav.getArtifactId() + ":" + projectGav.getVersion()
-                //                        + " - " + projectGitBasedVersion.getCommitRefType() + ": " + projectGitBasedVersion.getCommitRefName()
-                //                        + " -> version: " + projectGitBasedVersion.getVersion());
+            GitVersioning gitVersioning = GitVersioning.build(project.getProjectDir(),
+                    Optional.ofNullable(config.commit).map(it -> new VersionDescription(null, null, it.versionFormat))
+                            .orElse(new VersionDescription()),
+                    config.branches.stream().map(it -> new VersionDescription(it.pattern, it.prefix, it.versionFormat))
+                            .collect(toList()),
+                    config.tags.stream()
+                            .map(it -> new VersionDescription(it.pattern, it.prefix, it.versionFormat))
+                            .collect(toList()));
 
-                p.setVersion(gitVersionDetails.getVersion());
+            if (!config.enabled) {
+                LOG.warn("Git Versioning Plugin disabled.");
+                return;
+            }
 
-                p.getExtensions().getExtraProperties().set("project.commit",
+            project.getAllprojects().forEach(it -> {
+                GitVersionDetails gitVersionDetails = gitVersioning.determineVersion(it.getVersion().toString());
+                it.getLogger().info(it.getDisplayName() + " git versioning [" + it.getVersion() + " -> " + gitVersionDetails.getVersion() + "]"
+                        + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
+
+                it.setVersion(gitVersionDetails.getVersion());
+
+                it.getExtensions().getExtraProperties().set("project.commit",
                         gitVersionDetails.getCommit());
-                p.getExtensions().getExtraProperties().set("project.tag",
+                it.getExtensions().getExtraProperties().set("project.tag",
                         gitVersionDetails.getCommitRefType().equals("tag") ? gitVersionDetails.getCommitRefName() : "");
-                p.getExtensions().getExtraProperties().set("project.branch",
+                it.getExtensions().getExtraProperties().set("project.branch",
                         gitVersionDetails.getCommitRefType().equals("branch") ? gitVersionDetails.getCommitRefName() : "");
             });
         });

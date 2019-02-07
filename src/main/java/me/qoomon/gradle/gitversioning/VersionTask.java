@@ -8,8 +8,5 @@ public class VersionTask extends DefaultTask {
     @TaskAction
     void printVersion() {
         System.out.println(getProject().getVersion());
-
-
-
     }
 }

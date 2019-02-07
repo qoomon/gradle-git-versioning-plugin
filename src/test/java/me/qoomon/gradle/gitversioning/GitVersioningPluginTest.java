@@ -1,6 +1,11 @@
 package me.qoomon.gradle.gitversioning;
 
-import org.assertj.core.api.Assertions;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.gradle.util.GFileUtils.writeFile;
+
+import java.io.File;
+import java.nio.file.Path;
+
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -12,12 +17,6 @@ import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
-import java.io.File;
-import java.nio.file.Path;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.gradle.util.GFileUtils.writeFile;
 
 class GitVersioningPluginTest {
 
@@ -60,6 +59,5 @@ class GitVersioningPluginTest {
 
         // then
         assertThat(project.getVersion()).isEqualTo(commit.name());
-
     }
 }

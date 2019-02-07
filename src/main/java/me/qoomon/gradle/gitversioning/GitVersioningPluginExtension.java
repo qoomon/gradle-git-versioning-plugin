@@ -3,35 +3,51 @@ package me.qoomon.gradle.gitversioning;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import org.gradle.api.Project;
 
 import groovy.lang.Closure;
 
 public class GitVersioningPluginExtension {
 
-    public Project project;
+    public final Project project;
 
-    public List<VersionFormatDescription> branches = new ArrayList<>();
-    public List<VersionFormatDescription> tags = new ArrayList<>();
+    public boolean enabled = true;
 
-    @Inject
+    public CommitVersionDescription commit;
+    public List<VersionDescription> branches = new ArrayList<>();
+    public List<VersionDescription> tags = new ArrayList<>();
+
     public GitVersioningPluginExtension(Project project) {
         this.project = project;
     }
 
     public void branch(Closure closure) {
-        VersionFormatDescription versionFormatDescription = new VersionFormatDescription();
-        project.configure(versionFormatDescription, closure);
-        this.branches.add(versionFormatDescription);
+        VersionDescription versionDescription = new VersionDescription();
+        project.configure(versionDescription, closure);
+        this.branches.add(versionDescription);
     }
 
     public void tag(Closure closure) {
-        VersionFormatDescription versionFormatDescription = new VersionFormatDescription();
-        project.configure(versionFormatDescription, closure);
-        this.tags.add(versionFormatDescription);
+        VersionDescription versionDescription = new VersionDescription();
+        project.configure(versionDescription, closure);
+        this.tags.add(versionDescription);
     }
 
+    public void commit(Closure closure) {
+        CommitVersionDescription versionDescription = new CommitVersionDescription();
+        project.configure(versionDescription, closure);
+        this.commit = versionDescription;
+    }
 
+    public static class VersionDescription {
+
+        public String pattern;
+        public String prefix;
+        public String versionFormat;
+    }
+
+    public static class CommitVersionDescription {
+
+        public String versionFormat;
+    }
 }

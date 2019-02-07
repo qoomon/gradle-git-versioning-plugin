@@ -1,21 +1,22 @@
 package me.qoomon.gitversioning;
 
+import static java.util.Collections.emptyList;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
+
+import java.nio.file.Path;
+
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.nio.file.Path;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.SoftAssertions.assertSoftly;
-
 class GitVersioningTest {
 
     @TempDir
     Path tempDir;
-
 
     @Test
     void determineVersion_empty_repo() throws GitAPIException {
@@ -24,7 +25,10 @@ class GitVersioningTest {
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
         // when
-        GitVersioning gitVersioning = GitVersioning.build(git.getRepository().getDirectory());
+        GitVersioning gitVersioning = GitVersioning.build(git.getRepository().getDirectory(),
+                new VersionDescription(),
+                emptyList(),
+                emptyList());
         GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
 
         // then
@@ -47,7 +51,10 @@ class GitVersioningTest {
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         // when
-        GitVersioning gitVersioning = GitVersioning.build(git.getRepository().getDirectory());
+        GitVersioning gitVersioning = GitVersioning.build(git.getRepository().getDirectory(),
+                new VersionDescription(),
+                emptyList(),
+                emptyList());
         GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
 
         // then
