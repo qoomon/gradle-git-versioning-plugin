@@ -1,19 +1,17 @@
 package me.qoomon.gradle.gitversioning;
 
-import static java.util.stream.Collectors.toList;
-
-import java.util.Optional;
-
-import javax.annotation.Nonnull;
-
+import me.qoomon.gitversioning.GitVersionDetails;
+import me.qoomon.gitversioning.GitVersioning;
+import me.qoomon.gitversioning.VersionDescription;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 
-import me.qoomon.gitversioning.GitVersionDetails;
-import me.qoomon.gitversioning.GitVersioning;
-import me.qoomon.gitversioning.VersionDescription;
+import javax.annotation.Nonnull;
+import java.util.Optional;
+
+import static java.util.stream.Collectors.toList;
 
 public class GitVersioningPlugin implements Plugin<Project> {
 

@@ -1,11 +1,10 @@
 package me.qoomon.gradle.gitversioning;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import groovy.lang.Closure;
 import org.gradle.api.Project;
 
-import groovy.lang.Closure;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GitVersioningPluginExtension {
 

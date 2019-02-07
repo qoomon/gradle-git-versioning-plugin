@@ -15,7 +15,7 @@ public class GitVersionDetails {
 
     public GitVersionDetails(final File directory, final boolean clean,
                              final String commit, final String commitRefType, final String commitRefName,
-                             final Map<String,String> metaData,
+                             final Map<String, String> metaData,
                              final String version) {
         this.directory = directory;
         this.clean = clean;

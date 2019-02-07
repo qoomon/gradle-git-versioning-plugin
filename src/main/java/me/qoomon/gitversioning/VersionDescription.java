@@ -1,8 +1,5 @@
 package me.qoomon.gitversioning;
 
-/**
- * Created by qoomon on 26/11/2016.
- */
 public class VersionDescription {
 
     private String pattern;
@@ -25,20 +22,20 @@ public class VersionDescription {
         return pattern;
     }
 
-    public String getPrefix() {
-        return prefix;
-    }
-
-    public String getVersionFormat() {
-        return versionFormat;
-    }
-
     public void setPattern(final String pattern) {
         this.pattern = pattern != null ? pattern : ".*";
     }
 
+    public String getPrefix() {
+        return prefix;
+    }
+
     public void setPrefix(final String prefix) {
         this.prefix = prefix != null ? prefix : "";
+    }
+
+    public String getVersionFormat() {
+        return versionFormat;
     }
 
     public void setVersionFormat(final String versionFormat) {

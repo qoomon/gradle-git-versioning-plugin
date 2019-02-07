@@ -1,16 +1,15 @@
 package me.qoomon.gitversioning;
 
-import static java.util.stream.Collectors.toList;
-
-import static me.qoomon.UncheckedExceptions.unchecked;
-
-import java.util.List;
-
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
+
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
+import static me.qoomon.UncheckedExceptions.unchecked;
 
 public final class GitUtil {
 

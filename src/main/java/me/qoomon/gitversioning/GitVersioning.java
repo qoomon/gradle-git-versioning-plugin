@@ -1,25 +1,18 @@
 package me.qoomon.gitversioning;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static java.util.Comparator.comparing;
-
-import static me.qoomon.UncheckedExceptions.unchecked;
-import static me.qoomon.gitversioning.StringUtil.removePrefix;
-import static me.qoomon.gitversioning.StringUtil.substituteText;
-import static me.qoomon.gitversioning.StringUtil.valueGroupMap;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+
+import java.io.File;
+import java.util.*;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Comparator.comparing;
+import static me.qoomon.UncheckedExceptions.unchecked;
+import static me.qoomon.gitversioning.StringUtil.*;
 
 public class GitVersioning {
 
@@ -149,7 +142,7 @@ public class GitVersioning {
 
     private static class GitRepoData {
 
-        private File directory;
+        private final File directory;
         private boolean clean;
         private String commit;
         private String branch;
