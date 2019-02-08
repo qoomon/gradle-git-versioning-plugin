@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.gradle.util.GFileUtils.writeFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 
 import org.eclipse.jgit.api.Git;
@@ -24,7 +25,7 @@ class GitVersioningPluginTest {
     Path tempDir;
 
     @Test
-    void test() throws GitAPIException {
+    void runVersionTask() throws GitAPIException {
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
@@ -35,12 +36,12 @@ class GitVersioningPluginTest {
         BuildResult buildresult = GradleRunner.create()
                 .withProjectDir(tempDir.toFile())
                 .withPluginClasspath()
-                .withArguments("version")
+                .withArguments("version", "-q")
                 .build();
-        TaskOutcome taskOutcome = buildresult.task(":version").getOutcome();
 
         // then
-        assertThat(taskOutcome).isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(buildresult.task(":version").getOutcome()).isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(buildresult.getOutput()).isEqualTo("0000000000000000000000000000000000000000\n");
     }
 
     @Test
@@ -51,7 +52,7 @@ class GitVersioningPluginTest {
 
         Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
         project.setVersion("1.0.0");
-        project.getExtensions().add("me.qoomon.git-versioning", new GitVersioningPluginExtension(project));
+
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
         // when
@@ -59,5 +60,82 @@ class GitVersioningPluginTest {
 
         // then
         assertThat(project.getVersion()).isEqualTo(commit.name());
+    }
+
+    @Test
+    void apply_with_extension_commit_description() throws GitAPIException {
+        // given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
+        project.setVersion("1.0.0");
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+        extension.commit = new GitVersioningPluginExtension.CommitVersionDescription();
+        extension.commit.versionFormat = "commit-gitVersioning";
+
+        // when
+        ((ProjectInternal) project).evaluate();
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("commit-gitVersioning");
+    }
+
+    @Test
+    void apply_with_extension_branch_description() throws GitAPIException, IOException {
+        // given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenBranch = "feature/sandbox";
+        git.branchCreate().setName(givenBranch).call();
+        git.checkout().setName(givenBranch).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
+        project.setVersion("1.0.0");
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+        GitVersioningPluginExtension.VersionDescription branchVersionDescription = new GitVersioningPluginExtension.VersionDescription();
+        branchVersionDescription.versionFormat = "${branch}-gitVersioning";
+        extension.branches.add(branchVersionDescription);
+
+        // when
+        ((ProjectInternal) project).evaluate();
+
+        // then
+        assertThat(project.getVersion()).isEqualTo(givenBranch.replace("/","-") + "-gitVersioning");
+    }
+
+    @Test
+    void apply_with_extension_tag_description() throws GitAPIException {
+        // given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "v1";
+        git.tag().setName(givenTag).call();
+        git.checkout().setName(givenTag).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
+        project.setVersion("1.0.0");
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+        GitVersioningPluginExtension.VersionDescription tagVersionDescription = new GitVersioningPluginExtension.VersionDescription();
+        tagVersionDescription.versionFormat = "${tag}-gitVersioning";
+        extension.tags.add(tagVersionDescription);
+
+        // when
+        ((ProjectInternal) project).evaluate();
+
+        // then
+        assertThat(project.getVersion()).isEqualTo(givenTag + "-gitVersioning");
     }
 }
