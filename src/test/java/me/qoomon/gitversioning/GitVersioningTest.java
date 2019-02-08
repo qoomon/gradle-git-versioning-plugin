@@ -19,7 +19,7 @@ class GitVersioningTest {
     Path tempDir;
 
     @Test
-    void determineVersion_empty_repo() throws GitAPIException {
+    void determineVersion_emptyRepo() throws GitAPIException {
 
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
@@ -44,7 +44,7 @@ class GitVersioningTest {
     }
 
     @Test
-    void determineVersion_non_empty_repo() throws GitAPIException {
+    void determineVersion_nonEmptyRepo() throws GitAPIException {
 
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
