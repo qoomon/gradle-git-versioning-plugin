@@ -11,7 +11,6 @@ import java.util.List;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -23,6 +22,7 @@ class GitUtilTest {
 
     @Test
     void status_clean() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
@@ -35,6 +35,7 @@ class GitUtilTest {
 
     @Test
     void status_dirty() throws GitAPIException, IOException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
@@ -49,7 +50,8 @@ class GitUtilTest {
     }
 
     @Test
-    void branch_empty_repo() throws GitAPIException {
+    void branch_emptyRepo() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
@@ -61,7 +63,8 @@ class GitUtilTest {
     }
 
     @Test
-    void branch_non_empty_repo() throws GitAPIException {
+    void branch_nonEmptyRepo() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
@@ -77,7 +80,8 @@ class GitUtilTest {
     }
 
     @Test
-    void tag_pointsAt_empty_repo() throws GitAPIException {
+    void tag_pointsAt_emptyRepo() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
@@ -89,7 +93,8 @@ class GitUtilTest {
     }
 
     @Test
-    void tag_pointsAt_no_tags() throws GitAPIException {
+    void tag_pointsAt_noTags() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
@@ -103,7 +108,8 @@ class GitUtilTest {
     }
 
     @Test
-    void tag_pointsAt_one_tags() throws GitAPIException {
+    void tag_pointsAt_oneTag() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
@@ -119,7 +125,8 @@ class GitUtilTest {
     }
 
     @Test
-    void tag_pointsAt_multiple_tags() throws GitAPIException {
+    void tag_pointsAt_multipleTags() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
@@ -139,7 +146,8 @@ class GitUtilTest {
     }
 
     @Test
-    void revParse_empty_repo() throws GitAPIException {
+    void revParse_emptyRepo() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
@@ -151,7 +159,8 @@ class GitUtilTest {
     }
 
     @Test
-    void revParse_non_empty_repo() throws GitAPIException {
+    void revParse_nonEmptyRepo() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 

@@ -8,12 +8,8 @@ import org.eclipse.jgit.lib.Repository;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
-
-import static org.eclipse.jgit.lib.Constants.HEAD;
-import static org.eclipse.jgit.lib.Constants.MASTER;
-import static org.eclipse.jgit.lib.Constants.R_TAGS;
-
 import static me.qoomon.UncheckedExceptions.unchecked;
+import static org.eclipse.jgit.lib.Constants.*;
 
 public final class GitUtil {
 

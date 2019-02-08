@@ -38,6 +38,7 @@ class StringUtilTest {
 
     @Test
     void removePrefix_keepStringInMiddle() {
+
         // Given
         String givenText = "fairytale";
 
@@ -50,6 +51,7 @@ class StringUtilTest {
 
     @Test
     void removePrefix_removeRegex() {
+
         // Given
         String givenText = "fairytale";
 
@@ -62,6 +64,7 @@ class StringUtilTest {
 
     @Test
     void valueGroupMap() {
+
         // Given
         String givenRegex = "(one) (two) (three)";
         String givenText = "one two three";
@@ -75,6 +78,7 @@ class StringUtilTest {
 
     @Test
     void valueGroupMap_nested() {
+
         // Given
         String givenRegex = "(one) (two (three))";
         String givenText = "one two three";
@@ -88,6 +92,7 @@ class StringUtilTest {
 
     @Test
     void getRegexGroupValueMap_namedGroup() {
+
         // Given
         String givenRegex = "(?<first>one) (?<second>two) (?<third>three)";
         String givenText = "one two three";
@@ -101,7 +106,8 @@ class StringUtilTest {
     }
 
     @Test
-    void getRegexGroupValueMap_namedGroup_nested() {
+    void getRegexGroupValueMap_namedGroupNested() {
+
         // Given
         String givenRegex = "(?<first>one) (?<second>two (?<third>three))";
         String givenText = "one two three";
@@ -113,4 +119,5 @@ class StringUtilTest {
         assertThat(valueMap).contains(entry("0", givenText), entry("1", "one"), entry("2", "two three"), entry("3", "three"));
         assertThat(valueMap).contains(entry("first", "one"), entry("second", "two three"), entry("third", "three"));
     }
+
 }

@@ -4,19 +4,16 @@ import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.*;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
-
-import static org.eclipse.jgit.lib.Constants.HEAD;
-
 import static me.qoomon.UncheckedExceptions.unchecked;
 import static me.qoomon.gitversioning.StringUtil.*;
-
-import javax.annotation.Nonnull;
+import static org.eclipse.jgit.lib.Constants.HEAD;
 
 public class GitVersioning {
 
