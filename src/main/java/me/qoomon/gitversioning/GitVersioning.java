@@ -25,29 +25,6 @@ public class GitVersioning {
         this.versionDescription = versionDescription;
     }
 
-    public GitVersionDetails determineVersion(String currentVersion) {
-
-        Map<String, String> projectVersionDataMap = new HashMap<>();
-        projectVersionDataMap.put("version", currentVersion);
-        projectVersionDataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$", ""));
-        projectVersionDataMap.put("commit", defaultGitVersionDetails.getCommit());
-        projectVersionDataMap.put("commit.short", defaultGitVersionDetails.getCommit().substring(0, 7));
-        projectVersionDataMap.put(defaultGitVersionDetails.getCommitRefType(), defaultGitVersionDetails.getCommitRefName());
-        projectVersionDataMap.putAll(defaultGitVersionDetails.getMetaData());
-
-        String gitVersion = substituteText(versionDescription.getVersionFormat(), projectVersionDataMap);
-
-        return new GitVersionDetails(
-                defaultGitVersionDetails.getDirectory(),
-                defaultGitVersionDetails.isClean(),
-                defaultGitVersionDetails.getCommit(),
-                defaultGitVersionDetails.getCommitRefType(),
-                defaultGitVersionDetails.getCommitRefName(),
-                defaultGitVersionDetails.getMetaData(),
-                escapeVersion(gitVersion)
-        );
-    }
-
     public static GitVersioning build(File directory,
                                       final VersionDescription commitVersionDescription,
                                       final List<VersionDescription> branchVersionDescriptions,
@@ -119,6 +96,29 @@ public class GitVersioning {
         );
 
         return new GitVersioning(defaultGitVersionDetails, versionDescription);
+    }
+
+    public GitVersionDetails determineVersion(String currentVersion) {
+
+        Map<String, String> projectVersionDataMap = new HashMap<>();
+        projectVersionDataMap.put("version", currentVersion);
+        projectVersionDataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$", ""));
+        projectVersionDataMap.put("commit", defaultGitVersionDetails.getCommit());
+        projectVersionDataMap.put("commit.short", defaultGitVersionDetails.getCommit().substring(0, 7));
+        projectVersionDataMap.put(defaultGitVersionDetails.getCommitRefType(), defaultGitVersionDetails.getCommitRefName());
+        projectVersionDataMap.putAll(defaultGitVersionDetails.getMetaData());
+
+        String gitVersion = substituteText(versionDescription.getVersionFormat(), projectVersionDataMap);
+
+        return new GitVersionDetails(
+                defaultGitVersionDetails.getDirectory(),
+                defaultGitVersionDetails.isClean(),
+                defaultGitVersionDetails.getCommit(),
+                defaultGitVersionDetails.getCommitRefType(),
+                defaultGitVersionDetails.getCommitRefName(),
+                defaultGitVersionDetails.getMetaData(),
+                escapeVersion(gitVersion)
+        );
     }
 
     private static GitRepoData getGitRepoData(File directory) {
