@@ -13,8 +13,8 @@ public class GitVersioningPluginExtension {
     public boolean enabled = true;
 
     public CommitVersionDescription commit;
-    public List<VersionDescription> branches = new ArrayList<>();
-    public List<VersionDescription> tags = new ArrayList<>();
+    public final List<VersionDescription> branches = new ArrayList<>();
+    public final List<VersionDescription> tags = new ArrayList<>();
 
     public GitVersioningPluginExtension(Project project) {
         this.project = project;

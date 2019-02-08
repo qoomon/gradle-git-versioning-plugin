@@ -1,7 +1,6 @@
 package me.qoomon.gitversioning;
 
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
-import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
@@ -11,6 +10,9 @@ import java.util.*;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
+
+import static org.eclipse.jgit.lib.Constants.HEAD;
+
 import static me.qoomon.UncheckedExceptions.unchecked;
 import static me.qoomon.gitversioning.StringUtil.*;
 
@@ -129,9 +131,9 @@ public class GitVersioning {
         }
         try (Repository repository = unchecked(repositoryBuilder::build)) {
             boolean headClean = GitUtil.status(repository).isClean();
-            String headCommit = GitUtil.revParse(repository, Constants.HEAD);
+            String headCommit = GitUtil.revParse(repository, HEAD);
             String headBranch = GitUtil.branch(repository);
-            List<String> headTags = GitUtil.tag_pointsAt(repository, Constants.HEAD);
+            List<String> headTags = GitUtil.tag_pointsAt(repository, HEAD);
             return new GitRepoData(repository.getDirectory(), headClean, headCommit, headBranch, headTags);
         }
     }

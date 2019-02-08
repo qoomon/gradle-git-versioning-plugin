@@ -1,6 +1,7 @@
 package me.qoomon.gitversioning;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.jgit.lib.Constants.HEAD;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,7 +82,7 @@ class GitUtilTest {
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
         // when
-        List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), Constants.HEAD);
+        List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), HEAD);
 
         // then
         assertThat(tags).isEmpty();
@@ -95,7 +96,7 @@ class GitUtilTest {
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         // when
-        List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), Constants.HEAD);
+        List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), HEAD);
 
         // then
         assertThat(tags).isEmpty();
@@ -111,7 +112,7 @@ class GitUtilTest {
         git.tag().setName(givenTagName).setObjectId(givenCommit).call();
 
         // when
-        List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), Constants.HEAD);
+        List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), HEAD);
 
         // then
         assertThat(tags).containsExactly(givenTagName);
@@ -131,7 +132,7 @@ class GitUtilTest {
         git.tag().setName(givenTagName3).setObjectId(givenCommit).call();
 
         // when
-        List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), Constants.HEAD);
+        List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), HEAD);
 
         // then
         assertThat(tags).containsExactlyInAnyOrder(givenTagName1, givenTagName2, givenTagName3);
@@ -143,7 +144,7 @@ class GitUtilTest {
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
         // when
-        String ref = GitUtil.revParse(git.getRepository(), Constants.HEAD);
+        String ref = GitUtil.revParse(git.getRepository(), HEAD);
 
         // then
         assertThat(ref).isEqualTo("0000000000000000000000000000000000000000");
@@ -157,7 +158,7 @@ class GitUtilTest {
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         // when
-        String ref = GitUtil.revParse(git.getRepository(), Constants.HEAD);
+        String ref = GitUtil.revParse(git.getRepository(), HEAD);
 
         // then
         assertThat(ref).isEqualTo(givenCommit.name());
