@@ -32,15 +32,14 @@ class GitVersioningTest {
         GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
 
         // then
-        assertThat(gitVersionDetails).isNotNull()
-                .satisfies(it -> assertSoftly(softly -> {
-                    softly.assertThat(it.getDirectory()).isEqualTo(git.getRepository().getDirectory());
-                    softly.assertThat(it.isClean()).isTrue();
-                    softly.assertThat(it.getCommit()).isEqualTo("0000000000000000000000000000000000000000");
-                    softly.assertThat(it.getCommitRefType()).isEqualTo("commit");
-                    softly.assertThat(it.getCommitRefName()).isEqualTo("0000000000000000000000000000000000000000");
-                    softly.assertThat(it.getVersion()).isEqualTo("0000000000000000000000000000000000000000");
-                }));
+        assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.getDirectory()).isEqualTo(git.getRepository().getDirectory());
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getCommit()).isEqualTo("0000000000000000000000000000000000000000");
+            softly.assertThat(it.getCommitRefType()).isEqualTo("commit");
+            softly.assertThat(it.getCommitRefName()).isEqualTo("0000000000000000000000000000000000000000");
+            softly.assertThat(it.getVersion()).isEqualTo("0000000000000000000000000000000000000000");
+        }));
     }
 
     @Test
@@ -58,14 +57,30 @@ class GitVersioningTest {
         GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
 
         // then
-        assertThat(gitVersionDetails).isNotNull()
-                .satisfies(it -> assertSoftly(softly -> {
-                    softly.assertThat(it.getDirectory()).isEqualTo(git.getRepository().getDirectory());
-                    softly.assertThat(it.isClean()).isTrue();
-                    softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
-                    softly.assertThat(it.getCommitRefType()).isEqualTo("commit");
-                    softly.assertThat(it.getCommitRefName()).isEqualTo(givenCommit.getName());
-                    softly.assertThat(it.getVersion()).isEqualTo(givenCommit.getName());
-                }));
+        assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.getDirectory()).isEqualTo(git.getRepository().getDirectory());
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getCommitRefType()).isEqualTo("commit");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getVersion()).isEqualTo(givenCommit.getName());
+        }));
+    }
+
+    @Test
+    void determineVersion_normalizeVersionCharacters() throws GitAPIException {
+
+        // given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+
+        // when
+        GitVersioning gitVersioning = GitVersioning.build(git.getRepository().getDirectory(),
+                new VersionDescription(null, null, "x/y/z"),
+                emptyList(),
+                emptyList());
+        GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
+
+        // then
+        assertThat(gitVersionDetails.getVersion()).isEqualTo("x-y-z");
     }
 }

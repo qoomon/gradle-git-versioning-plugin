@@ -16,6 +16,8 @@ import static org.eclipse.jgit.lib.Constants.HEAD;
 import static me.qoomon.UncheckedExceptions.unchecked;
 import static me.qoomon.gitversioning.StringUtil.*;
 
+import javax.annotation.Nonnull;
+
 public class GitVersioning {
 
     final private GitVersionDetails defaultGitVersionDetails;
@@ -100,6 +102,7 @@ public class GitVersioning {
         return new GitVersioning(defaultGitVersionDetails, versionDescription);
     }
 
+    @Nonnull
     public GitVersionDetails determineVersion(String currentVersion) {
 
         Map<String, String> projectVersionDataMap = new HashMap<>();
@@ -119,7 +122,7 @@ public class GitVersioning {
                 defaultGitVersionDetails.getCommitRefType(),
                 defaultGitVersionDetails.getCommitRefName(),
                 defaultGitVersionDetails.getMetaData(),
-                escapeVersion(gitVersion)
+                normalizeVersionCharacters(gitVersion)
         );
     }
 
@@ -138,7 +141,7 @@ public class GitVersioning {
         }
     }
 
-    private static String escapeVersion(String version) {
+    private static String normalizeVersionCharacters(String version) {
         return version.replace("/", "-");
     }
 
