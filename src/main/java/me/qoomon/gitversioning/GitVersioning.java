@@ -19,24 +19,24 @@ public class GitVersioning {
         this.versionFormat = versionFormat;
     }
 
-    public static GitVersioning build(final GitRepoData gitRepoData,
+    public static GitVersioning build(final GitRepoSituation repoSituation,
                                       final VersionDescription commitVersionDescription,
                                       final List<VersionDescription> branchVersionDescriptions,
                                       final List<VersionDescription> tagVersionDescriptions) {
-        Objects.requireNonNull(gitRepoData);
+        Objects.requireNonNull(repoSituation);
         Objects.requireNonNull(commitVersionDescription);
         Objects.requireNonNull(branchVersionDescriptions);
         Objects.requireNonNull(tagVersionDescriptions);
 
         // default versioning
         String gitRefType = "commit";
-        String gitRefName = gitRepoData.getCommit();
+        String gitRefName = repoSituation.getCommit();
         VersionDescription versionDescription = commitVersionDescription;
 
-        if (gitRepoData.getBranch() != null) {
+        if (repoSituation.getBranch() != null) {
             // branch versioning
             for (final VersionDescription branchVersionDescription : branchVersionDescriptions) {
-                Optional<String> versionBranch = Optional.of(gitRepoData.getBranch())
+                Optional<String> versionBranch = Optional.of(repoSituation.getBranch())
                         .filter(branch -> branch.matches(branchVersionDescription.getPattern()));
                 if (versionBranch.isPresent()) {
                     gitRefType = "branch";
@@ -45,10 +45,10 @@ public class GitVersioning {
                     break;
                 }
             }
-        } else if (!gitRepoData.getTags().isEmpty()) {
+        } else if (!repoSituation.getTags().isEmpty()) {
             // tag versioning
             for (final VersionDescription tagVersionDescription : tagVersionDescriptions) {
-                Optional<String> versionTag = gitRepoData.getTags().stream()
+                Optional<String> versionTag = repoSituation.getTags().stream()
                         .filter(tag -> tag.matches(tagVersionDescription.getPattern()))
                         .max(comparing(DefaultArtifactVersion::new));
                 if (versionTag.isPresent()) {
@@ -61,8 +61,8 @@ public class GitVersioning {
         }
 
         GitVersionDetails defaultGitVersionDetails = new GitVersionDetails(
-                gitRepoData.isClean(),
-                gitRepoData.getCommit(),
+                repoSituation.isClean(),
+                repoSituation.getCommit(),
                 gitRefType,
                 removePrefix(gitRefName, versionDescription.getPrefix()),
                 valueGroupMap(versionDescription.getPattern(), gitRefName),
@@ -77,7 +77,6 @@ public class GitVersioning {
 
         Map<String, String> projectVersionDataMap = new HashMap<>();
         projectVersionDataMap.put("version", currentVersion);
-        projectVersionDataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$", ""));
         projectVersionDataMap.put("commit", commonGitVersionDetails.getCommit());
         projectVersionDataMap.put("commit.short", commonGitVersionDetails.getCommit().substring(0, 7));
         projectVersionDataMap.put(commonGitVersionDetails.getCommitRefType(), commonGitVersionDetails.getCommitRefName());

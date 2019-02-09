@@ -1,7 +1,10 @@
 package me.qoomon.gitversioning;
 
+import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.eclipse.jgit.lib.Constants.HEAD;
+import static org.eclipse.jgit.lib.Constants.MASTER;
 
 import java.io.File;
 import java.io.IOException;
@@ -171,5 +174,105 @@ class GitUtilTest {
 
         // then
         assertThat(ref).isEqualTo(givenCommit.name());
+    }
+
+    @Test
+    void headSituation_emptyRepo() throws GitAPIException {
+
+        // Given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+
+        // When
+        GitRepoSituation repoSituation = GitUtil.headSituation(git.getRepository().getDirectory());
+
+        // Then
+        assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getCommit()).isEqualTo(NO_COMMIT);
+            softly.assertThat(it.getBranch()).isEqualTo(MASTER);
+            softly.assertThat(it.getTags()).isEmpty();
+        }));
+    }
+
+    @Test
+    void headSituation_onBranch() throws GitAPIException {
+
+        // Given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
+
+        // When
+        GitRepoSituation repoSituation = GitUtil.headSituation(git.getRepository().getDirectory());
+
+        // Then
+        assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getBranch()).isEqualTo(MASTER);
+            softly.assertThat(it.getTags()).isEmpty();
+        }));
+    }
+
+    @Test
+    void headSituation_onBranchWithTag() throws GitAPIException {
+
+        // Given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
+        String givenTag = "v1";
+        git.tag().setName(givenTag).setObjectId(givenCommit).call();
+
+        // When
+        GitRepoSituation repoSituation = GitUtil.headSituation(git.getRepository().getDirectory());
+
+        // Then
+        assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getBranch()).isEqualTo(MASTER);
+            softly.assertThat(it.getTags()).containsExactly(givenTag);
+        }));
+    }
+
+    @Test
+    void headSituation_detachedHead() throws GitAPIException {
+
+        // Given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
+        git.checkout().setName(givenCommit.getName()).call();
+
+        // When
+        GitRepoSituation repoSituation = GitUtil.headSituation(git.getRepository().getDirectory());
+
+        // Then
+        assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getBranch()).isNull();
+            softly.assertThat(it.getTags()).isEmpty();
+        }));
+    }
+
+    @Test
+    void headSituation_detachedHeadWithTag() throws GitAPIException {
+
+        // Given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
+        String givenTag = "v1";
+        git.tag().setName(givenTag).setObjectId(givenCommit).call();
+        git.checkout().setName(givenTag).call();
+
+        // When
+        GitRepoSituation repoSituation = GitUtil.headSituation(git.getRepository().getDirectory());
+
+        // Then
+        assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
+            softly.assertThat(it.isClean()).isTrue();
+            softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getBranch()).isNull();
+            softly.assertThat(it.getTags()).containsExactly(givenTag);
+        }));
     }
 }

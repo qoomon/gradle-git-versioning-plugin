@@ -13,10 +13,10 @@ class GitVersioningTest {
     void determineVersion_forBranch() {
 
         // given
-        GitRepoData gitRepoData = new GitRepoData();
-        gitRepoData.setBranch("develop");
+        GitRepoSituation repoSituation = new GitRepoSituation();
+        repoSituation.setBranch("develop");
 
-        GitVersioning gitVersioning = GitVersioning.build(gitRepoData,
+        GitVersioning gitVersioning = GitVersioning.build(repoSituation,
                 new VersionDescription(),
                 asList(new VersionDescription(null, null, "${branch}-branch")),
                 emptyList());
@@ -27,10 +27,10 @@ class GitVersioningTest {
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(gitRepoData.getCommit());
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getCommit());
             softly.assertThat(it.getCommitRefType()).isEqualTo("branch");
-            softly.assertThat(it.getCommitRefName()).isEqualTo(gitRepoData.getBranch());
-            softly.assertThat(it.getVersion()).isEqualTo(gitRepoData.getBranch() + "-branch");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getBranch());
+            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getBranch() + "-branch");
         }));
     }
 
@@ -38,11 +38,11 @@ class GitVersioningTest {
     void determineVersion_forBranchWithTag() {
 
         // given
-        GitRepoData gitRepoData = new GitRepoData();
-        gitRepoData.setBranch("develop");
-        gitRepoData.setTags(asList("v1"));
+        GitRepoSituation repoSituation = new GitRepoSituation();
+        repoSituation.setBranch("develop");
+        repoSituation.setTags(asList("v1"));
 
-        GitVersioning gitVersioning = GitVersioning.build(gitRepoData,
+        GitVersioning gitVersioning = GitVersioning.build(repoSituation,
                 new VersionDescription(),
                 asList(new VersionDescription(null, null, "${branch}-branch")),
                 emptyList());
@@ -53,10 +53,10 @@ class GitVersioningTest {
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(gitRepoData.getCommit());
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getCommit());
             softly.assertThat(it.getCommitRefType()).isEqualTo("branch");
-            softly.assertThat(it.getCommitRefName()).isEqualTo(gitRepoData.getBranch());
-            softly.assertThat(it.getVersion()).isEqualTo(gitRepoData.getBranch() + "-branch");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getBranch());
+            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getBranch() + "-branch");
         }));
     }
 
@@ -64,9 +64,9 @@ class GitVersioningTest {
     void determineVersion_detachedHead() {
 
         // given
-        GitRepoData gitRepoData = new GitRepoData();
+        GitRepoSituation repoSituation = new GitRepoSituation();
 
-        GitVersioning gitVersioning = GitVersioning.build(gitRepoData,
+        GitVersioning gitVersioning = GitVersioning.build(repoSituation,
                 new VersionDescription(null, null, "${commit}-commit"),
                 emptyList(),
                 emptyList());
@@ -77,10 +77,10 @@ class GitVersioningTest {
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(gitRepoData.getCommit());
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getCommit());
             softly.assertThat(it.getCommitRefType()).isEqualTo("commit");
-            softly.assertThat(it.getCommitRefName()).isEqualTo(gitRepoData.getCommit());
-            softly.assertThat(it.getVersion()).isEqualTo(gitRepoData.getCommit() + "-commit");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getCommit());
+            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getCommit() + "-commit");
         }));
     }
 
@@ -88,10 +88,10 @@ class GitVersioningTest {
     void determineVersion_detachedHeadWithTag() {
 
         // given
-        GitRepoData gitRepoData = new GitRepoData();
-        gitRepoData.setTags(asList("v1"));
+        GitRepoSituation repoSituation = new GitRepoSituation();
+        repoSituation.setTags(asList("v1"));
 
-        GitVersioning gitVersioning = GitVersioning.build(gitRepoData,
+        GitVersioning gitVersioning = GitVersioning.build(repoSituation,
                 new VersionDescription(),
                 emptyList(),
                 asList(new VersionDescription("v.*", null, "${tag}-tag")));
@@ -102,10 +102,10 @@ class GitVersioningTest {
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(gitRepoData.getCommit());
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getCommit());
             softly.assertThat(it.getCommitRefType()).isEqualTo("tag");
-            softly.assertThat(it.getCommitRefName()).isEqualTo(gitRepoData.getTags().get(0));
-            softly.assertThat(it.getVersion()).isEqualTo(gitRepoData.getTags().get(0) + "-tag");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getTags().get(0));
+            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getTags().get(0) + "-tag");
         }));
     }
 
@@ -115,7 +115,7 @@ class GitVersioningTest {
         // given
         String versionFormat = "x/y/z";
 
-        GitVersioning gitVersioning = GitVersioning.build(new GitRepoData(),
+        GitVersioning gitVersioning = GitVersioning.build(new GitRepoSituation(),
                 new VersionDescription(null, null, versionFormat),
                 emptyList(),
                 emptyList());

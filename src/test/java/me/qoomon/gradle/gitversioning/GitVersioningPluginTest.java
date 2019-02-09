@@ -15,7 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.nio.file.Path;
 
-import static me.qoomon.gitversioning.GitUtil.NO_COMMIT;
+import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.gradle.util.GFileUtils.writeFile;
 

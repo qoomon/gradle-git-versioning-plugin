@@ -1,9 +1,6 @@
 package me.qoomon.gradle.gitversioning;
 
-import me.qoomon.gitversioning.GitRepoData;
-import me.qoomon.gitversioning.GitVersionDetails;
-import me.qoomon.gitversioning.GitVersioning;
-import me.qoomon.gitversioning.VersionDescription;
+import me.qoomon.gitversioning.*;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
@@ -38,21 +35,21 @@ public class GitVersioningPlugin implements Plugin<Project> {
             String providedBranch = null; // TODO
             String providedTag = null; // TODO
 
-            GitRepoData gitRepoData = GitRepoData.get(project.getProjectDir());
+            GitRepoSituation repoSituation = GitUtil.headSituation(project.getProjectDir());
             if (providedClean != null) {
-                gitRepoData.setClean(providedClean);
+                repoSituation.setClean(providedClean);
             }
             if (providedCommit != null) {
-                gitRepoData.setCommit(providedCommit);
+                repoSituation.setCommit(providedCommit);
             }
             if (providedBranch != null) {
-                gitRepoData.setBranch(providedBranch.equals("") ? null : providedBranch);
+                repoSituation.setBranch(providedBranch.equals("") ? null : providedBranch);
             }
             if (providedTag != null) {
-                gitRepoData.setTags(providedTag.equals("") ? emptyList() : singletonList(providedTag));
+                repoSituation.setTags(providedTag.equals("") ? emptyList() : singletonList(providedTag));
             }
 
-            GitVersioning gitVersioning = GitVersioning.build(gitRepoData,
+            GitVersioning gitVersioning = GitVersioning.build(repoSituation,
                     ofNullable(config.commit).map(it -> new VersionDescription(null, null, it.versionFormat))
                             .orElse(new VersionDescription()),
                     config.branches.stream().map(it -> new VersionDescription(it.pattern, it.prefix, it.versionFormat))
@@ -61,8 +58,11 @@ public class GitVersioningPlugin implements Plugin<Project> {
                             .map(it -> new VersionDescription(it.pattern, it.prefix, it.versionFormat))
                             .collect(toList()));
 
+            GitVersionDetails gitVersionDetails = gitVersioning.determineVersion(project.getVersion().toString());
+
             project.getAllprojects().forEach(it -> {
-                GitVersionDetails gitVersionDetails = gitVersioning.determineVersion(it.getVersion().toString());
+                // TODO check for version is equals to root project
+
                 it.getLogger().info(it.getDisplayName() + " git versioning [" + it.getVersion() + " -> " + gitVersionDetails.getVersion() + "]"
                         + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
 
