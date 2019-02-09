@@ -6,7 +6,8 @@ import javax.annotation.Nonnull;
 import java.util.*;
 
 import static java.util.Comparator.comparing;
-import static me.qoomon.gitversioning.StringUtil.*;
+import static me.qoomon.gitversioning.StringUtil.substituteText;
+import static me.qoomon.gitversioning.StringUtil.valueGroupMap;
 
 public class GitVersioning {
 

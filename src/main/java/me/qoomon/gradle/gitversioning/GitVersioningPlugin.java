@@ -73,10 +73,11 @@ public class GitVersioningPlugin implements Plugin<Project> {
         });
     }
 
-    private String getOption(final Project project, final String key) {
-        String value = (String) project.getProperties().get("gitVersioning." + key);
+    private String getOption(final Project project, final String name) {
+        String key = "git." + name;
+        String value = (String) project.getProperties().get(key);
         if (value == null) {
-            value = System.getenv("GIT_VERSIONING_" + key.replaceAll("[A-Z]", "_$0").toUpperCase());
+            value = System.getenv(key.replaceAll("[A-Z]", "_$0").toUpperCase());
         }
         return value;
     }
