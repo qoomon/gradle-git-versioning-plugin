@@ -1,5 +1,6 @@
 package me.qoomon.gradle.gitversioning;
 
+import me.qoomon.gitversioning.GitRepoData;
 import me.qoomon.gitversioning.GitVersionDetails;
 import me.qoomon.gitversioning.GitVersioning;
 import me.qoomon.gitversioning.VersionDescription;
@@ -9,8 +10,10 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 
 import javax.annotation.Nonnull;
-import java.util.Optional;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 public class GitVersioningPlugin implements Plugin<Project> {
@@ -24,19 +27,39 @@ public class GitVersioningPlugin implements Plugin<Project> {
                 .create("gitVersioning", GitVersioningPluginExtension.class, project);
 
         project.afterEvaluate(evaluatedProject -> {
-            GitVersioning gitVersioning = GitVersioning.build(project.getProjectDir(),
-                    Optional.ofNullable(config.commit).map(it -> new VersionDescription(null, null, it.versionFormat))
+
+            if (!config.enabled) {
+                LOG.warn("Git Versioning Plugin disabled.");
+                return;
+            }
+
+            Boolean providedClean = null; // TODO
+            String providedCommit = null; // TODO
+            String providedBranch = null; // TODO
+            String providedTag = null; // TODO
+
+            GitRepoData gitRepoData = GitRepoData.get(project.getProjectDir());
+            if (providedClean != null) {
+                gitRepoData.setClean(providedClean);
+            }
+            if (providedCommit != null) {
+                gitRepoData.setCommit(providedCommit);
+            }
+            if (providedBranch != null) {
+                gitRepoData.setBranch(providedBranch.equals("") ? null : providedBranch);
+            }
+            if (providedTag != null) {
+                gitRepoData.setTags(providedTag.equals("") ? emptyList() : singletonList(providedTag));
+            }
+
+            GitVersioning gitVersioning = GitVersioning.build(gitRepoData,
+                    ofNullable(config.commit).map(it -> new VersionDescription(null, null, it.versionFormat))
                             .orElse(new VersionDescription()),
                     config.branches.stream().map(it -> new VersionDescription(it.pattern, it.prefix, it.versionFormat))
                             .collect(toList()),
                     config.tags.stream()
                             .map(it -> new VersionDescription(it.pattern, it.prefix, it.versionFormat))
                             .collect(toList()));
-
-            if (!config.enabled) {
-                LOG.warn("Git Versioning Plugin disabled.");
-                return;
-            }
 
             project.getAllprojects().forEach(it -> {
                 GitVersionDetails gitVersionDetails = gitVersioning.determineVersion(it.getVersion().toString());

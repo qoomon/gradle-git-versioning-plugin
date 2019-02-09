@@ -1,12 +1,5 @@
 package me.qoomon.gradle.gitversioning;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.gradle.util.GFileUtils.writeFile;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -18,6 +11,13 @@ import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import java.io.File;
+import java.nio.file.Path;
+
+import static me.qoomon.gitversioning.GitUtil.NO_COMMIT;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.gradle.util.GFileUtils.writeFile;
 
 class GitVersioningPluginTest {
 
@@ -41,11 +41,12 @@ class GitVersioningPluginTest {
 
         // then
         assertThat(buildresult.task(":version").getOutcome()).isEqualTo(TaskOutcome.SUCCESS);
-        assertThat(buildresult.getOutput()).isEqualTo("0000000000000000000000000000000000000000\n");
+        assertThat(buildresult.getOutput()).isEqualTo(NO_COMMIT + "\n");
     }
 
     @Test
     void apply() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
         RevCommit commit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
@@ -64,6 +65,7 @@ class GitVersioningPluginTest {
 
     @Test
     void apply_with_extension_commit_description() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
@@ -86,7 +88,8 @@ class GitVersioningPluginTest {
     }
 
     @Test
-    void apply_with_extension_branch_description() throws GitAPIException, IOException {
+    void apply_with_extension_branch_description() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
@@ -109,11 +112,12 @@ class GitVersioningPluginTest {
         ((ProjectInternal) project).evaluate();
 
         // then
-        assertThat(project.getVersion()).isEqualTo(givenBranch.replace("/","-") + "-gitVersioning");
+        assertThat(project.getVersion()).isEqualTo(givenBranch.replace("/", "-") + "-gitVersioning");
     }
 
     @Test
     void apply_with_extension_tag_description() throws GitAPIException {
+
         // given
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();

@@ -13,6 +13,8 @@ import static org.eclipse.jgit.lib.Constants.*;
 
 public final class GitUtil {
 
+    public static String NO_COMMIT = "0000000000000000000000000000000000000000";
+
     public static Status status(Repository repository) {
         return unchecked(() -> Git.wrap(repository).status().call());
     }
@@ -41,7 +43,8 @@ public final class GitUtil {
     public static String revParse(Repository repository, String revstr) {
         ObjectId rev = unchecked(() -> repository.resolve(revstr));
         if (rev == null) {
-            return "0000000000000000000000000000000000000000";
+
+            return NO_COMMIT;
         }
         return rev.getName();
     }
