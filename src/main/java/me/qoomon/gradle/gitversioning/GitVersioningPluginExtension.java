@@ -41,7 +41,6 @@ public class GitVersioningPluginExtension {
     public static class VersionDescription {
 
         public String pattern;
-        public String prefix;
         public String versionFormat;
     }
 

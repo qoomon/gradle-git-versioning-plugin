@@ -183,14 +183,14 @@ class GitUtilTest {
         Git git = Git.init().setDirectory(tempDir.toFile()).call();
 
         // When
-        GitRepoSituation repoSituation = GitUtil.headSituation(git.getRepository().getDirectory());
+        GitRepoSituation repoSituation = GitUtil.situation(git.getRepository().getDirectory());
 
         // Then
         assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(NO_COMMIT);
-            softly.assertThat(it.getBranch()).isEqualTo(MASTER);
-            softly.assertThat(it.getTags()).isEmpty();
+            softly.assertThat(it.getHeadCommit()).isEqualTo(NO_COMMIT);
+            softly.assertThat(it.getHeadBranch()).isEqualTo(MASTER);
+            softly.assertThat(it.getHeadTags()).isEmpty();
         }));
     }
 
@@ -202,14 +202,14 @@ class GitUtilTest {
         RevCommit givenCommit = git.commit().setMessage("init").setAllowEmpty(true).call();
 
         // When
-        GitRepoSituation repoSituation = GitUtil.headSituation(git.getRepository().getDirectory());
+        GitRepoSituation repoSituation = GitUtil.situation(git.getRepository().getDirectory());
 
         // Then
         assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
-            softly.assertThat(it.getBranch()).isEqualTo(MASTER);
-            softly.assertThat(it.getTags()).isEmpty();
+            softly.assertThat(it.getHeadCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getHeadBranch()).isEqualTo(MASTER);
+            softly.assertThat(it.getHeadTags()).isEmpty();
         }));
     }
 
@@ -223,14 +223,14 @@ class GitUtilTest {
         git.tag().setName(givenTag).setObjectId(givenCommit).call();
 
         // When
-        GitRepoSituation repoSituation = GitUtil.headSituation(git.getRepository().getDirectory());
+        GitRepoSituation repoSituation = GitUtil.situation(git.getRepository().getDirectory());
 
         // Then
         assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
-            softly.assertThat(it.getBranch()).isEqualTo(MASTER);
-            softly.assertThat(it.getTags()).containsExactly(givenTag);
+            softly.assertThat(it.getHeadCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getHeadBranch()).isEqualTo(MASTER);
+            softly.assertThat(it.getHeadTags()).containsExactly(givenTag);
         }));
     }
 
@@ -243,14 +243,14 @@ class GitUtilTest {
         git.checkout().setName(givenCommit.getName()).call();
 
         // When
-        GitRepoSituation repoSituation = GitUtil.headSituation(git.getRepository().getDirectory());
+        GitRepoSituation repoSituation = GitUtil.situation(git.getRepository().getDirectory());
 
         // Then
         assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
-            softly.assertThat(it.getBranch()).isNull();
-            softly.assertThat(it.getTags()).isEmpty();
+            softly.assertThat(it.getHeadCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getHeadBranch()).isNull();
+            softly.assertThat(it.getHeadTags()).isEmpty();
         }));
     }
 
@@ -265,14 +265,14 @@ class GitUtilTest {
         git.checkout().setName(givenTag).call();
 
         // When
-        GitRepoSituation repoSituation = GitUtil.headSituation(git.getRepository().getDirectory());
+        GitRepoSituation repoSituation = GitUtil.situation(git.getRepository().getDirectory());
 
         // Then
         assertThat(repoSituation).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(givenCommit.getName());
-            softly.assertThat(it.getBranch()).isNull();
-            softly.assertThat(it.getTags()).containsExactly(givenTag);
+            softly.assertThat(it.getHeadCommit()).isEqualTo(givenCommit.getName());
+            softly.assertThat(it.getHeadBranch()).isNull();
+            softly.assertThat(it.getHeadTags()).containsExactly(givenTag);
         }));
     }
 }

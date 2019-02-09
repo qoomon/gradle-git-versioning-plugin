@@ -9,29 +9,27 @@ gitVersioning {
     enabled = true
 
     commit {
-        versionFormat = 'commit-${commit}-vGIT'
+        versionFormat = 'headCommit-${commit.short}-vGIT'
     }
 
     branch {
         pattern = 'master'
-        versionFormat = 'branch-master-${branch}-vGIT'
+        versionFormat = 'headBranch-master-${branch}-vGIT'
     }
 
     branch {
-        pattern = 'feature/.*'
-        prefix = 'feature/'
-        versionFormat = 'branch-feature-${branch}-vGIT'
+        pattern = 'feature/(?<feature>.*)'
+        versionFormat = 'headBranch-feature-${feature}-vGIT'
     }
 
     branch {
         pattern = ".*"
-        versionFormat = 'branch-fallback-${branch}-vGIT'
+        versionFormat = 'headBranch-fallback-${branch}-vGIT'
     }
 
     tag {
-        pattern = 'v[0-9]+'
-        prefix = 'v'
-        versionFormat = 'tag-version-${tag}-vGIT'
+        pattern = 'v(?<release>[0-9]+)'
+        versionFormat = 'tag-version-${release}-vGIT'
     }
 }
 

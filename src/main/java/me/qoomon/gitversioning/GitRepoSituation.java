@@ -9,19 +9,19 @@ import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
 public class GitRepoSituation {
 
     private boolean clean;
-    private String commit;
-    private String branch;
-    private List<String> tags;
+    private String headCommit;
+    private String headBranch;
+    private List<String> headTags;
 
     public GitRepoSituation(){
         this(true, NO_COMMIT, null, emptyList());
     }
 
-    public GitRepoSituation(boolean clean, String commit, String branch, List<String> tags) {
+    public GitRepoSituation(boolean clean, String headCommit, String headBranch, List<String> headTags) {
         setClean(clean);
-        setCommit(commit);
-        setBranch(branch);
-        setTags(tags);
+        setHeadCommit(headCommit);
+        setHeadBranch(headBranch);
+        setHeadTags(headTags);
     }
 
     public boolean isClean() {
@@ -32,30 +32,30 @@ public class GitRepoSituation {
         this.clean = clean;
     }
 
-    public String getCommit() {
-        return commit;
+    public String getHeadCommit() {
+        return headCommit;
     }
 
-    public void setCommit(String commit) {
-        this.commit = requireNonNull(commit);
-        if (commit.length() != 40){
-            throw new IllegalArgumentException("commit sha-1 hash must contains of 40 hex characters");
+    public void setHeadCommit(String headCommit) {
+        this.headCommit = requireNonNull(headCommit);
+        if (headCommit.length() != 40){
+            throw new IllegalArgumentException("headCommit sha-1 hash must contains of 40 hex characters");
         }
     }
 
-    public String getBranch() {
-        return branch;
+    public String getHeadBranch() {
+        return headBranch;
     }
 
-    public void setBranch(String branch) {
-        this.branch = branch;
+    public void setHeadBranch(String headBranch) {
+        this.headBranch = headBranch;
     }
 
-    public List<String> getTags() {
-        return tags;
+    public List<String> getHeadTags() {
+        return headTags;
     }
 
-    public void setTags(List<String> tags) {
-        this.tags = requireNonNull(tags);
+    public void setHeadTags(List<String> headTags) {
+        this.headTags = requireNonNull(headTags);
     }
 }

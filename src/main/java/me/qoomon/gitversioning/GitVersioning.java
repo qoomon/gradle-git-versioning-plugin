@@ -13,9 +13,9 @@ public class GitVersioning {
     final private GitVersionDetails commonGitVersionDetails;
     final private String versionFormat;
 
-    public GitVersioning(final GitVersionDetails defaultGitVersionDetails,
+    public GitVersioning(final GitVersionDetails commonGitVersionDetails,
                          final String versionFormat) {
-        this.commonGitVersionDetails = defaultGitVersionDetails;
+        this.commonGitVersionDetails = commonGitVersionDetails;
         this.versionFormat = versionFormat;
     }
 
@@ -30,13 +30,13 @@ public class GitVersioning {
 
         // default versioning
         String gitRefType = "commit";
-        String gitRefName = repoSituation.getCommit();
+        String gitRefName = repoSituation.getHeadCommit();
         VersionDescription versionDescription = commitVersionDescription;
 
-        if (repoSituation.getBranch() != null) {
+        if (repoSituation.getHeadBranch() != null) {
             // branch versioning
             for (final VersionDescription branchVersionDescription : branchVersionDescriptions) {
-                Optional<String> versionBranch = Optional.of(repoSituation.getBranch())
+                Optional<String> versionBranch = Optional.of(repoSituation.getHeadBranch())
                         .filter(branch -> branch.matches(branchVersionDescription.getPattern()));
                 if (versionBranch.isPresent()) {
                     gitRefType = "branch";
@@ -45,10 +45,10 @@ public class GitVersioning {
                     break;
                 }
             }
-        } else if (!repoSituation.getTags().isEmpty()) {
+        } else if (!repoSituation.getHeadTags().isEmpty()) {
             // tag versioning
             for (final VersionDescription tagVersionDescription : tagVersionDescriptions) {
-                Optional<String> versionTag = repoSituation.getTags().stream()
+                Optional<String> versionTag = repoSituation.getHeadTags().stream()
                         .filter(tag -> tag.matches(tagVersionDescription.getPattern()))
                         .max(comparing(DefaultArtifactVersion::new));
                 if (versionTag.isPresent()) {
@@ -60,16 +60,16 @@ public class GitVersioning {
             }
         }
 
-        GitVersionDetails defaultGitVersionDetails = new GitVersionDetails(
+        GitVersionDetails commonGitVersionDetails = new GitVersionDetails(
                 repoSituation.isClean(),
-                repoSituation.getCommit(),
+                repoSituation.getHeadCommit(),
                 gitRefType,
-                removePrefix(gitRefName, versionDescription.getPrefix()),
+                gitRefName,
                 valueGroupMap(versionDescription.getPattern(), gitRefName),
                 null
         );
 
-        return new GitVersioning(defaultGitVersionDetails, versionDescription.getVersionFormat());
+        return new GitVersioning(commonGitVersionDetails, versionDescription.getVersionFormat());
     }
 
     @Nonnull
@@ -79,6 +79,7 @@ public class GitVersioning {
         projectVersionDataMap.put("version", currentVersion);
         projectVersionDataMap.put("commit", commonGitVersionDetails.getCommit());
         projectVersionDataMap.put("commit.short", commonGitVersionDetails.getCommit().substring(0, 7));
+        projectVersionDataMap.put("ref", commonGitVersionDetails.getCommitRefName());
         projectVersionDataMap.put(commonGitVersionDetails.getCommitRefType(), commonGitVersionDetails.getCommitRefName());
         projectVersionDataMap.putAll(commonGitVersionDetails.getMetaData());
 

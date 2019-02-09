@@ -23,16 +23,6 @@ public final class StringUtil {
         return result;
     }
 
-    public static String removePrefix(String string, String prefix) {
-
-        String prefixRegex = prefix;
-        if (!prefix.startsWith("^")) {
-            prefixRegex = "^" + Pattern.quote(prefix);
-        }
-
-        return string.replaceFirst(prefixRegex, "");
-    }
-
     /**
      * @param regex pattern
      * @param text  to parse

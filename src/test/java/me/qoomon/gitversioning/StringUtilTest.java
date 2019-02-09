@@ -25,44 +25,6 @@ class StringUtilTest {
     }
 
     @Test
-    void removePrefix_removeStringFromStart() {
-        // Given
-        String givenText = "fairytale";
-
-        // When
-        String outputText = StringUtil.removePrefix(givenText, "fairy");
-
-        // Then
-        assertThat(outputText).isEqualTo("tale");
-    }
-
-    @Test
-    void removePrefix_keepStringInMiddle() {
-
-        // Given
-        String givenText = "fairytale";
-
-        // When
-        String outputText = StringUtil.removePrefix(givenText, "airy");
-
-        // Then
-        assertThat(outputText).isEqualTo("fairytale");
-    }
-
-    @Test
-    void removePrefix_removeRegex() {
-
-        // Given
-        String givenText = "fairytale";
-
-        // When
-        String outputText = StringUtil.removePrefix(givenText, "^f...y");
-
-        // Then
-        assertThat(outputText).isEqualTo("tale");
-    }
-
-    @Test
     void valueGroupMap() {
 
         // Given
@@ -119,5 +81,4 @@ class StringUtilTest {
         assertThat(valueMap).contains(entry("0", givenText), entry("1", "one"), entry("2", "two three"), entry("3", "three"));
         assertThat(valueMap).contains(entry("first", "one"), entry("second", "two three"), entry("third", "three"));
     }
-
 }

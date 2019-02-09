@@ -49,7 +49,7 @@ public final class GitUtil {
         return rev.getName();
     }
 
-    public static GitRepoSituation headSituation(File directory) {
+    public static GitRepoSituation situation(File directory) {
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(directory);
         if (repositoryBuilder.getGitDir() == null) {
             throw new IllegalArgumentException(

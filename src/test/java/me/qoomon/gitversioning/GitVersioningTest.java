@@ -14,11 +14,11 @@ class GitVersioningTest {
 
         // given
         GitRepoSituation repoSituation = new GitRepoSituation();
-        repoSituation.setBranch("develop");
+        repoSituation.setHeadBranch("develop");
 
         GitVersioning gitVersioning = GitVersioning.build(repoSituation,
                 new VersionDescription(),
-                asList(new VersionDescription(null, null, "${branch}-branch")),
+                asList(new VersionDescription(null, "${branch}-branch")),
                 emptyList());
 
         // when
@@ -27,10 +27,10 @@ class GitVersioningTest {
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getCommit());
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getHeadCommit());
             softly.assertThat(it.getCommitRefType()).isEqualTo("branch");
-            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getBranch());
-            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getBranch() + "-branch");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadBranch());
+            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getHeadBranch() + "-branch");
         }));
     }
 
@@ -39,12 +39,12 @@ class GitVersioningTest {
 
         // given
         GitRepoSituation repoSituation = new GitRepoSituation();
-        repoSituation.setBranch("develop");
-        repoSituation.setTags(asList("v1"));
+        repoSituation.setHeadBranch("develop");
+        repoSituation.setHeadTags(asList("v1"));
 
         GitVersioning gitVersioning = GitVersioning.build(repoSituation,
                 new VersionDescription(),
-                asList(new VersionDescription(null, null, "${branch}-branch")),
+                asList(new VersionDescription(null, "${branch}-branch")),
                 emptyList());
 
         // when
@@ -53,10 +53,10 @@ class GitVersioningTest {
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getCommit());
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getHeadCommit());
             softly.assertThat(it.getCommitRefType()).isEqualTo("branch");
-            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getBranch());
-            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getBranch() + "-branch");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadBranch());
+            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getHeadBranch() + "-branch");
         }));
     }
 
@@ -67,7 +67,7 @@ class GitVersioningTest {
         GitRepoSituation repoSituation = new GitRepoSituation();
 
         GitVersioning gitVersioning = GitVersioning.build(repoSituation,
-                new VersionDescription(null, null, "${commit}-commit"),
+                new VersionDescription(null, "${commit}-commit"),
                 emptyList(),
                 emptyList());
 
@@ -77,10 +77,10 @@ class GitVersioningTest {
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getCommit());
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getHeadCommit());
             softly.assertThat(it.getCommitRefType()).isEqualTo("commit");
-            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getCommit());
-            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getCommit() + "-commit");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadCommit());
+            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getHeadCommit() + "-commit");
         }));
     }
 
@@ -89,12 +89,12 @@ class GitVersioningTest {
 
         // given
         GitRepoSituation repoSituation = new GitRepoSituation();
-        repoSituation.setTags(asList("v1"));
+        repoSituation.setHeadTags(asList("v1"));
 
         GitVersioning gitVersioning = GitVersioning.build(repoSituation,
                 new VersionDescription(),
                 emptyList(),
-                asList(new VersionDescription("v.*", null, "${tag}-tag")));
+                asList(new VersionDescription("v.*", "${tag}-tag")));
 
         // when
         GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
@@ -102,10 +102,10 @@ class GitVersioningTest {
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
             softly.assertThat(it.isClean()).isTrue();
-            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getCommit());
+            softly.assertThat(it.getCommit()).isEqualTo(repoSituation.getHeadCommit());
             softly.assertThat(it.getCommitRefType()).isEqualTo("tag");
-            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getTags().get(0));
-            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getTags().get(0) + "-tag");
+            softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadTags().get(0));
+            softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getHeadTags().get(0) + "-tag");
         }));
     }
 
@@ -116,7 +116,7 @@ class GitVersioningTest {
         String versionFormat = "x/y/z";
 
         GitVersioning gitVersioning = GitVersioning.build(new GitRepoSituation(),
-                new VersionDescription(null, null, versionFormat),
+                new VersionDescription(null, versionFormat),
                 emptyList(),
                 emptyList());
 

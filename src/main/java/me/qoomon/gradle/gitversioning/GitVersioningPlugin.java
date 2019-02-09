@@ -18,11 +18,10 @@ public class GitVersioningPlugin implements Plugin<Project> {
     private static final Logger LOG = Logging.getLogger(GitVersioningPlugin.class);
 
     public void apply(@Nonnull Project project) {
-
         project.getTasks().create("version", VersionTask.class);
+
         GitVersioningPluginExtension config = project.getExtensions()
                 .create("gitVersioning", GitVersioningPluginExtension.class, project);
-
         project.afterEvaluate(evaluatedProject -> {
 
             if (!config.enabled) {
@@ -35,27 +34,27 @@ public class GitVersioningPlugin implements Plugin<Project> {
             String providedBranch = null; // TODO
             String providedTag = null; // TODO
 
-            GitRepoSituation repoSituation = GitUtil.headSituation(project.getProjectDir());
+            GitRepoSituation repoSituation = GitUtil.situation(project.getProjectDir());
             if (providedClean != null) {
                 repoSituation.setClean(providedClean);
             }
             if (providedCommit != null) {
-                repoSituation.setCommit(providedCommit);
+                repoSituation.setHeadCommit(providedCommit);
             }
             if (providedBranch != null) {
-                repoSituation.setBranch(providedBranch.equals("") ? null : providedBranch);
+                repoSituation.setHeadBranch(providedBranch.equals("") ? null : providedBranch);
             }
             if (providedTag != null) {
-                repoSituation.setTags(providedTag.equals("") ? emptyList() : singletonList(providedTag));
+                repoSituation.setHeadTags(providedTag.equals("") ? emptyList() : singletonList(providedTag));
             }
 
             GitVersioning gitVersioning = GitVersioning.build(repoSituation,
-                    ofNullable(config.commit).map(it -> new VersionDescription(null, null, it.versionFormat))
+                    ofNullable(config.commit).map(it -> new VersionDescription(null, it.versionFormat))
                             .orElse(new VersionDescription()),
-                    config.branches.stream().map(it -> new VersionDescription(it.pattern, it.prefix, it.versionFormat))
+                    config.branches.stream().map(it -> new VersionDescription(it.pattern, it.versionFormat))
                             .collect(toList()),
                     config.tags.stream()
-                            .map(it -> new VersionDescription(it.pattern, it.prefix, it.versionFormat))
+                            .map(it -> new VersionDescription(it.pattern, it.versionFormat))
                             .collect(toList()));
 
             GitVersionDetails gitVersionDetails = gitVersioning.determineVersion(project.getVersion().toString());
