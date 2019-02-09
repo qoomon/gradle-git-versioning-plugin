@@ -10,8 +10,6 @@ public class GitVersioningPluginExtension {
 
     public final Project project;
 
-    public boolean enabled = true;
-
     public CommitVersionDescription commit;
     public final List<VersionDescription> branches = new ArrayList<>();
     public final List<VersionDescription> tags = new ArrayList<>();

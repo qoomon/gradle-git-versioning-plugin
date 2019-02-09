@@ -5,6 +5,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.plugins.ExtraPropertiesExtension;
 
 import javax.annotation.Nonnull;
 
@@ -24,34 +25,30 @@ public class GitVersioningPlugin implements Plugin<Project> {
                 .create("gitVersioning", GitVersioningPluginExtension.class, project);
         project.afterEvaluate(evaluatedProject -> {
 
-            if (!config.enabled) {
+            String disabled = getOption(project, "disable");
+            if ("true".equals(disabled)) {
                 LOG.warn("Git Versioning Plugin disabled.");
                 return;
             }
 
-            Boolean providedClean = null; // TODO
-            String providedCommit = null; // TODO
-            String providedBranch = null; // TODO
-            String providedTag = null; // TODO
-
             GitRepoSituation repoSituation = GitUtil.situation(project.getProjectDir());
-            if (providedClean != null) {
-                repoSituation.setClean(providedClean);
-            }
-            if (providedCommit != null) {
-                repoSituation.setHeadCommit(providedCommit);
-            }
+
+            String providedBranch = getOption(project, "branch");
             if (providedBranch != null) {
-                repoSituation.setHeadBranch(providedBranch.equals("") ? null : providedBranch);
+                repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
             }
+
+            String providedTag = getOption(project, "tag");
             if (providedTag != null) {
-                repoSituation.setHeadTags(providedTag.equals("") ? emptyList() : singletonList(providedTag));
+                repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
             }
 
             GitVersioning gitVersioning = GitVersioning.build(repoSituation,
-                    ofNullable(config.commit).map(it -> new VersionDescription(null, it.versionFormat))
+                    ofNullable(config.commit)
+                            .map(it -> new VersionDescription(null, it.versionFormat))
                             .orElse(new VersionDescription()),
-                    config.branches.stream().map(it -> new VersionDescription(it.pattern, it.versionFormat))
+                    config.branches.stream()
+                            .map(it -> new VersionDescription(it.pattern, it.versionFormat))
                             .collect(toList()),
                     config.tags.stream()
                             .map(it -> new VersionDescription(it.pattern, it.versionFormat))
@@ -67,14 +64,21 @@ public class GitVersioningPlugin implements Plugin<Project> {
 
                 it.setVersion(gitVersionDetails.getVersion());
 
-                it.getExtensions().getExtraProperties().set("project.commit",
-                        gitVersionDetails.getCommit());
-                it.getExtensions().getExtraProperties().set("project.tag",
-                        gitVersionDetails.getCommitRefType().equals("tag") ? gitVersionDetails.getCommitRefName() : "");
-                it.getExtensions().getExtraProperties().set("project.branch",
-                        gitVersionDetails.getCommitRefType().equals("branch") ? gitVersionDetails.getCommitRefName() : "");
+                ExtraPropertiesExtension extraProperties = it.getExtensions().getExtraProperties();
+                extraProperties.set("git.commit", gitVersionDetails.getCommit());
+                extraProperties.set("git.ref", gitVersionDetails.getCommitRefName());
+                extraProperties.set("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
+                gitVersionDetails.getMetaData().forEach((key, value) -> extraProperties.set("git." + key, value));
             });
         });
+    }
+
+    private String getOption(final Project project, final String key) {
+        String value = (String) project.getProperties().get("gitVersioning." + key);
+        if (value == null) {
+            value = System.getenv("GIT_VERSIONING_" + key.replaceAll("[A-Z]", "_$0").toUpperCase());
+        }
+        return value;
     }
 }
 
