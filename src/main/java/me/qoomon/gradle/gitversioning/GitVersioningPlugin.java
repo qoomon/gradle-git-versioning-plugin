@@ -25,8 +25,8 @@ public class GitVersioningPlugin implements Plugin<Project> {
                 .create("gitVersioning", GitVersioningPluginExtension.class, project);
         project.afterEvaluate(evaluatedProject -> {
 
-            String disabled = getOption(project, "disable");
-            if ("true".equals(disabled)) {
+            String disabled = (String) project.getProperties().get("gitVersioning.disable");
+            if (disabled != null && (disabled.isEmpty() || disabled.equals("true"))) {
                 LOG.warn("Git Versioning Plugin disabled.");
                 return;
             }

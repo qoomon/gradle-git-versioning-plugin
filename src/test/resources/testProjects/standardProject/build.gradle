@@ -6,7 +6,6 @@ group 'me.qoomon'
 version '1.0.0-SNAPSHOT'
 
 gitVersioning {
-    enabled = true
 
     commit {
         versionFormat = 'headCommit-${commit.short}-vGIT'
