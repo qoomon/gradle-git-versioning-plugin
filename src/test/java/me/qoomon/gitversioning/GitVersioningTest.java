@@ -16,13 +16,12 @@ class GitVersioningTest {
         GitRepoSituation repoSituation = new GitRepoSituation();
         repoSituation.setHeadBranch("develop");
 
-        GitVersioning gitVersioning = GitVersioning.build(repoSituation,
+        // when
+        GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
                 asList(new VersionDescription(null, "${branch}-branch")),
-                emptyList());
-
-        // when
-        GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
+                emptyList(),
+                "undefined");
 
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
@@ -42,13 +41,13 @@ class GitVersioningTest {
         repoSituation.setHeadBranch("develop");
         repoSituation.setHeadTags(asList("v1"));
 
-        GitVersioning gitVersioning = GitVersioning.build(repoSituation,
-                new VersionDescription(),
-                asList(new VersionDescription(null, "${branch}-branch")),
-                emptyList());
 
         // when
-        GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
+        GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
+                new VersionDescription(),
+                asList(new VersionDescription(null, "${branch}-branch")),
+                emptyList(),
+                "undefined");
 
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
@@ -66,13 +65,13 @@ class GitVersioningTest {
         // given
         GitRepoSituation repoSituation = new GitRepoSituation();
 
-        GitVersioning gitVersioning = GitVersioning.build(repoSituation,
-                new VersionDescription(null, "${commit}-commit"),
-                emptyList(),
-                emptyList());
 
         // when
-        GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
+        GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
+                new VersionDescription(null, "${commit}-commit"),
+                emptyList(),
+                emptyList(),
+                "undefined");
 
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
@@ -91,13 +90,13 @@ class GitVersioningTest {
         GitRepoSituation repoSituation = new GitRepoSituation();
         repoSituation.setHeadTags(asList("v1"));
 
-        GitVersioning gitVersioning = GitVersioning.build(repoSituation,
+        // when
+        GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                 new VersionDescription(),
                 emptyList(),
-                asList(new VersionDescription("v.*", "${tag}-tag")));
+                asList(new VersionDescription("v.*", "${tag}-tag")),
+                "undefined");
 
-        // when
-        GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
 
         // then
         assertThat(gitVersionDetails).satisfies(it -> assertSoftly(softly -> {
@@ -107,23 +106,5 @@ class GitVersioningTest {
             softly.assertThat(it.getCommitRefName()).isEqualTo(repoSituation.getHeadTags().get(0));
             softly.assertThat(it.getVersion()).isEqualTo(repoSituation.getHeadTags().get(0) + "-tag");
         }));
-    }
-
-    @Test
-    void determineVersion_normalizeVersionCharacters() {
-
-        // given
-        String versionFormat = "x/y/z";
-
-        GitVersioning gitVersioning = GitVersioning.build(new GitRepoSituation(),
-                new VersionDescription(null, versionFormat),
-                emptyList(),
-                emptyList());
-
-        // when
-        GitVersionDetails gitVersionDetails = gitVersioning.determineVersion("undefined");
-
-        // then
-        assertThat(gitVersionDetails.getVersion()).isEqualTo("x-y-z");
     }
 }

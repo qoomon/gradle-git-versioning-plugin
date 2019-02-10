@@ -27,7 +27,7 @@ class GitVersioningPluginTest {
     @Test
     void runVersionTask() throws GitAPIException {
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git.init().setDirectory(tempDir.toFile()).call();
 
         File buildFile = tempDir.resolve("build.gradle").toFile();
         writeFile("plugins { id 'me.qoomon.git-versioning' }", buildFile);
@@ -52,7 +52,6 @@ class GitVersioningPluginTest {
         RevCommit commit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
-        project.setVersion("1.0.0");
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
@@ -71,7 +70,6 @@ class GitVersioningPluginTest {
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
-        project.setVersion("1.0.0");
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
@@ -98,7 +96,6 @@ class GitVersioningPluginTest {
         git.checkout().setName(givenBranch).call();
 
         Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
-        project.setVersion("1.0.0");
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
@@ -126,7 +123,6 @@ class GitVersioningPluginTest {
         git.checkout().setName(givenTag).call();
 
         Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
-        project.setVersion("1.0.0");
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
@@ -141,5 +137,28 @@ class GitVersioningPluginTest {
 
         // then
         assertThat(project.getVersion()).isEqualTo(givenTag + "-gitVersioning");
+    }
+
+    @Test
+    void apply_normalizeVersion() throws GitAPIException {
+
+        // given
+        Git.init().setDirectory(tempDir.toFile()).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+        GitVersioningPluginExtension.CommitVersionDescription commitVersionDescription = new GitVersioningPluginExtension.CommitVersionDescription();
+        commitVersionDescription.versionFormat = "a/b/c";
+        extension.commit = commitVersionDescription;
+
+        // when
+        ((ProjectInternal) project).evaluate();
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("a-b-c");
     }
 }

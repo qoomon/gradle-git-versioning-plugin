@@ -43,7 +43,7 @@ public class GitVersioningPlugin implements Plugin<Project> {
                 repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
             }
 
-            GitVersioning gitVersioning = GitVersioning.build(repoSituation,
+            GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                     ofNullable(config.commit)
                             .map(it -> new VersionDescription(null, it.versionFormat))
                             .orElse(new VersionDescription()),
@@ -52,17 +52,18 @@ public class GitVersioningPlugin implements Plugin<Project> {
                             .collect(toList()),
                     config.tags.stream()
                             .map(it -> new VersionDescription(it.pattern, it.versionFormat))
-                            .collect(toList()));
+                            .collect(toList()),
+                    project.getVersion().toString());
 
-            GitVersionDetails gitVersionDetails = gitVersioning.determineVersion(project.getVersion().toString());
+            String normalizedGitVersion = gitVersionDetails.getVersion().replace("/", "-");
 
             project.getAllprojects().forEach(it -> {
                 // TODO check for version is equals to root project
 
-                it.getLogger().info(it.getDisplayName() + " git versioning [" + it.getVersion() + " -> " + gitVersionDetails.getVersion() + "]"
+                it.getLogger().info(it.getDisplayName() + " git versioning [" + it.getVersion() + " -> " + normalizedGitVersion + "]"
                         + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
 
-                it.setVersion(gitVersionDetails.getVersion());
+                it.setVersion(normalizedGitVersion);
 
                 ExtraPropertiesExtension extraProperties = it.getExtensions().getExtraProperties();
                 extraProperties.set("git.commit", gitVersionDetails.getCommit());

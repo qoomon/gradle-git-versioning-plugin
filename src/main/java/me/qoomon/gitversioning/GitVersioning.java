@@ -3,31 +3,33 @@ package me.qoomon.gitversioning;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static java.util.Comparator.comparing;
+import static java.util.Objects.requireNonNull;
 import static me.qoomon.gitversioning.StringUtil.substituteText;
 import static me.qoomon.gitversioning.StringUtil.valueGroupMap;
 
-public class GitVersioning {
+public final class GitVersioning {
 
-    final private GitVersionDetails commonGitVersionDetails;
-    final private String versionFormat;
-
-    public GitVersioning(final GitVersionDetails commonGitVersionDetails,
-                         final String versionFormat) {
-        this.commonGitVersionDetails = commonGitVersionDetails;
-        this.versionFormat = versionFormat;
+    private GitVersioning() {
     }
 
-    public static GitVersioning build(final GitRepoSituation repoSituation,
-                                      final VersionDescription commitVersionDescription,
-                                      final List<VersionDescription> branchVersionDescriptions,
-                                      final List<VersionDescription> tagVersionDescriptions) {
-        Objects.requireNonNull(repoSituation);
-        Objects.requireNonNull(commitVersionDescription);
-        Objects.requireNonNull(branchVersionDescriptions);
-        Objects.requireNonNull(tagVersionDescriptions);
+    @Nonnull
+    public static GitVersionDetails determineVersion(
+            final GitRepoSituation repoSituation,
+            final VersionDescription commitVersionDescription,
+            final List<VersionDescription> branchVersionDescriptions,
+            final List<VersionDescription> tagVersionDescriptions,
+            final String currentVersion) {
+
+        requireNonNull(repoSituation);
+        requireNonNull(commitVersionDescription);
+        requireNonNull(branchVersionDescriptions);
+        requireNonNull(tagVersionDescriptions);
 
         // default versioning
         String gitRefType = "commit";
@@ -60,43 +62,25 @@ public class GitVersioning {
                 }
             }
         }
+        Map<String, String> refFields = valueGroupMap(versionDescription.getPattern(), gitRefName);
 
-        GitVersionDetails commonGitVersionDetails = new GitVersionDetails(
+        Map<String, String> projectVersionDataMap = new HashMap<>();
+        projectVersionDataMap.put("version", currentVersion);
+        projectVersionDataMap.put("commit", repoSituation.getHeadCommit());
+        projectVersionDataMap.put("commit.short", repoSituation.getHeadCommit().substring(0, 7));
+        projectVersionDataMap.put("ref", gitRefName);
+        projectVersionDataMap.put(gitRefType, gitRefName);
+        projectVersionDataMap.putAll(refFields);
+
+        String gitVersion = substituteText(versionDescription.getVersionFormat(), projectVersionDataMap);
+
+        return new GitVersionDetails(
                 repoSituation.isClean(),
                 repoSituation.getHeadCommit(),
                 gitRefType,
                 gitRefName,
-                valueGroupMap(versionDescription.getPattern(), gitRefName),
-                null
+                refFields,
+                gitVersion
         );
-
-        return new GitVersioning(commonGitVersionDetails, versionDescription.getVersionFormat());
-    }
-
-    @Nonnull
-    public GitVersionDetails determineVersion(String currentVersion) {
-
-        Map<String, String> projectVersionDataMap = new HashMap<>();
-        projectVersionDataMap.put("version", currentVersion);
-        projectVersionDataMap.put("commit", commonGitVersionDetails.getCommit());
-        projectVersionDataMap.put("commit.short", commonGitVersionDetails.getCommit().substring(0, 7));
-        projectVersionDataMap.put("ref", commonGitVersionDetails.getCommitRefName());
-        projectVersionDataMap.put(commonGitVersionDetails.getCommitRefType(), commonGitVersionDetails.getCommitRefName());
-        projectVersionDataMap.putAll(commonGitVersionDetails.getMetaData());
-
-        String gitVersion = substituteText(versionFormat, projectVersionDataMap);
-
-        return new GitVersionDetails(
-                commonGitVersionDetails.isClean(),
-                commonGitVersionDetails.getCommit(),
-                commonGitVersionDetails.getCommitRefType(),
-                commonGitVersionDetails.getCommitRefName(),
-                commonGitVersionDetails.getMetaData(),
-                normalizeVersionCharacters(gitVersion)
-        );
-    }
-
-    private static String normalizeVersionCharacters(String version) {
-        return version.replace("/", "-");
     }
 }
