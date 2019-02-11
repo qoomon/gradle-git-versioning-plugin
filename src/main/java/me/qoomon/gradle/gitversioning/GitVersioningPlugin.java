@@ -25,19 +25,11 @@ public class GitVersioningPlugin implements Plugin<Project> {
                 .create("gitVersioning", GitVersioningPluginExtension.class, project);
         project.afterEvaluate(evaluatedProject -> {
 
-            String disabled = (String) project.getProperties().get("gitVersioning.disable");
-            if (disabled != null && (disabled.isEmpty() || disabled.equals("true"))) {
-                LOG.warn("Git Versioning Plugin disabled.");
-                return;
-            }
-
             GitRepoSituation repoSituation = GitUtil.situation(project.getProjectDir());
-
             String providedBranch = getOption(project, "branch");
             if (providedBranch != null) {
                 repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
             }
-
             String providedTag = getOption(project, "tag");
             if (providedTag != null) {
                 repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
@@ -62,14 +54,13 @@ public class GitVersioningPlugin implements Plugin<Project> {
 
                 it.getLogger().info(it.getDisplayName() + " git versioning [" + it.getVersion() + " -> " + normalizedGitVersion + "]"
                         + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
-
                 it.setVersion(normalizedGitVersion);
 
                 ExtraPropertiesExtension extraProperties = it.getExtensions().getExtraProperties();
                 extraProperties.set("git.commit", gitVersionDetails.getCommit());
                 extraProperties.set("git.ref", gitVersionDetails.getCommitRefName());
                 extraProperties.set("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
-                gitVersionDetails.getMetaData().forEach((key, value) -> extraProperties.set("git." + key, value));
+                gitVersionDetails.getMetaData().forEach((key, value) -> extraProperties.set("git.ref." + key, value)); // TODO write tests
             });
         });
     }

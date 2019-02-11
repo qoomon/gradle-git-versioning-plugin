@@ -116,8 +116,9 @@ gitVersioning {
 
 - Provide **branch** or **tag** name
     - **Environment Variables**
-        - `export GIT_VERSIONING_BRANCH=$PROVIDED_BRANCH_NAME`
-        - `export GIT_VERSIONING_TAG=$PROVIDED_TAG_NAME`
+        - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME`
+        - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME`
+        - `export VERSIONING_GIT_COMMIT=$PROVIDED_COMMIT_HASH`
     - **Command Line Parameters**
         - `gradle ... -Pgit.branch=$PROVIDED_BRANCH_NAME`
         - `gradle ... -Pgit.tag=$PROVIDED_TAG_NAME`
@@ -130,6 +131,7 @@ gitVersioning {
 - `git.branch`
 - `git.tag`
 - `git.commit`
+- `git.ref.<PATTERN_GROUP>`
 
 
 ## Miscellaneous Hints

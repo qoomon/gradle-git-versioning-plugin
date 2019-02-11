@@ -14,15 +14,30 @@ class StringUtilTest {
     void substituteText() {
         // Given
         String givenText = "${type}tale";
-        Map<String, String> givemSubstitutionMap = new HashMap<>();
-        givemSubstitutionMap.put("type", "fairy");
+        Map<String, String> givenSubstitutionMap = new HashMap<>();
+        givenSubstitutionMap.put("type", "fairy");
 
         // When
-        String outputText = StringUtil.substituteText(givenText, givemSubstitutionMap);
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
 
         // Then
         assertThat(outputText).isEqualTo("fairytale");
     }
+
+    @Test
+    void substituteText_missingValue() {
+
+        // Given
+        String givenText = "${missing}tale";
+        Map<String, String> givenSubstitutionMap = new HashMap<>();
+
+        // When
+        String outputText = StringUtil.substituteText(givenText, givenSubstitutionMap);
+
+        // Then
+        assertThat(outputText).isEqualTo("${missing}tale");
+    }
+
 
     @Test
     void valueGroupMap() {
@@ -53,7 +68,7 @@ class StringUtilTest {
     }
 
     @Test
-    void getRegexGroupValueMap_namedGroup() {
+    void valueGroupMap_namedGroup() {
 
         // Given
         String givenRegex = "(?<first>one) (?<second>two) (?<third>three)";
@@ -68,7 +83,7 @@ class StringUtilTest {
     }
 
     @Test
-    void getRegexGroupValueMap_namedGroupNested() {
+    void valueGroupMap_namedGroupNested() {
 
         // Given
         String givenRegex = "(?<first>one) (?<second>two (?<third>three))";
