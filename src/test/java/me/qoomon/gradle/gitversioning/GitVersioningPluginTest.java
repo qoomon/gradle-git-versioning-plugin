@@ -22,19 +22,19 @@ import static org.gradle.util.GFileUtils.writeFile;
 class GitVersioningPluginTest {
 
     @TempDir
-    Path tempDir;
+    Path projectDir;
 
     @Test
     void runVersionTask() throws GitAPIException {
         // given
-        Git.init().setDirectory(tempDir.toFile()).call();
+        Git.init().setDirectory(projectDir.toFile()).call();
 
-        File buildFile = tempDir.resolve("build.gradle").toFile();
+        File buildFile = projectDir.resolve("build.gradle").toFile();
         writeFile("plugins { id 'me.qoomon.git-versioning' }", buildFile);
 
         // when
         BuildResult buildresult = GradleRunner.create()
-                .withProjectDir(tempDir.toFile())
+                .withProjectDir(projectDir.toFile())
                 .withPluginClasspath()
                 .withArguments("version", "-q")
                 .build();
@@ -48,10 +48,10 @@ class GitVersioningPluginTest {
     void apply() throws GitAPIException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setDirectory(projectDir.toFile()).call();
         RevCommit commit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
-        Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
@@ -66,10 +66,10 @@ class GitVersioningPluginTest {
     void apply_with_extension_commit_description() throws GitAPIException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
-        Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
@@ -89,13 +89,13 @@ class GitVersioningPluginTest {
     void apply_with_extension_branch_description() throws GitAPIException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenBranch = "feature/sandbox";
         git.branchCreate().setName(givenBranch).call();
         git.checkout().setName(givenBranch).call();
 
-        Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
@@ -116,13 +116,13 @@ class GitVersioningPluginTest {
     void apply_with_extension_tag_description() throws GitAPIException {
 
         // given
-        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+        Git git = Git.init().setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
         git.tag().setName(givenTag).call();
         git.checkout().setName(givenTag).call();
 
-        Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
@@ -143,9 +143,9 @@ class GitVersioningPluginTest {
     void apply_normalizeVersion() throws GitAPIException {
 
         // given
-        Git.init().setDirectory(tempDir.toFile()).call();
+        Git.init().setDirectory(projectDir.toFile()).call();
 
-        Project project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
 

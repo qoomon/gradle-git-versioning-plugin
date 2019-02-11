@@ -3,8 +3,6 @@ package me.qoomon.gradle.gitversioning;
 import me.qoomon.gitversioning.*;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
 
 import javax.annotation.Nonnull;
@@ -15,8 +13,6 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 public class GitVersioningPlugin implements Plugin<Project> {
-
-    private static final Logger LOG = Logging.getLogger(GitVersioningPlugin.class);
 
     public void apply(@Nonnull Project project) {
         project.getTasks().create("version", VersionTask.class);
