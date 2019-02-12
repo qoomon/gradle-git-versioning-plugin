@@ -118,7 +118,6 @@ gitVersioning {
     - **Environment Variables**
         - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME`
         - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME`
-        - `export VERSIONING_GIT_COMMIT=$PROVIDED_COMMIT_HASH`
     - **Command Line Parameters**
         - `gradle ... -Pgit.branch=$PROVIDED_BRANCH_NAME`
         - `gradle ... -Pgit.tag=$PROVIDED_TAG_NAME`
