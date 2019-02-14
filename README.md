@@ -4,6 +4,9 @@
 
 [![Build Status](https://travis-ci.com/qoomon/gradle-git-versioning-plugin.svg?branch=master)](https://travis-ci.com/qoomon/gradle-git-versioning-plugin)
 
+ℹ Also available as [Maven Extension](https://github.com/qoomon/maven-git-versioning-extension)
+
+
 This extension will set project versions, based on current **Git branch** or **Git tag**.
 
 * Get rid of...
