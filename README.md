@@ -109,8 +109,12 @@ gitVersioning {
         ```
         
 - `${version}`
-    - `version` set in `build.gradle
-    - e.g. '1.2.3'
+    - `version` set in `build.gradle`
+    - e.g. '1.0.0-SNAPSHOT'
+    
+- `${version.release}`
+    - `version` set in `build.gradle` without `-SNAPSHOT` postfix
+    - e.g. '1.0.0'
     
 ### Parameters & Environment Variables
 
