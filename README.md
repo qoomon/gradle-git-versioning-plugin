@@ -163,6 +163,6 @@ fi
 ```
 
 ## Build
-```bash
+```shell
   - ./gradlew build
 ```

@@ -1,0 +1,17 @@
+language: java
+
+jdk:
+  - oraclejdk8
+  
+before_install:
+# nothing
+
+install:
+# nothin
+
+script:
+  - ./gradlew build
+  
+after_script:
+# nothing
+ 

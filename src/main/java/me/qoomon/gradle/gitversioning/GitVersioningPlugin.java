@@ -43,14 +43,13 @@ public class GitVersioningPlugin implements Plugin<Project> {
                             .collect(toList()),
                     project.getVersion().toString());
 
-            String normalizedGitVersion = gitVersionDetails.getVersion().replace("/", "-");
 
             project.getAllprojects().forEach(it -> {
                 // TODO check for version is equals to root project
 
-                it.getLogger().info(it.getDisplayName() + " git versioning [" + it.getVersion() + " -> " + normalizedGitVersion + "]"
+                it.getLogger().info(it.getDisplayName() + " - git versioning [" + it.getVersion() + " -> " + gitVersionDetails.getVersion() + "]"
                         + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
-                it.setVersion(normalizedGitVersion);
+                it.setVersion(gitVersionDetails.getVersion());
 
                 ExtraPropertiesExtension extraProperties = it.getExtensions().getExtraProperties();
                 extraProperties.set("git.commit", gitVersionDetails.getCommit());
