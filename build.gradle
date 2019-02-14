@@ -39,6 +39,8 @@ gradlePlugin {
     plugins {
         gitVersioning {
             id = 'me.qoomon.git-versioning'
+            displayName= 'Git Versioning'
+            description = 'This extension will adjust the project version, based on current git branch or tag.'
             implementationClass = 'me.qoomon.gradle.gitversioning.GitVersioningPlugin'
         }
     }
@@ -47,7 +49,6 @@ gradlePlugin {
 pluginBundle {
     website = 'https://github.com/qoomon/gradle-git-versioning-plugin'
     vcsUrl = 'https://github.com/qoomon/gradle-git-versioning-plugin.git'
-    description = 'This extension will adjust the project version, based on current git branch or tag.'
     tags = ['git', 'versioning', 'version', 'tag', 'branch', 'generated', 'plugin', 'artificial']
 
     plugins {

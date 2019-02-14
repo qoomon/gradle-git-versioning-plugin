@@ -84,11 +84,11 @@ gitVersioning {
 
 - `${branch}` (only available within branch configuration)
     - The branch name of `HEAD`
-    - e.g. 'master', 'feature-next-big-thing', ...
+    - e.g. 'master', 'feature/next-big-thing', ...
 
 - `${tag}` (only available within tag configuration)
     - The tag name that points at `HEAD`, if multiple tags point at `HEAD` latest version is selected
-    - e.g. 'version/1.0.1', 'version-1.2.3', ...
+    - e.g. 'version/1.0.1', 'v1.2.3', ...
 
 - `${commit}`
     - The `HEAD` commit hash
@@ -133,10 +133,10 @@ gitVersioning {
 
 ## Provided Project Properties
 
-- `git.ref`
-- `git.branch`
-- `git.tag`
-- `git.commit`
+- `git.ref` value of branch of tag name, always set
+- `git.branch` e.g. 'feature/next-big-thing', only set for branch versioning
+- `git.tag` e.g. 'v1.2.3', only set for tag versioning
+- `git.commit` e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
 - `git.ref.<PATTERN_GROUP>`
 
 
