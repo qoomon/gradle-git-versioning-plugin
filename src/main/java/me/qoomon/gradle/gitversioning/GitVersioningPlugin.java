@@ -22,11 +22,11 @@ public class GitVersioningPlugin implements Plugin<Project> {
         project.afterEvaluate(evaluatedProject -> {
 
             GitRepoSituation repoSituation = GitUtil.situation(project.getProjectDir());
-            String providedBranch = getOption(project, "branch");
+            String providedBranch = getOption(project, "git.branch");
             if (providedBranch != null) {
                 repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
             }
-            String providedTag = getOption(project, "tag");
+            String providedTag = getOption(project, "git.tag");
             if (providedTag != null) {
                 repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
             }
@@ -61,10 +61,9 @@ public class GitVersioningPlugin implements Plugin<Project> {
     }
 
     private String getOption(final Project project, final String name) {
-        String key = "git." + name;
-        String value = (String) project.getProperties().get(key);
+        String value = (String) project.getProperties().get(name);
         if (value == null) {
-            value = System.getenv(key.replaceAll("[A-Z]", "_$0").toUpperCase());
+            value = System.getenv("VERSIONING_" + name.replaceAll("\\.", "_").toUpperCase());
         }
         return value;
     }
