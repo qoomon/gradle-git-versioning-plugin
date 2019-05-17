@@ -149,6 +149,24 @@ class GitUtilTest {
     }
 
     @Test
+    void tag_pointsAt_lightweightTag() throws GitAPIException {
+
+        // given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+
+        String givenTagName = "v1.0.0-1234";
+        git.tag().setName(givenTagName).setAnnotated(false).setObjectId(givenCommit).call();
+
+        // when
+        List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), HEAD);
+
+        // then
+        assertThat(tags).containsExactlyInAnyOrder(givenTagName);
+    }
+
+    @Test
     void revParse_emptyRepo() throws GitAPIException {
 
         // given
