@@ -149,6 +149,27 @@ class GitUtilTest {
     }
 
     @Test
+    void tag_pointsAt_unannotedTag() throws GitAPIException {
+
+        // given
+        Git git = Git.init().setDirectory(tempDir.toFile()).call();
+
+        RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTagName1 = "111";
+        git.tag().setName(givenTagName1).setObjectId(givenCommit).call();
+        String givenTagName2 = "222";
+        git.tag().setName(givenTagName2).setObjectId(givenCommit).call();
+        String givenTagName3 = "333";
+        git.tag().setName(givenTagName3).setAnnotated(false).setObjectId(givenCommit).call();
+
+        // when
+        List<String> tags = GitUtil.tag_pointsAt(git.getRepository(), HEAD);
+
+        // then
+        assertThat(tags).containsExactlyInAnyOrder(givenTagName1, givenTagName2, givenTagName3);
+    }
+
+    @Test
     void revParse_emptyRepo() throws GitAPIException {
 
         // given
