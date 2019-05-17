@@ -57,3 +57,6 @@ pluginBundle {
         }
     }
 }
+
+// Publishes this plugin to the Gradle Plugin portal.
+// ./gradlew publishPlugins
