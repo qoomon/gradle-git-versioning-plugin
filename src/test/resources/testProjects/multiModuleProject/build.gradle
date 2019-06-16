@@ -5,6 +5,10 @@ plugins {
 group 'me.qoomon'
 version '1.0.0-SNAPSHOT'
 
+allprojects {
+    version = "1.0.0-SNAPSHOT"
+}
+
 gitVersioning {
 
     commit {

@@ -7,4 +7,5 @@ pluginManagement {
 
 rootProject.name = 'gradle-git-versioning-plugin-test-multi-module-project'
 
+include 'api'
 include 'logic'
