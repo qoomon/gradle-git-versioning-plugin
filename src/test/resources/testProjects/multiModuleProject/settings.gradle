@@ -1,0 +1,10 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'gradle-git-versioning-plugin-test-multi-module-project'
+
+include 'logic'

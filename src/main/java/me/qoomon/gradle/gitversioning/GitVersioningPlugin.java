@@ -15,7 +15,7 @@ import static java.util.stream.Collectors.toList;
 public class GitVersioningPlugin implements Plugin<Project> {
 
     public void apply(@Nonnull Project project) {
-        project.getTasks().create("version", VersionTask.class);
+        project.getAllprojects().forEach(it -> it.getTasks().create("version", VersionTask.class));
 
         GitVersioningPluginExtension config = project.getExtensions()
                 .create("gitVersioning", GitVersioningPluginExtension.class, project);

@@ -13,7 +13,7 @@ gitVersioning {
 
     branch {
         pattern = 'master'
-        versionFormat = 'headBranch-master-${branch}-vGIT'
+        versionFormat = 'headBranch-${branch}-${version}-vGIT'
     }
 
     branch {
