@@ -1,0 +1,8 @@
+plugins {
+     id 'java'
+}
+apply plugin: 'java-library'
+
+dependencies {
+     api project(':api')
+}

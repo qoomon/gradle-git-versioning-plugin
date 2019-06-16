@@ -2,12 +2,8 @@ plugins {
     id 'me.qoomon.git-versioning' version '1.0.3'
 }
 
-group 'me.qoomon'
-version '1.0.0-SNAPSHOT'
-
-allprojects {
-    version = "1.0.0-SNAPSHOT"
-}
+group = 'me.qoomon'
+version = '1.0.0-SNAPSHOT'
 
 gitVersioning {
 
