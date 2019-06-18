@@ -49,6 +49,15 @@ public final class GitUtil {
         return rev.getName();
     }
 
+    public static long revTimestamp(Repository repository, String revstr) {
+        ObjectId rev = unchecked(() -> repository.resolve(revstr));
+        if (rev == null) {
+            return 0;
+        }
+        // The timestamp is expressed in seconds since epoch...
+        return unchecked(() -> repository.parseCommit(rev).getCommitTime());
+    }
+
     public static GitRepoSituation situation(File directory) {
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(directory);
         if (repositoryBuilder.getGitDir() == null) {
@@ -58,9 +67,10 @@ public final class GitUtil {
         try (Repository repository = unchecked(repositoryBuilder::build)) {
             boolean headClean = GitUtil.status(repository).isClean();
             String headCommit = GitUtil.revParse(repository, HEAD);
+            long headCommitTimestamp = GitUtil.revTimestamp(repository, HEAD);
             String headBranch = GitUtil.branch(repository);
             List<String> headTags = GitUtil.tag_pointsAt(repository, HEAD);
-            return new GitRepoSituation(headClean, headCommit, headBranch, headTags);
+            return new GitRepoSituation(headClean, headCommit, headCommitTimestamp, headTags, headBranch);
         }
     }
 }

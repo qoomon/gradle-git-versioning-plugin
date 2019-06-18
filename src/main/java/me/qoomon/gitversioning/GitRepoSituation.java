@@ -11,15 +11,17 @@ public class GitRepoSituation {
     private boolean clean;
     private String headCommit;
     private String headBranch;
+    private long headCommitTimestamp;
     private List<String> headTags;
 
     public GitRepoSituation(){
-        this(true, NO_COMMIT, null, emptyList());
+        this(true, NO_COMMIT, 0, emptyList(), null);
     }
 
-    public GitRepoSituation(boolean clean, String headCommit, String headBranch, List<String> headTags) {
+    public GitRepoSituation(boolean clean, String headCommit, long headCommitTimestamp, List<String> headTags, String headBranch) {
         setClean(clean);
         setHeadCommit(headCommit);
+        setHeadCommitTimestamp(headCommitTimestamp);
         setHeadBranch(headBranch);
         setHeadTags(headTags);
     }
@@ -41,6 +43,16 @@ public class GitRepoSituation {
         if (headCommit.length() != 40){
             throw new IllegalArgumentException("headCommit sha-1 hash must contains of 40 hex characters");
         }
+    }
+
+    public long getHeadCommitTimestamp()
+    {
+        return headCommitTimestamp;
+    }
+
+    public void setHeadCommitTimestamp(long headCommitTimestamp)
+    {
+        this.headCommitTimestamp = headCommitTimestamp;
     }
 
     public String getHeadBranch() {
