@@ -1,5 +1,5 @@
 plugins {
-    id 'me.qoomon.git-versioning' version '1.0.3'
+    id 'me.qoomon.git-versioning' version '1.2.0'
 }
 
 group 'me.qoomon'
@@ -14,6 +14,13 @@ gitVersioning {
     branch {
         pattern = 'master'
         versionFormat = 'headBranch-master-${branch}-vGIT'
+        property {
+            pattern = "foo"
+            value {
+                pattern = ".*"
+                format = "srdgfngjhgfgasdghfg"
+            }
+        }
     }
 
     branch {
