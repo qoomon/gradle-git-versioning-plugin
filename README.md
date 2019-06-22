@@ -58,6 +58,11 @@ gitVersioning {
 - `branch` specific version format definition.
     - `pattern` An arbitrary regex to match branch names (has to be a **full match pattern** e.g. `feature/.+` )
     - `versionFormat` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
+    - `property` A property definition to update the value of a property
+        - `pattern` An arbitrary regex to match property names
+        - `value` The definition of the new property value
+            - `pattern` An arbitrary regex to match property values
+            - `format` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
     - ⚠ **considered if...**
         * HEAD attached to a branch `git checkout <BRANCH>`<br>
         * Or branch name is provided by environment variable or command line parameter
@@ -65,12 +70,22 @@ gitVersioning {
 - `tag` specific version format definition.
     - `pattern` An arbitrary regex to match tag names (has to be a **full match pattern** e.g. `v[0-9].*` )
     - `versionFormat` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
+    - `property` A property definition to update the value of a property
+        - `pattern` An arbitrary regex to match property names
+        - `value` The definition of the new property value
+            - `pattern` An arbitrary regex to match property values
+            - `format` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <TAG>`<br>
         * Or tag name is provided by environment variable or command line parameter
   
 - `commit` specific version format definition.
     - `versionFormat` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
+    - `property` A property definition to update the value of a property
+        - `pattern` An arbitrary regex to match property names
+        - `value` The definition of the new property value
+            - `pattern` An arbitrary regex to match property values
+            - `format` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
 
