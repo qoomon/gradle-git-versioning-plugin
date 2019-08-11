@@ -26,13 +26,14 @@ public class GitVersioningPlugin implements Plugin<Project> {
         rootProject.afterEvaluate(evaluatedProject -> {
 
             GitRepoSituation repoSituation = GitUtil.situation(rootProject.getProjectDir());
+            String providedTag = getOption(rootProject, "git.tag");
+            if (providedTag != null) {
+                repoSituation.setHeadBranch(null);
+                repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
+            }
             String providedBranch = getOption(rootProject, "git.branch");
             if (providedBranch != null) {
                 repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
-            }
-            String providedTag = getOption(rootProject, "git.tag");
-            if (providedTag != null) {
-                repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
             }
 
             GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
