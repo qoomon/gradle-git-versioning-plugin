@@ -1,5 +1,7 @@
 package me.qoomon.gitversioning;
 
+import me.qoomon.gitversioning.GitVersionDetails.PropertiesTransformer;
+import me.qoomon.gitversioning.GitVersionDetails.VersionTransformer;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
 import javax.annotation.Nonnull;
@@ -29,9 +31,7 @@ public final class GitVersioning {
             final GitRepoSituation repoSituation,
             final VersionDescription commitVersionDescription,
             final List<VersionDescription> branchVersionDescriptions,
-            final List<VersionDescription> tagVersionDescriptions,
-            final String currentVersion,
-            final Map<String,String> currentProperties) {
+            final List<VersionDescription> tagVersionDescriptions) {
 
         requireNonNull(repoSituation);
         requireNonNull(commitVersionDescription);
@@ -69,56 +69,74 @@ public final class GitVersioning {
                 }
             }
         }
-        Map<String, String> refFields = valueGroupMap(versionDescription.getPattern(), gitRefName);
 
-        Map<String, String> versionDataMap = new HashMap<>();
-        versionDataMap.put("version", currentVersion);
-        versionDataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$", ""));
-        versionDataMap.put("commit", repoSituation.getHeadCommit());
-        versionDataMap.put("commit.short", repoSituation.getHeadCommit().substring(0, 7));
-        versionDataMap.put("commit.timestamp", Long.toString(repoSituation.getHeadCommitTimestamp()));
-        versionDataMap.put("commit.timestamp.datetime", formatHeadCommitTimestamp(repoSituation.getHeadCommitTimestamp()));
-        versionDataMap.put("ref", gitRefName);
-        versionDataMap.put(gitRefType, gitRefName);
-        versionDataMap.putAll(refFields);
+        final VersionDescription finalVersionDescription = versionDescription;
 
-        String gitVersion = substituteText(versionDescription.getVersionFormat(), versionDataMap)
-                .replace("/", "-");
+        final Map<String, String> refData = valueGroupMap(versionDescription.getPattern(), gitRefName);
 
-        Map<String, String> gitProperties = determineProperties(currentProperties, versionDescription.getPropertyDescriptions(), versionDataMap);
+        final Map<String, String> gitDataMap = new HashMap<>();
+        gitDataMap.put("commit", repoSituation.getHeadCommit());
+        gitDataMap.put("commit.short", repoSituation.getHeadCommit().substring(0, 7));
+        gitDataMap.put("commit.timestamp", Long.toString(repoSituation.getHeadCommitTimestamp()));
+        gitDataMap.put("commit.timestamp.datetime", formatHeadCommitTimestamp(repoSituation.getHeadCommitTimestamp()));
+        gitDataMap.put("ref", gitRefName);
+        gitDataMap.put(gitRefType, gitRefName);
+        gitDataMap.putAll(refData);
+
+        final VersionTransformer versionTransformer = currentVersion -> {
+            final Map<String, String> dataMap = new HashMap<>(gitDataMap);
+            dataMap.put("version", currentVersion);
+            dataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$", ""));
+            return substituteText(finalVersionDescription.getVersionFormat(), dataMap)
+                    .replace("/", "-");
+        };
+
+        final PropertiesTransformer propertiesTransformer = (currentProperties, currentVersion) -> {
+            final Map<String, String> dataMap = new HashMap<>(gitDataMap);
+            dataMap.put("version", currentVersion);
+            dataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$", ""));
+            return transformProperties(
+                    currentProperties, finalVersionDescription.getPropertyDescriptions(), dataMap);
+        };
 
         return new GitVersionDetails(
                 repoSituation.isClean(),
                 repoSituation.getHeadCommit(),
                 gitRefType,
                 gitRefName,
-                refFields,
-                gitVersion,
-                gitProperties);
+                versionTransformer,
+                propertiesTransformer
+        );
     }
 
-    private static Map<String, String> determineProperties(Map<String, String> currentProperties,
+    private static Map<String, String> transformProperties(Map<String, String> currentProperties,
                                                            List<PropertyDescription> propertyDescriptions,
-                                                           Map<String, String> versionDataMap) {
+                                                           Map<String, String> dataMap) {
 
-        Map<String, String> gitProperties =  new HashMap<>(currentProperties);
+        Map<String, String> resultProperties = new HashMap<>(currentProperties);
 
         for (Map.Entry<String, String> property : currentProperties.entrySet()) {
-            Optional<PropertyDescription> propertyDescription = propertyDescriptions.stream().filter(it -> property.getKey().matches(it.getPattern())).findFirst();
-            if(propertyDescription.isPresent()){
-                if(property.getValue().matches(propertyDescription.get().getValueDescription().getPattern())){
-                    Map<String, String> propertyFields = valueGroupMap(propertyDescription.get().getValueDescription().getPattern(), property.getValue());
-                    HashMap<String, String> propertyDataMap = new HashMap<>(versionDataMap);
+            Optional<PropertyDescription> propertyDescription = propertyDescriptions.stream()
+                    .filter(it -> property.getKey().matches(it.getPattern()))
+                    .findFirst();
+            if (propertyDescription.isPresent()) {
+                String valuePattern = propertyDescription.get().getValueDescription().getPattern();
+                if (property.getValue().matches(valuePattern)) {
+                    HashMap<String, String> propertyDataMap = new HashMap<>(dataMap);
+                    propertyDataMap.put("property.name", property.getKey());
+                    propertyDataMap.put("property.value", property.getValue());
+                    Map<String, String> propertyFields = valueGroupMap(valuePattern, property.getValue());
                     propertyDataMap.putAll(propertyFields);
 
-                    String gitPropertyValue = substituteText(propertyDescription.get().getValueDescription().getFormat(), propertyDataMap);
+                    String valueFormat = propertyDescription.get().getValueDescription().getFormat();
+                    String resultValue = substituteText(valueFormat, propertyDataMap);
 
-                    gitProperties.put(property.getKey(), gitPropertyValue);
+                    resultProperties.replace(property.getKey(), resultValue);
                 }
             }
         }
 
-        return gitProperties;
+        return resultProperties;
     }
 
     private static String formatHeadCommitTimestamp(long headCommitDate) {
@@ -130,5 +148,4 @@ public final class GitVersioning {
                 .withZone(ZoneOffset.UTC)
                 .format(Instant.ofEpochSecond(headCommitDate));
     }
-
 }

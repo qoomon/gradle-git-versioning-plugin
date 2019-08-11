@@ -1,20 +1,14 @@
 package me.qoomon.gradle.gitversioning;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import me.qoomon.gitversioning.*;
-import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.ValueDescription;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
 
 import javax.annotation.Nonnull;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -40,51 +34,55 @@ public class GitVersioningPlugin implements Plugin<Project> {
                 repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
             }
 
+            GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
+                    ofNullable(config.commit)
+                            .map(it -> new VersionDescription(null, it.versionFormat, mapPropertyDescription(it.properties)))
+                            .orElse(new VersionDescription()),
+                    config.branches.stream()
+                            .map(it -> new VersionDescription(it.pattern, it.versionFormat, mapPropertyDescription(it.properties)))
+                            .collect(toList()),
+                    config.tags.stream()
+                            .map(it -> new VersionDescription(it.pattern, it.versionFormat, mapPropertyDescription(it.properties)))
+                            .collect(toList()));
+
             rootProject.getAllprojects().forEach(project -> {
                 // TODO check for version is equals to root project
 
-                Map<String, String> projectStringProperties = new HashMap<>();
-                for (Entry<String, ?> entry : project.getProperties().entrySet()) {
-                    if (entry.getValue() instanceof String) {
-                        projectStringProperties.put(entry.getKey(), (String) entry.getValue());
-                    }
-                }
+                // update version
+                String gitProjectVersion = gitVersionDetails.getVersionTransformer().apply(project.getVersion().toString());
 
-                GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
-                        ofNullable(config.commit)
-                                .map(it -> new VersionDescription(null, it.versionFormat, mapPropertyDescription(it.properties)))
-                                .orElse(new VersionDescription()),
-                        config.branches.stream()
-                                .map(it -> new VersionDescription(it.pattern, it.versionFormat, mapPropertyDescription(it.properties)))
-                                .collect(toList()),
-                        config.tags.stream()
-                                .map(it -> new VersionDescription(it.pattern, it.versionFormat, mapPropertyDescription(it.properties)))
-                                .collect(toList()),
-                        project.getVersion().toString(),
-                        projectStringProperties);
-
-                project.getLogger().info(project.getDisplayName() + " - git versioning [" + project.getVersion() + " -> " + gitVersionDetails.getVersion() + "]"
+                project.getLogger().info(project.getDisplayName() + " - git versioning [" + project.getVersion() + " -> " + gitProjectVersion + "]"
                         + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
+
+                project.setVersion(gitProjectVersion);
 
 
                 // update properties
-                gitVersionDetails.getProperties().forEach((key, value) -> {
-                    if (!project.property(key).equals(value)) {
-                        project.setProperty(key, value);
+                Map<String, String> gitProjectProperties = gitVersionDetails.getPropertiesTransformer().apply(getProjectStringProperties(project), project.getVersion().toString());
 
+                gitProjectProperties.forEach((key, value) -> {
+                    if (!Objects.equals(project.property(key), value)) {
+                        project.getLogger().info(project.getDisplayName() + " - set property " + key + ": " + value);
+                        project.setProperty(key, value);
                     }
                 });
-
-                // update version
-                project.setVersion(gitVersionDetails.getVersion());
 
                 ExtraPropertiesExtension extraProperties = project.getExtensions().getExtraProperties();
                 extraProperties.set("git.commit", gitVersionDetails.getCommit());
                 extraProperties.set("git.ref", gitVersionDetails.getCommitRefName());
                 extraProperties.set("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
-                gitVersionDetails.getMetaData().forEach((key, value) -> extraProperties.set("git.ref." + key, value)); // TODO write tests
             });
         });
+    }
+
+    private Map<String, String> getProjectStringProperties(Project project) {
+        Map<String, String> result = new HashMap<>();
+        for (Entry<String, ?> entry : project.getProperties().entrySet()) {
+            if (entry.getValue() instanceof String) {
+                result.put(entry.getKey(), (String) entry.getValue());
+            }
+        }
+        return result;
     }
 
     private List<PropertyDescription> mapPropertyDescription(List<GitVersioningPluginExtension.PropertyDescription> properties) {
