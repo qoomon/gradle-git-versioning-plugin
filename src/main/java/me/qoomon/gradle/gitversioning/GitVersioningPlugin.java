@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -45,11 +46,14 @@ public class GitVersioningPlugin implements Plugin<Project> {
                             .map(it -> new VersionDescription(it.pattern, it.versionFormat, mapPropertyDescription(it.properties)))
                             .collect(toList()));
 
+
+            final Map<String, Object> originVersionMap = rootProject.getAllprojects().stream().collect(Collectors.toMap(Project::getPath, p -> p.getVersion()));
+
             rootProject.getAllprojects().forEach(project -> {
                 // TODO check for version is equals to root project
 
                 // update version
-                String gitProjectVersion = gitVersionDetails.getVersionTransformer().apply(project.getVersion().toString());
+                String gitProjectVersion = gitVersionDetails.getVersionTransformer().apply(resolveOriginVersion(project, originVersionMap));
 
                 project.getLogger().info(project.getDisplayName() + " - git versioning [" + project.getVersion() + " -> " + gitProjectVersion + "]"
                         + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
@@ -73,6 +77,21 @@ public class GitVersioningPlugin implements Plugin<Project> {
                 extraProperties.set("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
             });
         });
+    }
+
+    private String resolveOriginVersion(Project project, Map<String,Object> originVersionMap) {
+
+        String projectVersion = originVersionMap.get(project.getPath()).toString();
+        if (!projectVersion.equals("unspecified")) {
+            return projectVersion;
+        }
+
+        if(project.getParent() == null){
+            return "unspecified";
+        }
+
+        return resolveOriginVersion(project.getParent(), originVersionMap);
+
     }
 
     private Map<String, String> getProjectStringProperties(Project project) {

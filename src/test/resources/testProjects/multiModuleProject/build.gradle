@@ -1,5 +1,5 @@
 plugins {
-    id 'me.qoomon.git-versioning' version '1.2.0'
+    id 'me.qoomon.git-versioning' version '1.2.2'
 }
 
 group = 'me.qoomon'
@@ -7,28 +7,23 @@ version = '1.0.0-SNAPSHOT'
 
 gitVersioning {
 
-    commit {
-        versionFormat = 'headCommit-${commit.short}-vGIT'
-    }
-
     branch {
         pattern = 'master'
-        versionFormat = 'headBranch-${branch}-${version}-vGIT'
+        versionFormat = '${version}-xxx'
     }
-
     branch {
-        pattern = 'feature/(?<feature>.*)'
-        versionFormat = 'headBranch-feature-${feature}-vGIT'
+        pattern = 'feature/(?<user>.+)/(?<feature>.+)'
+        versionFormat = '${version}_${user}_${feature}'
     }
 
-    branch {
-        pattern = ".*"
-        versionFormat = 'headBranch-fallback-${branch}-vGIT'
-    }
 
-    tag {
-        pattern = 'v(?<release>[0-9]+)'
-        versionFormat = 'tag-version-${release}-vGIT'
+}
+
+allprojects {
+    task printVersion {
+        doLast {
+            println project.version
+        }
     }
 }
 
