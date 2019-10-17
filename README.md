@@ -175,9 +175,9 @@ execute this snippet before running your `gradle` command
 ```shell
 before_script:
   - if [ -n "$CI_COMMIT_TAG" ]; then
-       export GIT_VERSIONING_TAG=$CI_COMMIT_TAG;
+       export VERSIONING_GIT_TAG=$CI_COMMIT_TAG;
     else
-       export GIT_VERSIONING_BRANCH=$CI_COMMIT_REF_NAME;
+       export VERSIONING_GIT_BRANCH=$CI_COMMIT_REF_NAME;
     fi
 ```
 
@@ -185,9 +185,9 @@ before_script:
 execute this snippet before running your `gradle` command
 ```shell
 if [[ "$GIT_BRANCH" = origin/tags/* ]]; then e
-    export GIT_VERSIONING_TAG=${GIT_BRANCH#origin/tags/};
+    export VERSIONING_GIT_TAG=${GIT_BRANCH#origin/tags/};
 else 
-    export GIT_VERSIONING_BRANCH=${GIT_BRANCH#origin/};
+    export VERSIONING_GIT_BRANCH=${GIT_BRANCH#origin/};
 fi
 ```
 
