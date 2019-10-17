@@ -24,7 +24,7 @@ add plugin to `buil.gradle` file
 
 ```groovy
 plugins {
-    id 'me.qoomon.git-versioning' version 'LATEST'
+    id 'me.qoomon.git-versioning' version '1.2.3'
 }
 ```
 
