@@ -3,6 +3,7 @@ plugins {
     
     id "java"
     id "java-gradle-plugin"
+    id 'com.adarshr.test-logger' version '2.0.0'
     
     id "com.gradle.plugin-publish" version "0.10.0"
     id "maven-publish" // for local testing only
@@ -35,6 +36,7 @@ test {
     useJUnitPlatform()
 }
 
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 gradlePlugin {
     plugins {
         gitVersioning {
@@ -45,6 +47,7 @@ gradlePlugin {
         }
     }
 }
+
 
 pluginBundle {
     website = 'https://github.com/qoomon/gradle-git-versioning-plugin'
