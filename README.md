@@ -56,6 +56,7 @@ gitVersioning {
   }
 }
 ```
+- *optional* `preferTags` global enable(`true`)/disable(`false`) prefer tag rules over branch rules if both match.
 
 - `branch` specific version format definition.
     - `pattern` An arbitrary regex to match branch names (has to be a **full match pattern** e.g. `feature/.+` )
@@ -146,6 +147,12 @@ gitVersioning {
     
 ### Parameters & Environment Variables
 
+- Disable Plugin
+    - **Environment Variables**
+        - `export VERSIONING_DISABLE=true`
+    - **Command Line Parameters**
+        - `gradle ... -Pversioning.disable=true`
+
 - Provide **branch** or **tag** name
     - **Environment Variables**
         - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME`
@@ -155,6 +162,12 @@ gitVersioning {
         - `gradle ... -Pgit.tag=$PROVIDED_TAG_NAME`
   
   ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
+
+- **Prefer Tags** for Versioning instead of Branches
+    - **Environment Variables**
+        - `export VERSIONING_PREFER_TAGS=true`
+    - **Command Line Parameters**
+        - `gradle ... -Pversioning.preferTags=true`
 
 ## Provided Project Properties
 
