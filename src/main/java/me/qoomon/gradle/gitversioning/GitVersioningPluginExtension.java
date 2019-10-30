@@ -14,6 +14,8 @@ public class GitVersioningPluginExtension {
     public final List<VersionDescription> branches = new ArrayList<>();
     public final List<VersionDescription> tags = new ArrayList<>();
 
+    public boolean preferTags = false;
+
     public GitVersioningPluginExtension(Project project) {
     }
 

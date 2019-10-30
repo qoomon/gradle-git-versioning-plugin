@@ -31,63 +31,32 @@ public final class GitVersioning {
             final GitRepoSituation repoSituation,
             final VersionDescription commitVersionDescription,
             final List<VersionDescription> branchVersionDescriptions,
-            final List<VersionDescription> tagVersionDescriptions) {
+            final List<VersionDescription> tagVersionDescriptions,
+            final boolean preferTags) {
 
         requireNonNull(repoSituation);
         requireNonNull(commitVersionDescription);
         requireNonNull(branchVersionDescriptions);
         requireNonNull(tagVersionDescriptions);
 
-        // default versioning
-        String gitRefType = "commit";
-        String gitRefName = repoSituation.getHeadCommit();
-        VersionDescription versionDescription = commitVersionDescription;
+        final VersioningInfo versioningInfo = getVersioningInfo(repoSituation, commitVersionDescription, branchVersionDescriptions, tagVersionDescriptions, preferTags);
 
-        if (repoSituation.getHeadBranch() != null) {
-            // branch versioning
-            for (final VersionDescription branchVersionDescription : branchVersionDescriptions) {
-                Optional<String> versionBranch = Optional.of(repoSituation.getHeadBranch())
-                        .filter(branch -> branch.matches(branchVersionDescription.getPattern()));
-                if (versionBranch.isPresent()) {
-                    gitRefType = "branch";
-                    gitRefName = versionBranch.get();
-                    versionDescription = branchVersionDescription;
-                    break;
-                }
-            }
-        } else if (!repoSituation.getHeadTags().isEmpty()) {
-            // tag versioning
-            for (final VersionDescription tagVersionDescription : tagVersionDescriptions) {
-                Optional<String> versionTag = repoSituation.getHeadTags().stream()
-                        .filter(tag -> tag.matches(tagVersionDescription.getPattern()))
-                        .max(comparing(DefaultArtifactVersion::new));
-                if (versionTag.isPresent()) {
-                    gitRefType = "tag";
-                    gitRefName = versionTag.get();
-                    versionDescription = tagVersionDescription;
-                    break;
-                }
-            }
-        }
-
-        final VersionDescription finalVersionDescription = versionDescription;
-
-        final Map<String, String> refData = valueGroupMap(versionDescription.getPattern(), gitRefName);
+        final Map<String, String> refData = valueGroupMap(versioningInfo.description.getPattern(), versioningInfo.gitRefName);
 
         final Map<String, String> gitDataMap = new HashMap<>();
         gitDataMap.put("commit", repoSituation.getHeadCommit());
         gitDataMap.put("commit.short", repoSituation.getHeadCommit().substring(0, 7));
         gitDataMap.put("commit.timestamp", Long.toString(repoSituation.getHeadCommitTimestamp()));
         gitDataMap.put("commit.timestamp.datetime", formatHeadCommitTimestamp(repoSituation.getHeadCommitTimestamp()));
-        gitDataMap.put("ref", gitRefName);
-        gitDataMap.put(gitRefType, gitRefName);
+        gitDataMap.put("ref", versioningInfo.gitRefName);
+        gitDataMap.put(versioningInfo.gitRefType, versioningInfo.gitRefName);
         gitDataMap.putAll(refData);
 
         final VersionTransformer versionTransformer = currentVersion -> {
             final Map<String, String> dataMap = new HashMap<>(gitDataMap);
             dataMap.put("version", currentVersion);
             dataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$", ""));
-            return substituteText(finalVersionDescription.getVersionFormat(), dataMap)
+            return substituteText(versioningInfo.description.getVersionFormat(), dataMap)
                     .replace("/", "-");
         };
 
@@ -96,17 +65,65 @@ public final class GitVersioning {
             dataMap.put("version", currentVersion);
             dataMap.put("version.release", currentVersion.replaceFirst("-SNAPSHOT$", ""));
             return transformProperties(
-                    currentProperties, finalVersionDescription.getPropertyDescriptions(), dataMap);
+                    currentProperties, versioningInfo.description.getPropertyDescriptions(), dataMap);
         };
 
         return new GitVersionDetails(
                 repoSituation.isClean(),
                 repoSituation.getHeadCommit(),
-                gitRefType,
-                gitRefName,
+                versioningInfo.gitRefType,
+                versioningInfo.gitRefName,
                 versionTransformer,
                 propertiesTransformer
         );
+    }
+
+    private static VersioningInfo getVersioningInfo(GitRepoSituation repoSituation, VersionDescription commitVersionDescription, List<VersionDescription> branchVersionDescriptions, List<VersionDescription> tagVersionDescriptions, boolean preferTags) {
+
+        // tags take precedence over branches
+        VersioningInfo versioningInfo = null;
+        if (preferTags) {
+            versioningInfo = getTagVersioningInfo(repoSituation, tagVersionDescriptions);
+        }
+        if (versioningInfo == null) {
+            versioningInfo = getBranchVersioningInfo(repoSituation, branchVersionDescriptions);
+        }
+        if (versioningInfo == null && !preferTags) {
+            versioningInfo = getTagVersioningInfo(repoSituation, tagVersionDescriptions);
+        }
+
+        // default versioning: commit
+        if (versioningInfo == null) {
+            versioningInfo = new VersioningInfo("commit", repoSituation.getHeadCommit(), commitVersionDescription);
+        }
+        return versioningInfo;
+    }
+
+    private static VersioningInfo getTagVersioningInfo(GitRepoSituation repoSituation, List<VersionDescription> tagVersionDescriptions) {
+        if (!repoSituation.getHeadTags().isEmpty()) {
+            for (final VersionDescription tagVersionDescription : tagVersionDescriptions) {
+                Optional<String> versionTag = repoSituation.getHeadTags().stream()
+                        .filter(tag -> tag.matches(tagVersionDescription.getPattern()))
+                        .max(comparing(DefaultArtifactVersion::new));
+                if (versionTag.isPresent()) {
+                    return new VersioningInfo("tag", versionTag.get(), tagVersionDescription);
+                }
+            }
+        }
+        return null;
+    }
+
+    private static VersioningInfo getBranchVersioningInfo(GitRepoSituation repoSituation, List<VersionDescription> branchVersionDescriptions) {
+        if (repoSituation.getHeadBranch() != null) {
+            for (final VersionDescription branchVersionDescription : branchVersionDescriptions) {
+                Optional<String> versionBranch = Optional.of(repoSituation.getHeadBranch())
+                        .filter(branch -> branch.matches(branchVersionDescription.getPattern()));
+                if (versionBranch.isPresent()) {
+                    return new VersioningInfo("branch", versionBranch.get(), branchVersionDescription);
+                }
+            }
+        }
+        return null;
     }
 
     private static Map<String, String> transformProperties(Map<String, String> currentProperties,
@@ -147,5 +164,17 @@ public final class GitVersioning {
                 .ofPattern(VERSION_DATE_TIME_FORMAT)
                 .withZone(ZoneOffset.UTC)
                 .format(Instant.ofEpochSecond(headCommitDate));
+    }
+
+    private static class VersioningInfo {
+        private final String gitRefType;
+        private final String gitRefName;
+        private final VersionDescription description;
+
+        private VersioningInfo(String gitRefType, String gitRefName, VersionDescription versionDescription) {
+            this.gitRefType = gitRefType;
+            this.gitRefName = gitRefName;
+            this.description = versionDescription;
+        }
     }
 }

@@ -16,7 +16,11 @@ gitVersioning {
         versionFormat = '${version}_${user}_${feature}'
     }
 
-
+    tag {
+        pattern = 'version/(.*)'
+        versionFormat = '${1}'
+    }
+    
 }
 
 allprojects {
