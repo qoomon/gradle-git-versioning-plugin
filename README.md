@@ -2,7 +2,9 @@
 
 [![Gradle Plugin Portal](https://img.shields.io/maven-metadata/v/https/plugins.gradle.org/m2/me/qoomon/gradle-git-versioning-plugin/maven-metadata.xml.svg?colorB=007ec6&label=gradle-plugin)](https://plugins.gradle.org/plugin/me.qoomon.git-versioning)
 
-[![Build Status](https://travis-ci.com/qoomon/gradle-git-versioning-plugin.svg?branch=master)](https://travis-ci.com/qoomon/gradle-git-versioning-plugin)
+[![Build Workflow](https://github.com/qoomon/gradle-git-versioning-plugin/workflows/Build/badge.svg)](https://github.com/qoomon/gradle-git-versioning-plugin/actions)
+
+[![LGTM Grade](https://img.shields.io/lgtm/grade/java/github/qoomon/gradle-git-versioning-plugin)](https://lgtm.com/projects/g/qoomon/gradle-git-versioning-plugin)
 
 ℹ Also available as [Maven Extension](https://github.com/qoomon/maven-git-versioning-extension)
 
