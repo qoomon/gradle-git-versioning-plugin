@@ -22,11 +22,17 @@ This extension will set project versions, based on current **Git branch** or **G
 
 ### Add Plugin
 
-add plugin to `buil.gradle` file
-
+#### Groovy DSL `build.gradle`
 ```groovy
 plugins {
     id 'me.qoomon.git-versioning' version '1.2.3'
+}
+```
+
+#### Kotlin DSL `build.gradle.kts`
+```kotlin
+plugins {
+    id("me.qoomon.git-versioning") version "1.2.3"
 }
 ```
 
@@ -36,7 +42,9 @@ plugins {
 
 You can configure the final version format for specific branches and tags separately.
 
-**Example:** `build.gradle` 
+### Example Configuration
+
+##### Groovy DSL `build.gradle` 
 ```groovy
 gitVersioning {
   branch {
@@ -56,6 +64,30 @@ gitVersioning {
   }
 }
 ```
+
+#### Kotlin DSL `build.gradle.kts`
+```kotlin
+import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.VersionDescription
+import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.CommitVersionDescription
+gitVersioning {
+        branch(closureOf<VersionDescription> {
+            pattern = "master"
+            versionFormat = "\${version}"
+        })
+        branch(closureOf<VersionDescription> {
+            pattern = "feature/(?<feature>.+)"
+            versionFormat = "\${feature}-SNAPSHOT"
+        })
+        tag(closureOf<VersionDescription>{
+            pattern = "v(?<tagVersion>[0-9].*)"
+            versionFormat = "\${tagVersion}"
+        })
+        commit(closureOf<CommitVersionDescription>{
+          versionFormat = "\${commit.short}"
+        })
+}
+```
+
 - *optional* `preferTags` global enable(`true`)/disable(`false`) prefer tag rules over branch rules if both match.
 
 - `branch` specific version format definition.
