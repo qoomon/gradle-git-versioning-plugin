@@ -29,7 +29,7 @@ public class GitVersioningPlugin implements Plugin<Project> {
         GitVersioningPluginExtension config = rootProject.getExtensions()
                 .create("gitVersioning", GitVersioningPluginExtension.class, rootProject);
 
-        if (parseBoolean(getOption(rootProject, OPTION_NAME_DISABLE))) {
+        if (parseBoolean(getCommandOption(rootProject, OPTION_NAME_DISABLE))) {
             rootProject.getLogger().warn("skip - versioning is disabled");
             return;
         }
@@ -37,18 +37,17 @@ public class GitVersioningPlugin implements Plugin<Project> {
         rootProject.afterEvaluate(evaluatedProject -> {
 
             GitRepoSituation repoSituation = GitUtil.situation(rootProject.getProjectDir());
-            String providedTag = getOption(rootProject, OPTION_NAME_GIT_TAG);
+            String providedTag = getCommandOption(rootProject, OPTION_NAME_GIT_TAG);
             if (providedTag != null) {
                 repoSituation.setHeadBranch(null);
                 repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
             }
-            String providedBranch = getOption(rootProject, OPTION_NAME_GIT_BRANCH);
+            String providedBranch = getCommandOption(rootProject, OPTION_NAME_GIT_BRANCH);
             if (providedBranch != null) {
                 repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
             }
 
-            final boolean preferTags = config.preferTags || parseBoolean(getOption(rootProject, OPTION_PREFER_TAGS));
-
+            final boolean preferTagsOption = getPreferTagsOption(rootProject, config);
             GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
                     ofNullable(config.commit)
                             .map(it -> new VersionDescription(null, it.versionFormat, mapPropertyDescription(it.properties)))
@@ -59,7 +58,7 @@ public class GitVersioningPlugin implements Plugin<Project> {
                     config.tags.stream()
                             .map(it -> new VersionDescription(it.pattern, it.versionFormat, mapPropertyDescription(it.properties)))
                             .collect(toList()),
-                    preferTags);
+                    preferTagsOption);
 
 
             final Map<String, Object> originVersionMap = rootProject.getAllprojects().stream().collect(Collectors.toMap(Project::getPath, p -> p.getVersion()));
@@ -130,7 +129,7 @@ public class GitVersioningPlugin implements Plugin<Project> {
                 .map(it -> new PropertyValueDescription(it.pattern, it.format)).get();
     }
 
-    private String getOption(final Project project, final String name) {
+    private String getCommandOption(final Project project, final String name) {
         String value = (String) project.getProperties().get(name);
         if (value == null) {
             String plainName = name.replaceFirst("^versioning\\.", "");
@@ -141,6 +140,17 @@ public class GitVersioningPlugin implements Plugin<Project> {
             value = System.getenv(environmentVariableName);
         }
         return value;
+    }
+
+    private boolean getPreferTagsOption(final Project rootProject, final GitVersioningPluginExtension config) {
+        final boolean preferTagsOption;
+        final String preferTagsCommandOption = getCommandOption(rootProject, OPTION_PREFER_TAGS);
+        if(preferTagsCommandOption != null){
+            preferTagsOption = parseBoolean(preferTagsCommandOption);
+        } else {
+            preferTagsOption = config.preferTags;
+        }
+        return preferTagsOption;
     }
 }
 
