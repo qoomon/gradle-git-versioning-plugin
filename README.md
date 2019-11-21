@@ -6,7 +6,7 @@
 
 [![LGTM Grade](https://img.shields.io/lgtm/grade/java/github/qoomon/gradle-git-versioning-plugin)](https://lgtm.com/projects/g/qoomon/gradle-git-versioning-plugin)
 
-ℹ Also available as [Maven Extension](https://github.com/qoomon/maven-git-versioning-extension)
+**ℹ Also available as [Maven Extension](https://github.com/qoomon/maven-git-versioning-extension)**
 
 
 This extension will set project versions, based on current **Git branch** or **Git tag**.
