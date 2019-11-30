@@ -7,6 +7,9 @@ import org.gradle.api.plugins.ExtraPropertiesExtension;
 
 import javax.annotation.Nonnull;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -87,6 +90,9 @@ public class GitVersioningPlugin implements Plugin<Project> {
 
                 ExtraPropertiesExtension extraProperties = project.getExtensions().getExtraProperties();
                 extraProperties.set("git.commit", gitVersionDetails.getCommit());
+                extraProperties.set("git.commit.timestamp", Long.toString(gitVersionDetails.getCommitTimestamp()));
+                extraProperties.set("git.commit.timestamp.datetime", toTimestampDateTime(gitVersionDetails.getCommitTimestamp()));
+
                 extraProperties.set("git.ref", gitVersionDetails.getCommitRefName());
                 extraProperties.set("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
             });
@@ -139,6 +145,9 @@ public class GitVersioningPlugin implements Plugin<Project> {
                     .toUpperCase();
             value = System.getenv(environmentVariableName);
         }
+        if(value == null) {
+            value = System.getProperty(name);
+        }
         return value;
     }
 
@@ -151,6 +160,16 @@ public class GitVersioningPlugin implements Plugin<Project> {
             preferTagsOption = config.preferTags;
         }
         return preferTagsOption;
+    }
+
+    private static String toTimestampDateTime(long timestamp) {
+        if (timestamp == 0) {
+            return "0000-00-00T00:00:00Z";
+        }
+
+        return DateTimeFormatter.ISO_DATE_TIME
+                .withZone(ZoneOffset.UTC)
+                .format(Instant.ofEpochSecond(timestamp));
     }
 }
 

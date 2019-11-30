@@ -205,9 +205,10 @@ gitVersioning {
 
 - `git.commit` e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
 - `git.ref` value of branch of tag name, always set
-- `git.branch` e.g. 'feature/next-big-thing', only set for branch versioning
-- `git.tag` e.g. 'v1.2.3', only set for tag versioning
-
+  - `git.branch` e.g. 'feature/next-big-thing', only set for branch versioning
+  - `git.tag` e.g. 'v1.2.3', only set for tag versioning
+- `git.commit.timestamp` e.g. '1560694278'
+- `git.commit.timestamp.datetime` e.g. '2019-11-16T14:37:10Z'
 
 ## Miscellaneous Hints
 
