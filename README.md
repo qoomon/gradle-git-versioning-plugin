@@ -213,7 +213,7 @@ gitVersioning {
 
 ## Gradle Tasks
 
-* **Print Version** `gradle version -q`
+* **Print Version** `gradle :version -q`
 
 ## Miscellaneous Hints
 
