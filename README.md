@@ -210,10 +210,12 @@ gitVersioning {
 - `git.commit.timestamp` e.g. '1560694278'
 - `git.commit.timestamp.datetime` e.g. '2019-11-16T14:37:10Z'
 
-## Miscellaneous Hints
 
-### Command Line To Print Project Version
-`gradle :version -q`
+## Gradle Tasks
+
+* **Print Version** `gradle version -q`
+
+## Miscellaneous Hints
 
 ### CI/CD
 Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information. You can provide those, by using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for common CI/CD systems.
