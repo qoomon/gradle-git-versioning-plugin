@@ -92,6 +92,7 @@ public class GitVersioningPluginExtension {
             extraProperties.set("git.commit.timestamp.datetime", toTimestampDateTime(gitVersionDetails.getCommitTimestamp()));
             extraProperties.set("git.ref", gitVersionDetails.getCommitRefName());
             extraProperties.set("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
+            extraProperties.set("git.dirty", Boolean.toString(!gitVersionDetails.isClean()));
         });
     }
 

@@ -171,6 +171,10 @@ gitVersioning.apply {
     - The `HEAD` commit timestamp formatted as `yyyyMMdd.HHmmss`
     - e.g. '20190616.161442'
 
+- `${dirty}`
+    - A dirty flag indicator
+    - resolves to '-DIRTY' if repo is in dirty state, empty string otherwise
+
 - `Pattern Groups`
     - Contents of group in the regex pattern can be addressed by `group name` or `group index` e.g.
     - Named Group Example
