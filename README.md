@@ -268,8 +268,8 @@ fi
 
 # Changelog
 ### 2.1.0
-* add `${dirty}` flag version formt placholder
-* add `git.dirty` porperty
+* add `${dirty}` flag version format placeholder
+* add `git.dirty` property
 
 ### 2.0.0
 
