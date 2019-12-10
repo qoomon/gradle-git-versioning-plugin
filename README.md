@@ -270,7 +270,7 @@ fi
 ### 2.0.0
 
 #### Breaking Changes
-* New way of apply git versioning
+* New way of applying git versioning
   * You need to call `apply` method with config, after version was set. 
     ```
     version = '0.0.0-SNAPSHOT'
