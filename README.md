@@ -1,9 +1,9 @@
 # Gradle Git Versioning Plugin
 
 [![Gradle Plugin Portal](https://img.shields.io/maven-metadata/v/https/plugins.gradle.org/m2/me/qoomon/gradle-git-versioning-plugin/maven-metadata.xml.svg?colorB=007ec6&label=gradle-plugin)](https://plugins.gradle.org/plugin/me.qoomon.git-versioning)
+[![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](#changelog)
 
 [![Build Workflow](https://github.com/qoomon/gradle-git-versioning-plugin/workflows/Build/badge.svg)](https://github.com/qoomon/gradle-git-versioning-plugin/actions)
-
 [![LGTM Grade](https://img.shields.io/lgtm/grade/java/github/qoomon/gradle-git-versioning-plugin)](https://lgtm.com/projects/g/qoomon/gradle-git-versioning-plugin)
 
 **ℹ Also available as [Maven Extension](https://github.com/qoomon/maven-git-versioning-extension)**
@@ -25,14 +25,29 @@ This extension will set project versions, based on current **Git branch** or **G
 #### Groovy DSL `build.gradle`
 ```groovy
 plugins {
-    id 'me.qoomon.git-versioning' version '1.2.3'
+    id 'me.qoomon.git-versioning' version '2.0.0'
+}
+
+// ...
+
+version = '0.0.0-SNAPSHOT'
+gitVersioning.apply {
+  // see configuration documentation below
 }
 ```
 
 #### Kotlin DSL `build.gradle.kts`
 ```kotlin
 plugins {
-    id("me.qoomon.git-versioning") version "1.2.3"
+    id("me.qoomon.git-versioning") version "2.0.0"
+}
+
+
+// ...
+
+version = '0.0.0-SNAPSHOT'
+gitVersioning.apply {
+  // see configuration documentation below
 }
 ```
 
@@ -46,7 +61,7 @@ You can configure the final version format for specific branches and tags separa
 
 ##### Groovy DSL `build.gradle` 
 ```groovy
-gitVersioning {
+gitVersioning.apply {
   branch {
     pattern = 'master'
     versionFormat = '${version}'
@@ -69,7 +84,7 @@ gitVersioning {
 ```kotlin
 import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.VersionDescription
 import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.CommitVersionDescription
-gitVersioning {
+gitVersioning.apply {
         branch(closureOf<VersionDescription> {
             pattern = "master"
             versionFormat = "\${version}"
@@ -246,3 +261,16 @@ fi
 ```shell
   - ./gradlew build
 ```
+
+# Changelog
+### 2.0.0
+
+#### Breaking Changes
+* New way of apply git versioning
+  * You need to call `apply` method with config, after version was set. 
+    ```
+    version = '0.0.0-SNAPSHOT'
+    gitVersioning.apply {
+      // see configuration documentatiomn below
+    }
+    ```

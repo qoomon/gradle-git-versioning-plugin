@@ -4,7 +4,6 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.gradle.api.Project;
-import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
@@ -15,7 +14,6 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.nio.file.Path;
 
-import static me.qoomon.gitversioning.GitConstants.NO_COMMIT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.gradle.util.GFileUtils.writeFile;
 
@@ -30,7 +28,8 @@ class GitVersioningPluginTest {
         Git.init().setDirectory(projectDir.toFile()).call();
 
         File buildFile = projectDir.resolve("build.gradle").toFile();
-        writeFile("plugins { id 'me.qoomon.git-versioning' }", buildFile);
+        String givenVersion = "1.2.3";
+        writeFile("plugins { id 'me.qoomon.git-versioning' }\nversion = '" + givenVersion + "'", buildFile);
 
         // when
         BuildResult buildresult = GradleRunner.create()
@@ -40,8 +39,10 @@ class GitVersioningPluginTest {
                 .build();
 
         // then
-        assertThat(buildresult.task(":version").getOutcome()).isEqualTo(TaskOutcome.SUCCESS);
-        assertThat(buildresult.getOutput()).isEqualTo(NO_COMMIT + "\n");
+        assertThat(buildresult.task(":version")).satisfies(it ->
+                assertThat(it.getOutcome()).isEqualTo(TaskOutcome.SUCCESS)
+        );
+        assertThat(buildresult.getOutput()).isEqualTo(givenVersion + "\n");
     }
 
     @Test
@@ -55,8 +56,13 @@ class GitVersioningPluginTest {
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
 
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig();
+
         // when
-        ((ProjectInternal) project).evaluate();
+        extension.apply(config);
 
         // then
         assertThat(project.getVersion()).isEqualTo(commit.name());
@@ -75,11 +81,15 @@ class GitVersioningPluginTest {
 
         GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
                 .getByName("gitVersioning");
-        extension.commit = new GitVersioningPluginExtension.CommitVersionDescription();
-        extension.commit.versionFormat = "commit-gitVersioning";
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            commitVersionDescription = new CommitVersionDescription() {{
+                versionFormat = "commit-gitVersioning";
+            }};
+        }};
 
         // when
-        ((ProjectInternal) project).evaluate();
+        extension.apply(config);
 
         // then
         assertThat(project.getVersion()).isEqualTo("commit-gitVersioning");
@@ -101,12 +111,15 @@ class GitVersioningPluginTest {
 
         GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
                 .getByName("gitVersioning");
-        GitVersioningPluginExtension.VersionDescription branchVersionDescription = new GitVersioningPluginExtension.VersionDescription();
-        branchVersionDescription.versionFormat = "${branch}-gitVersioning";
-        extension.branches.add(branchVersionDescription);
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            addBranchVersionDescription(new VersionDescription() {{
+                versionFormat = "${branch}-gitVersioning";
+            }});
+        }};
 
         // when
-        ((ProjectInternal) project).evaluate();
+        extension.apply(config);
 
         // then
         assertThat(project.getVersion()).isEqualTo(givenBranch.replace("/", "-") + "-gitVersioning");
@@ -128,12 +141,15 @@ class GitVersioningPluginTest {
 
         GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
                 .getByName("gitVersioning");
-        GitVersioningPluginExtension.VersionDescription tagVersionDescription = new GitVersioningPluginExtension.VersionDescription();
-        tagVersionDescription.versionFormat = "${tag}-gitVersioning";
-        extension.tags.add(tagVersionDescription);
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            addTagVersionDescription(new VersionDescription() {{
+                versionFormat = "${tag}-gitVersioning";
+            }});
+        }};
 
         // when
-        ((ProjectInternal) project).evaluate();
+        extension.apply(config);
 
         // then
         assertThat(project.getVersion()).isEqualTo(givenTag + "-gitVersioning");
@@ -151,12 +167,15 @@ class GitVersioningPluginTest {
 
         GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
                 .getByName("gitVersioning");
-        GitVersioningPluginExtension.CommitVersionDescription commitVersionDescription = new GitVersioningPluginExtension.CommitVersionDescription();
-        commitVersionDescription.versionFormat = "a/b/c";
-        extension.commit = commitVersionDescription;
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            commitVersionDescription = new CommitVersionDescription() {{
+                versionFormat = "a/b/c";
+            }};
+        }};
 
         // when
-        ((ProjectInternal) project).evaluate();
+        extension.apply(config);
 
         // then
         assertThat(project.getVersion()).isEqualTo("a-b-c");
