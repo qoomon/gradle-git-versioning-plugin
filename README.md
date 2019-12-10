@@ -267,6 +267,10 @@ fi
 ```
 
 # Changelog
+### 2.1.0
+* add `${dirty}` flag version formt placholder
+* add `git.dirty` porperty
+
 ### 2.0.0
 
 #### Breaking Changes
