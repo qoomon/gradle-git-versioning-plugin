@@ -90,7 +90,7 @@ public class GitVersioningPluginExtension {
         });
     }
 
-    public void apply(Closure<GitVersioningPluginConfig> closure) {
+    public void apply(Closure<?> closure) {
         GitVersioningPluginConfig config = new GitVersioningPluginConfig();
         configure(closure, config);
         apply(config);

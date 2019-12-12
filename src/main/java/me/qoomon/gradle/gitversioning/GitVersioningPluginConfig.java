@@ -15,7 +15,7 @@ public class GitVersioningPluginConfig {
 
     public boolean preferTags = false;
 
-    public void commit(Closure<CommitVersionDescription> closure) {
+    public void commit(Closure<?> closure) {
         CommitVersionDescription versionDescription = new CommitVersionDescription();
         configure(closure, versionDescription);
         this.commitVersionDescription = versionDescription;
@@ -25,7 +25,7 @@ public class GitVersioningPluginConfig {
         this.branchVersionDescriptions.add(versionDescription);
     }
 
-    public void branch(Closure<VersionDescription> closure) {
+    public void branch(Closure<?> closure) {
         VersionDescription versionDescription = new VersionDescription();
         configure(closure, versionDescription);
         branch(versionDescription);
@@ -35,7 +35,7 @@ public class GitVersioningPluginConfig {
         this.tagVersionDescriptions.add(versionDescription);
     }
 
-    public void tag(Closure<VersionDescription> closure) {
+    public void tag(Closure<?> closure) {
         VersionDescription versionDescription = new VersionDescription();
         configure(closure, versionDescription);
         tag(versionDescription);
@@ -51,7 +51,7 @@ public class GitVersioningPluginConfig {
             this.properties.add(propertyDescription);
         }
 
-        public void property(Closure<PropertyDescription> closure) {
+        public void property(Closure<?> closure) {
             PropertyDescription propertyDescription = new PropertyDescription();
             configure(closure, propertyDescription);
             property(propertyDescription);
@@ -67,7 +67,7 @@ public class GitVersioningPluginConfig {
             this.properties.add(propertyDescription);
         }
 
-        public void property(Closure<PropertyDescription> closure) {
+        public void property(Closure<?> closure) {
             PropertyDescription propertyDescription = new PropertyDescription();
             configure(closure, propertyDescription);
             property(propertyDescription);
@@ -83,7 +83,7 @@ public class GitVersioningPluginConfig {
             this.value = valueDescription;
         }
 
-        public void value(Closure<ValueDescription> closure) {
+        public void value(Closure<?> closure) {
             ValueDescription valueDescription = new ValueDescription();
             configure(closure, valueDescription);
             value(valueDescription);

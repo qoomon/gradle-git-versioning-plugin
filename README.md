@@ -61,6 +61,7 @@ You can configure the final version format for specific branches and tags separa
 
 ##### Groovy DSL `build.gradle` 
 ```groovy
+version = '0.0.0-SNAPSHOT'
 gitVersioning.apply {
   branch {
     pattern = 'master'
@@ -84,6 +85,10 @@ gitVersioning.apply {
 ```kotlin
 import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.VersionDescription
 import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.CommitVersionDescription
+
+//...
+
+version = "0.0.0-SNAPSHOT"
 gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
         branch(closureOf<VersionDescription>{
             pattern = "master"
