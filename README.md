@@ -25,7 +25,7 @@ This extension will set project versions, based on current **Git branch** or **G
 #### Groovy DSL `build.gradle`
 ```groovy
 plugins {
-    id 'me.qoomon.git-versioning' version '2.0.0'
+    id 'me.qoomon.git-versioning' version '2.1.1'
 }
 
 // ...
@@ -39,7 +39,7 @@ gitVersioning.apply {
 #### Kotlin DSL `build.gradle.kts`
 ```kotlin
 plugins {
-    id("me.qoomon.git-versioning") version "2.0.0"
+    id("me.qoomon.git-versioning") version "2.1.1"
 }
 
 
