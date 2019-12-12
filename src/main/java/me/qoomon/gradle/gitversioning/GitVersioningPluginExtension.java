@@ -29,12 +29,6 @@ public class GitVersioningPluginExtension {
         this.rootProject = project;
     }
 
-    public void apply(Closure closure) {
-        GitVersioningPluginConfig config = new GitVersioningPluginConfig();
-        configure(closure, config);
-        apply(config);
-    }
-
     public void apply(GitVersioningPluginConfig config) {
 
         if (parseBoolean(getCommandOption(rootProject, OPTION_NAME_DISABLE))) {
@@ -94,6 +88,12 @@ public class GitVersioningPluginExtension {
             extraProperties.set("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
             extraProperties.set("git.dirty", Boolean.toString(!gitVersionDetails.isClean()));
         });
+    }
+
+    public void apply(Closure<GitVersioningPluginConfig> closure) {
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig();
+        configure(closure, config);
+        apply(config);
     }
 
     private String resolveOriginVersion(Project project, Map<String, Object> originVersionMap) {

@@ -113,7 +113,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            addBranchVersionDescription(new VersionDescription() {{
+            branch(new VersionDescription() {{
                 versionFormat = "${branch}-gitVersioning";
             }});
         }};
@@ -143,7 +143,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            addTagVersionDescription(new VersionDescription() {{
+            tag(new VersionDescription() {{
                 versionFormat = "${tag}-gitVersioning";
             }});
         }};

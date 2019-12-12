@@ -15,30 +15,30 @@ public class GitVersioningPluginConfig {
 
     public boolean preferTags = false;
 
-    public void addBranchVersionDescription(VersionDescription versionDescription) {
-        this.branchVersionDescriptions.add(versionDescription);
-    }
-
-    public void addTagVersionDescription(VersionDescription versionDescription) {
-        this.tagVersionDescriptions.add(versionDescription);
-    }
-
-    public void commit(Closure closure) {
+    public void commit(Closure<CommitVersionDescription> closure) {
         CommitVersionDescription versionDescription = new CommitVersionDescription();
         configure(closure, versionDescription);
         this.commitVersionDescription = versionDescription;
     }
 
-    public void branch(Closure closure) {
-        VersionDescription versionDescription = new VersionDescription();
-        configure(closure, versionDescription);
-        addBranchVersionDescription(versionDescription);
+    public void branch(VersionDescription versionDescription) {
+        this.branchVersionDescriptions.add(versionDescription);
     }
 
-    public void tag(Closure closure) {
+    public void branch(Closure<VersionDescription> closure) {
         VersionDescription versionDescription = new VersionDescription();
         configure(closure, versionDescription);
-        addTagVersionDescription(versionDescription);
+        branch(versionDescription);
+    }
+
+    public void tag(VersionDescription versionDescription) {
+        this.tagVersionDescriptions.add(versionDescription);
+    }
+
+    public void tag(Closure<VersionDescription> closure) {
+        VersionDescription versionDescription = new VersionDescription();
+        configure(closure, versionDescription);
+        tag(versionDescription);
     }
 
     public static class VersionDescription {
@@ -47,10 +47,14 @@ public class GitVersioningPluginConfig {
         public String versionFormat;
         public List<PropertyDescription> properties = new ArrayList<>();
 
-        public void property(Closure closure) {
+        public void property(PropertyDescription propertyDescription) {
+            this.properties.add(propertyDescription);
+        }
+
+        public void property(Closure<PropertyDescription> closure) {
             PropertyDescription propertyDescription = new PropertyDescription();
             configure(closure, propertyDescription);
-            this.properties.add(propertyDescription);
+            property(propertyDescription);
         }
     }
 
@@ -59,10 +63,14 @@ public class GitVersioningPluginConfig {
         public String versionFormat;
         public List<PropertyDescription> properties = new ArrayList<>();
 
-        public void property(Closure closure) {
+        public void property(PropertyDescription propertyDescription) {
+            this.properties.add(propertyDescription);
+        }
+
+        public void property(Closure<PropertyDescription> closure) {
             PropertyDescription propertyDescription = new PropertyDescription();
             configure(closure, propertyDescription);
-            this.properties.add(propertyDescription);
+            property(propertyDescription);
         }
     }
 
@@ -71,10 +79,14 @@ public class GitVersioningPluginConfig {
         public String pattern;
         public ValueDescription value;
 
-        public void value(Closure closure) {
+        public void value(ValueDescription valueDescription) {
+            this.value = valueDescription;
+        }
+
+        public void value(Closure<ValueDescription> closure) {
             ValueDescription valueDescription = new ValueDescription();
             configure(closure, valueDescription);
-            this.value = valueDescription;
+            value(valueDescription);
         }
     }
 
