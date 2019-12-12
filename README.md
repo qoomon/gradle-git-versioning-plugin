@@ -84,12 +84,12 @@ gitVersioning.apply {
 ```kotlin
 import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.VersionDescription
 import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.CommitVersionDescription
-gitVersioning.apply {
-        branch(closureOf<VersionDescription> {
+gitVersioning.apply.apply(closureOf<GitVersioningPluginConfig> {
+        branch(closureOf<VersionDescription>{
             pattern = "master"
             versionFormat = "\${version}"
         })
-        branch(closureOf<VersionDescription> {
+        branch(closureOf<VersionDescription>{
             pattern = "feature/(?<feature>.+)"
             versionFormat = "\${feature}-SNAPSHOT"
         })
@@ -100,7 +100,7 @@ gitVersioning.apply {
         commit(closureOf<CommitVersionDescription>{
           versionFormat = "\${commit.short}"
         })
-}
+})
 ```
 
 - *optional* `preferTags` global enable(`true`)/disable(`false`) prefer tag rules over branch rules if both match.

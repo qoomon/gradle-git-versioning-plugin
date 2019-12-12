@@ -15,30 +15,30 @@ public class GitVersioningPluginConfig {
 
     public boolean preferTags = false;
 
+    public void addBranchVersionDescription(VersionDescription versionDescription) {
+        this.branchVersionDescriptions.add(versionDescription);
+    }
+
+    public void addTagVersionDescription(VersionDescription versionDescription) {
+        this.tagVersionDescriptions.add(versionDescription);
+    }
+
     public void commit(Closure closure) {
         CommitVersionDescription versionDescription = new CommitVersionDescription();
         configure(closure, versionDescription);
         this.commitVersionDescription = versionDescription;
     }
 
-    public void branchVersionDescription(Closure closure) {
+    public void branch(Closure closure) {
         VersionDescription versionDescription = new VersionDescription();
         configure(closure, versionDescription);
         addBranchVersionDescription(versionDescription);
-    }
-
-    public void addBranchVersionDescription(VersionDescription versionDescription) {
-        this.branchVersionDescriptions.add(versionDescription);
     }
 
     public void tag(Closure closure) {
         VersionDescription versionDescription = new VersionDescription();
         configure(closure, versionDescription);
         addTagVersionDescription(versionDescription);
-    }
-
-    public void addTagVersionDescription(VersionDescription versionDescription) {
-        this.tagVersionDescriptions.add(versionDescription);
     }
 
     public static class VersionDescription {
