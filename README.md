@@ -45,7 +45,7 @@ plugins {
 
 // ...
 
-version = '0.0.0-SNAPSHOT'
+version = "0.0.0-SNAPSHOT"
 gitVersioning.apply {
   // see configuration documentation below
 }
@@ -84,7 +84,7 @@ gitVersioning.apply {
 ```kotlin
 import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.VersionDescription
 import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.CommitVersionDescription
-gitVersioning.apply.apply(closureOf<GitVersioningPluginConfig> {
+gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
         branch(closureOf<VersionDescription>{
             pattern = "master"
             versionFormat = "\${version}"
