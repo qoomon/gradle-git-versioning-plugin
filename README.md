@@ -83,8 +83,8 @@ gitVersioning.apply {
 
 #### Kotlin DSL `build.gradle.kts`
 ```kotlin
-import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.VersionDescription
-import me.qoomon.gradle.gitversioning.GitVersioningPluginExtension.CommitVersionDescription
+import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig
+import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.*
 
 //...
 
@@ -284,6 +284,6 @@ fi
     ```
     version = '0.0.0-SNAPSHOT'
     gitVersioning.apply {
-      // see configuration documentatiomn below
+      // see configuration documentatiomn above
     }
     ```
