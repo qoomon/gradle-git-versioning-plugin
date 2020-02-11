@@ -115,9 +115,8 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
     - `versionFormat` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     - `property` A property definition to update the value of a property
         - `pattern` An arbitrary regex to match property names
-        - `value` The definition of the new property value
-            - `pattern` An arbitrary regex to match property values
-            - `format` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - `valueFormat` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - *optional* `valuePattern` An arbitrary regex to match and use capture group values of property value
     - ⚠ **considered if...**
         * HEAD attached to a branch `git checkout <BRANCH>`<br>
         * Or branch name is provided by environment variable or command line parameter
@@ -127,9 +126,8 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
     - `versionFormat` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     - `property` A property definition to update the value of a property
         - `pattern` An arbitrary regex to match property names
-        - `value` The definition of the new property value
-            - `pattern` An arbitrary regex to match property values
-            - `format` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - `valueFormat` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - *optional* `valuePattern` An arbitrary regex to match and use capture group values of property value
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <TAG>`<br>
         * Or tag name is provided by environment variable or command line parameter
@@ -138,9 +136,8 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
     - `versionFormat` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
     - `property` A property definition to update the value of a property
         - `pattern` An arbitrary regex to match property names
-        - `value` The definition of the new property value
-            - `pattern` An arbitrary regex to match property values
-            - `format` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - `valueFormat` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+        - *optional* `valuePattern` An arbitrary regex to match and use capture group values of property value
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
 
@@ -272,6 +269,43 @@ fi
 ```
 
 # Changelog
+
+## 3.0.0
+#### Features
+* simplify `property` replacement configuration
+
+#### Breaking Changes
+* simplify `property` replacement configuration
+    
+    new config
+    ```groovy
+    gitVersioning.apply {
+      branch {
+        pattern = 'master'
+        versionFormat = '${version}'
+        property {
+          pattern = 'revision'
+          valueFormat = '${branch-SNAPSHOT}'
+        }
+      }
+    }
+    ```
+    old config
+    ```groovy
+    gitVersioning.apply {
+      branch {
+        pattern = 'master'
+        versionFormat = '${version}'
+        property {
+          pattern ='revision'
+          value {
+            format = '${branch-SNAPSHOT}'
+          }
+        }
+      }
+    }
+    ```
+  
 ### 2.1.0
 * add `${dirty}` flag version format placeholder
 * add `git.dirty` property

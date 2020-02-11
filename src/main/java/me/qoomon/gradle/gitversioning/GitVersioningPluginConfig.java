@@ -77,23 +77,7 @@ public class GitVersioningPluginConfig {
     public static class PropertyDescription {
 
         public String pattern;
-        public ValueDescription value;
-
-        public void value(ValueDescription valueDescription) {
-            this.value = valueDescription;
-        }
-
-        public void value(Closure<?> closure) {
-            ValueDescription valueDescription = new ValueDescription();
-            configure(closure, valueDescription);
-            value(valueDescription);
-        }
-    }
-
-    public static class ValueDescription {
-
-        public String pattern;
-        public String format;
-
+        public String valueFormat;
+        public String valuePattern;
     }
 }

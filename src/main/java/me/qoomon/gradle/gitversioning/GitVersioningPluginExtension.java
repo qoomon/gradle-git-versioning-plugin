@@ -96,20 +96,6 @@ public class GitVersioningPluginExtension {
         apply(config);
     }
 
-    private String resolveOriginVersion(Project project, Map<String, Object> originVersionMap) {
-        String projectVersion = originVersionMap.get(project.getPath()).toString();
-        if (!projectVersion.equals("unspecified")) {
-            return projectVersion;
-        }
-
-        if (project.getParent() == null) {
-            return "unspecified";
-        }
-
-        return resolveOriginVersion(project.getParent(), originVersionMap);
-
-    }
-
     private Map<String, String> getProjectStringProperties(Project project) {
         Map<String, String> result = new HashMap<>();
         for (Map.Entry<String, ?> entry : project.getProperties().entrySet()) {
@@ -120,15 +106,11 @@ public class GitVersioningPluginExtension {
         return result;
     }
 
-    private List<me.qoomon.gitversioning.PropertyDescription> mapPropertyDescription(List<GitVersioningPluginConfig.PropertyDescription> properties) {
+    private List<PropertyDescription> mapPropertyDescription(List<GitVersioningPluginConfig.PropertyDescription> properties) {
         return properties.stream()
-                .map(it -> new me.qoomon.gitversioning.PropertyDescription(it.pattern, mapPropertyValueDescription(it.value))
-                ).collect(toList());
-    }
-
-    private PropertyValueDescription mapPropertyValueDescription(GitVersioningPluginConfig.ValueDescription value) {
-        return Optional.of(value)
-                .map(it -> new PropertyValueDescription(it.pattern, it.format)).get();
+                .map(prop -> new PropertyDescription(
+                        prop.pattern, new PropertyValueDescription(prop.valuePattern, prop.valueFormat)))
+                .collect(toList());
     }
 
     private static String getCommandOption(final Project project, final String name) {
