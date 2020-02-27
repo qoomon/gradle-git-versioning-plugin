@@ -22,6 +22,8 @@ This extension will set project versions, based on current **Git branch** or **G
 
 ### Add Plugin
 
+⚠️ You should apply git versioning (`gitVersioning.apply{...}`) directly after version declaration.
+
 #### Groovy DSL `build.gradle`
 ```groovy
 plugins {
