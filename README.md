@@ -53,7 +53,7 @@ gitVersioning.apply {
 }
 ```
 
-ℹ Consider [CI/CD](#cicd) section when running this plugin in a CI/CD environment 
+ℹ Consider [CI/CD](#cicd-setup) section when running this plugin in a CI/CD environment 
 
 ## Configure Extension
 
@@ -241,8 +241,18 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
 
 ## Miscellaneous Hints
 
-### CI/CD
+### CI/CD Setup
 Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information. You can provide those, by using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for common CI/CD systems.
+
+#### GitHub Actions Setup
+execute this snippet before running your `gradle` command
+```shell
+if [[ "$GITHUB_REF" = refs/heads/* ]]; then
+    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/heads/};
+elif [[ "$GITHUB_REF" = refs/tags/* ]];
+    export VERSIONING_GIT_TAG=${GITHUB_REF#refs/tags/};
+fi
+```
 
 #### GitLab CI Setup
 execute this snippet before running your `gradle` command
