@@ -257,21 +257,6 @@ elif [[ "$GITHUB_REF" = refs/pull/*/merge ]]; then
 fi
 ```
 
-Pull request versions can be created by using following branch configuration:
-```groovy
-branch {
-   pattern = 'pull/(?<pull>.+)'
-   versionFormat = 'pull-${pull}-SNAPSHOT'
-}
-```
-
-```kotlin
-branch(closureOf<VersionDescription>{
-   pattern = "pull/(?<pull>.+)"
-   versionFormat = "pull-\${pull}-SNAPSHOT"
-})
-```
-
 #### GitLab CI Setup
 execute this snippet before running your `gradle` command
 ```shell
