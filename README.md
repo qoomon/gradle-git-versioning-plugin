@@ -73,6 +73,10 @@ gitVersioning.apply {
     pattern = 'feature/(?<feature>.+)'
     versionFormat = '${feature}-SNAPSHOT'
   }
+  branch {
+    pattern = 'pull/.+'
+    versionFormat = '${branch}-SNAPSHOT'
+  }
   tag {
     pattern = 'v(?<tagVersion>[0-9].*)'
     versionFormat = '${tagVersion}'
@@ -99,6 +103,10 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
         branch(closureOf<VersionDescription>{
             pattern = "feature/(?<feature>.+)"
             versionFormat = "\${feature}-SNAPSHOT"
+        })
+        branch(closureOf<VersionDescription>{
+            pattern = "pull/.+)"
+            versionFormat = "\${branch}-SNAPSHOT"
         })
         tag(closureOf<VersionDescription>{
             pattern = "v(?<tagVersion>[0-9].*)"
