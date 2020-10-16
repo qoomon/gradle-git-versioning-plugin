@@ -249,9 +249,27 @@ execute this snippet before running your `gradle` command
 ```shell
 if [[ "$GITHUB_REF" = refs/heads/* ]]; then
     export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/heads/};
-elif [[ "$GITHUB_REF" = refs/tags/* ]];
+elif [[ "$GITHUB_REF" = refs/tags/* ]]; then
     export VERSIONING_GIT_TAG=${GITHUB_REF#refs/tags/};
+elif [[ "$GITHUB_REF" = refs/pull/*/merge ]]; then
+    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/};
+    VERSIONING_GIT_BRANCH=${VERSIONING_GIT_BRANCH%/merge};
 fi
+```
+
+Pull request versions can be created by using following branch configuration:
+```groovy
+branch {
+   pattern = 'pull/(?<pull>.+)'
+   versionFormat = 'pull-${pull}-SNAPSHOT'
+}
+```
+
+```kotlin
+branch(closureOf<VersionDescription>{
+   pattern = "pull/(?<pull>.+)"
+   versionFormat = "pull-\${pull}-SNAPSHOT"
+})
 ```
 
 #### GitLab CI Setup
