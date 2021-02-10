@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +47,7 @@ class GitVersioningPluginTest {
     }
 
     @Test
-    void apply() throws GitAPIException {
+    void apply() throws GitAPIException, IOException {
 
         // given
         Git git = Git.init().setDirectory(projectDir.toFile()).call();
@@ -65,11 +66,11 @@ class GitVersioningPluginTest {
         extension.apply(config);
 
         // then
-        assertThat(project.getVersion()).isEqualTo(commit.name());
+        assertThat(project.getVersion()).isEqualTo("master-SNAPSHOT");
     }
 
     @Test
-    void apply_with_extension_commit_description() throws GitAPIException {
+    void apply_with_extension_commit_description() throws GitAPIException, IOException {
 
         // given
         Git git = Git.init().setDirectory(projectDir.toFile()).call();
@@ -83,20 +84,20 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            commitVersionDescription = new CommitVersionDescription() {{
-                versionFormat = "commit-gitVersioning";
-            }};
+            branches.add(new VersionDescription() {{
+                versionFormat = "branch-gitVersioning";
+            }});
         }};
 
         // when
         extension.apply(config);
 
         // then
-        assertThat(project.getVersion()).isEqualTo("commit-gitVersioning");
+        assertThat(project.getVersion()).isEqualTo("branch-gitVersioning");
     }
 
     @Test
-    void apply_with_extension_branch_description() throws GitAPIException {
+    void apply_with_extension_branch_description() throws GitAPIException, IOException {
 
         // given
         Git git = Git.init().setDirectory(projectDir.toFile()).call();
@@ -126,7 +127,7 @@ class GitVersioningPluginTest {
     }
 
     @Test
-    void apply_with_extension_tag_description() throws GitAPIException {
+    void apply_with_extension_tag_description() throws GitAPIException, IOException {
 
         // given
         Git git = Git.init().setDirectory(projectDir.toFile()).call();
@@ -156,7 +157,7 @@ class GitVersioningPluginTest {
     }
 
     @Test
-    void apply_normalizeVersion() throws GitAPIException {
+    void apply_normalizeVersion() throws GitAPIException, IOException {
 
         // given
         Git.init().setDirectory(projectDir.toFile()).call();
@@ -169,9 +170,9 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            commitVersionDescription = new CommitVersionDescription() {{
+            branches.add(new VersionDescription() {{
                 versionFormat = "a/b/c";
-            }};
+            }});
         }};
 
         // when

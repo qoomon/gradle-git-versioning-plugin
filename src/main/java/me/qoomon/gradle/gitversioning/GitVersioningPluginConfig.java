@@ -9,20 +9,21 @@ import static org.gradle.util.ConfigureUtil.configure;
 
 public class GitVersioningPluginConfig {
 
-    public CommitVersionDescription commitVersionDescription;
-    public final List<VersionDescription> branchVersionDescriptions = new ArrayList<>();
-    public final List<VersionDescription> tagVersionDescriptions = new ArrayList<>();
+    public VersionDescription commit;
+    public final List<VersionDescription> branches = new ArrayList<>();
+    public final List<VersionDescription> tags = new ArrayList<>();
 
+    public boolean disable = false;
     public boolean preferTags = false;
 
     public void commit(Closure<?> closure) {
-        CommitVersionDescription versionDescription = new CommitVersionDescription();
+        VersionDescription versionDescription = new VersionDescription();
         configure(closure, versionDescription);
-        this.commitVersionDescription = versionDescription;
+        this.commit = versionDescription;
     }
 
     public void branch(VersionDescription versionDescription) {
-        this.branchVersionDescriptions.add(versionDescription);
+        this.branches.add(versionDescription);
     }
 
     public void branch(Closure<?> closure) {
@@ -32,7 +33,7 @@ public class GitVersioningPluginConfig {
     }
 
     public void tag(VersionDescription versionDescription) {
-        this.tagVersionDescriptions.add(versionDescription);
+        this.tags.add(versionDescription);
     }
 
     public void tag(Closure<?> closure) {
@@ -58,26 +59,9 @@ public class GitVersioningPluginConfig {
         }
     }
 
-    public static class CommitVersionDescription {
-
-        public String versionFormat;
-        public List<PropertyDescription> properties = new ArrayList<>();
-
-        public void property(PropertyDescription propertyDescription) {
-            this.properties.add(propertyDescription);
-        }
-
-        public void property(Closure<?> closure) {
-            PropertyDescription propertyDescription = new PropertyDescription();
-            configure(closure, propertyDescription);
-            property(propertyDescription);
-        }
-    }
-
     public static class PropertyDescription {
 
-        public String pattern;
+        public String name;
         public String valueFormat;
-        public String valuePattern;
     }
 }

@@ -12,7 +12,7 @@ plugins {
 }
 
 group 'me.qoomon'
-version '3.0.0'
+version '4.0.0'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
@@ -22,9 +22,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'me.qoomon:git-versioning:0.2.0'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:5.2.1.201812262042-r'
     implementation 'org.apache.maven:maven-artifact:3.6.0'
-    implementation 'me.qoomon:unchecked-exceptions:1.0.0'
     implementation 'com.google.guava:guava:27.0.1-jre'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.4.0-RC2'
@@ -36,7 +35,6 @@ test {
     useJUnitPlatform()
 }
 
-import org.gradle.api.tasks.testing.logging.TestLogEvent
 gradlePlugin {
     plugins {
         gitVersioning {
@@ -60,6 +58,7 @@ pluginBundle {
         }
     }
 }
-
+// local isntall
+// ./gradlew publishToMavenLocal
 // Publishes this plugin to the Gradle Plugin portal.
 // ./gradlew publishPlugins

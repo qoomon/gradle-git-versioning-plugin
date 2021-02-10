@@ -1,120 +1,341 @@
 package me.qoomon.gradle.gitversioning;
 
 import groovy.lang.Closure;
-import me.qoomon.gitversioning.*;
+import me.qoomon.gitversioning.commons.GitSituation;
+import me.qoomon.gitversioning.commons.GitUtil;
+import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.PropertyDescription;
+import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.VersionDescription;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.gradle.api.Project;
+import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
 
-import java.time.Instant;
-import java.time.ZoneOffset;
+import java.io.File;
+import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import static java.lang.Boolean.parseBoolean;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static java.util.Optional.ofNullable;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static me.qoomon.gitversioning.commons.GitRefType.*;
+import static me.qoomon.gitversioning.commons.StringUtil.substituteText;
+import static me.qoomon.gitversioning.commons.StringUtil.valueGroupMap;
+import static org.apache.commons.lang3.StringUtils.leftPad;
 import static org.gradle.util.ConfigureUtil.configure;
 
 public class GitVersioningPluginExtension {
+
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_PREFER_TAGS = "versioning.preferTags";
 
+    private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branch}-SNAPSHOT";
+    private static final String DEFAULT_TAG_VERSION_FORMAT = "${tag}";
+    private static final String DEFAULT_COMMIT_VERSION_FORMAT = "${commit}";
+
     public final Project rootProject;
+    public final Logger logger;
+
+    public GitVersionDetails gitVersionDetails;
+    public Map<String, PropertyDescription> gitVersioningPropertyDescriptionMap;
+    public Map<String, String> formatPlaceholderMap;
+    public Map<String, String> gitProjectProperties;
 
     public GitVersioningPluginExtension(Project project) {
         this.rootProject = project;
+        this.logger = rootProject.getLogger();
     }
 
-    public void apply(GitVersioningPluginConfig config) {
-
-        if (parseBoolean(getCommandOption(rootProject, OPTION_NAME_DISABLE))) {
-            rootProject.getLogger().warn("skip - versioning is disabled");
-            return;
-        }
-
-        GitRepoSituation repoSituation = GitUtil.situation(rootProject.getProjectDir());
-        String providedTag = getCommandOption(rootProject, OPTION_NAME_GIT_TAG);
-        if (providedTag != null) {
-            repoSituation.setHeadBranch(null);
-            repoSituation.setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
-        }
-        String providedBranch = getCommandOption(rootProject, OPTION_NAME_GIT_BRANCH);
-        if (providedBranch != null) {
-            repoSituation.setHeadBranch(providedBranch.isEmpty() ? null : providedBranch);
-        }
-
-        final boolean preferTagsOption = getPreferTagsOption(rootProject, config);
-        GitVersionDetails gitVersionDetails = GitVersioning.determineVersion(repoSituation,
-                ofNullable(config.commitVersionDescription)
-                        .map(it -> new me.qoomon.gitversioning.VersionDescription(null, it.versionFormat, mapPropertyDescription(it.properties)))
-                        .orElse(new me.qoomon.gitversioning.VersionDescription()),
-                config.branchVersionDescriptions.stream()
-                        .map(it -> new me.qoomon.gitversioning.VersionDescription(it.pattern, it.versionFormat, mapPropertyDescription(it.properties)))
-                        .collect(toList()),
-                config.tagVersionDescriptions.stream()
-                        .map(it -> new me.qoomon.gitversioning.VersionDescription(it.pattern, it.versionFormat, mapPropertyDescription(it.properties)))
-                        .collect(toList()),
-                preferTagsOption);
-
-        String gitProjectVersion = gitVersionDetails.getVersionTransformer().apply(rootProject.getVersion().toString());
-        rootProject.getLogger().info(rootProject.getDisplayName()
-                + " - git versioning [" + rootProject.getVersion() + " -> " + gitProjectVersion + "]"
-                + " (" + gitVersionDetails.getCommitRefType() + ":" + gitVersionDetails.getCommitRefName() + ")");
-
-        rootProject.getAllprojects().forEach(project -> {
-            // update version
-            project.setVersion(gitProjectVersion);
-
-            // update properties
-            gitVersionDetails.getPropertiesTransformer()
-                    .apply(getProjectStringProperties(project), project.getVersion().toString())
-                    .forEach((key, value) -> {
-                        if (!Objects.equals(project.property(key), value)) {
-                            project.getLogger().info(project.getDisplayName() + " - set property " + key + ": " + value);
-                            project.setProperty(key, value);
-                        }
-                    });
-
-            // provide extra properties
-            ExtraPropertiesExtension extraProperties = project.getExtensions().getExtraProperties();
-            extraProperties.set("git.commit", gitVersionDetails.getCommit());
-            extraProperties.set("git.commit.timestamp", Long.toString(gitVersionDetails.getCommitTimestamp()));
-            extraProperties.set("git.commit.timestamp.datetime", toTimestampDateTime(gitVersionDetails.getCommitTimestamp()));
-            extraProperties.set("git.ref", gitVersionDetails.getCommitRefName());
-            extraProperties.set("git." + gitVersionDetails.getCommitRefType(), gitVersionDetails.getCommitRefName());
-            extraProperties.set("git.dirty", Boolean.toString(!gitVersionDetails.isClean()));
-        });
-    }
-
-    public void apply(Closure<?> closure) {
+    public void apply(Closure<?> closure) throws IOException {
         GitVersioningPluginConfig config = new GitVersioningPluginConfig();
         configure(closure, config);
         apply(config);
     }
 
-    private Map<String, String> getProjectStringProperties(Project project) {
-        Map<String, String> result = new HashMap<>();
-        for (Map.Entry<String, ?> entry : project.getProperties().entrySet()) {
-            if (entry.getValue() instanceof String) {
-                result.put(entry.getKey(), (String) entry.getValue());
+    public void apply(GitVersioningPluginConfig config) throws IOException {
+        setDefaults(config);
+
+        // check if extension is disabled by command option
+        String commandOptionDisable = getCommandOption(OPTION_NAME_DISABLE);
+        if (commandOptionDisable != null) {
+            boolean disabled = parseBoolean(commandOptionDisable);
+            if (disabled) {
+                logger.info("skip - versioning is disabled by command option");
+                return;
+            }
+        } else {
+            // check if extension is disabled by config option
+            if (config.disable) {
+                logger.info("skip - versioning is disabled by config option");
+                return;
             }
         }
-        return result;
+
+        GitSituation gitSituation = getGitSituation(rootProject.getProjectDir());
+        if (gitSituation == null) {
+            logger.warn("skip - project is not part of a git repository");
+            return;
+        }
+        logger.debug("git situation: " + gitSituation.getRootDirectory());
+        logger.debug("  root directory: " + gitSituation.getRootDirectory());
+        logger.debug("  head commit: " + gitSituation.getHeadCommit());
+        logger.debug("  head commit timestamp: " + gitSituation.getHeadCommitTimestamp());
+        logger.debug("  head branch: " + gitSituation.getHeadBranch());
+        logger.debug("  head tags: " + gitSituation.getHeadTags());
+
+        boolean preferTagsOption = getPreferTagsOption(config);
+        logger.debug("option -  prefer tags: " + preferTagsOption);
+
+        // determine git version details
+        gitVersionDetails = getGitVersionDetails(gitSituation, config, preferTagsOption);
+        logger.info("git " + gitVersionDetails.getRefType().name().toLowerCase() + ": " + gitVersionDetails.getRefName());
+        gitVersioningPropertyDescriptionMap = gitVersionDetails.getConfig().properties.stream()
+                .collect(toMap(property -> property.name, property -> property));
+
+        formatPlaceholderMap = generateGitPlaceholderMapFromGit(gitSituation, gitVersionDetails);
+        gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
+
+        rootProject.getAllprojects().forEach(project -> {
+            String originalProjectVersion = project.getVersion().toString();
+
+            updateVersion(project);
+            updatePropertyValues(project, originalProjectVersion);
+
+            addGitProperties(project);
+        });
     }
 
-    private List<PropertyDescription> mapPropertyDescription(List<GitVersioningPluginConfig.PropertyDescription> properties) {
-        return properties.stream()
-                .map(prop -> new PropertyDescription(
-                        prop.pattern, new PropertyValueDescription(prop.valuePattern, prop.valueFormat)))
-                .collect(toList());
+
+    // ---- project processing -----------------------------------------------------------------------------------------
+
+    private void updateVersion(Project project) {
+        String gitProjectVersion = getGitVersion(project.getVersion().toString());
+        project.getLogger().info("update version: " + gitProjectVersion);
+        project.setVersion(gitProjectVersion);
     }
 
-    private static String getCommandOption(final Project project, final String name) {
-        String value = (String) project.getProperties().get(name);
+    private void updatePropertyValues(Project project, String originalProjectVersion) {
+        // properties section
+        for (Entry<String, ?> property : project.getProperties().entrySet()) {
+            if (property.getValue() instanceof String) {
+                String gitPropertyValue = getGitProjectPropertyValue(property.getKey(), (String) property.getValue(), originalProjectVersion);
+                if (!gitPropertyValue.equals(property.getValue())) {
+                    project.getLogger().info("update property " + property.getKey() + ": " + gitPropertyValue);
+                    project.setProperty(property.getKey(), gitPropertyValue);
+                }
+            }
+        }
+    }
+
+    private void addGitProperties(Project project) {
+        ExtraPropertiesExtension extraProperties = project.getExtensions().getExtraProperties();
+        gitProjectProperties.forEach(extraProperties::set);
+    }
+
+
+    // ---- versioning -------------------------------------------------------------------------------------------------
+    private GitSituation getGitSituation(File executionRootDirectory) throws IOException {
+        GitSituation gitSituation = GitUtil.situation(executionRootDirectory);
+        if (gitSituation == null) {
+            return null;
+        }
+        String providedTag = getCommandOption(OPTION_NAME_GIT_TAG);
+        if (providedTag != null) {
+            logger.debug("set git head tag by command option: " + providedTag);
+            gitSituation = GitSituation.Builder.of(gitSituation)
+                    .setHeadBranch(null)
+                    .setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag))
+                    .build();
+        }
+        String providedBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
+        if (providedBranch != null) {
+            logger.debug("set git head branch by command option: " + providedBranch);
+            gitSituation = GitSituation.Builder.of(gitSituation)
+                    .setHeadBranch(providedBranch)
+                    .build();
+        }
+
+        return gitSituation;
+    }
+
+    private static GitVersionDetails getGitVersionDetails(GitSituation gitSituation, GitVersioningPluginConfig config, boolean preferTags) {
+        String headCommit = gitSituation.getHeadCommit();
+
+        // detached tag
+        if (!gitSituation.getHeadTags().isEmpty() && (gitSituation.isDetached() || preferTags)) {
+            // sort tags by maven version logic
+            List<String> sortedHeadTags = gitSituation.getHeadTags().stream()
+                    .sorted(comparing(DefaultArtifactVersion::new)).collect(toList());
+            for (VersionDescription tagConfig : config.tags) {
+                for (String headTag : sortedHeadTags) {
+                    if (tagConfig.pattern == null || headTag.matches(tagConfig.pattern)) {
+                        return new GitVersionDetails(headCommit, TAG, headTag, tagConfig);
+                    }
+                }
+            }
+        }
+
+        // detached commit
+        if (gitSituation.isDetached()) {
+            if (config.commit != null) {
+                if (config.commit.pattern == null || headCommit.matches(config.commit.pattern)) {
+                    return new GitVersionDetails(headCommit, COMMIT, headCommit, config.commit);
+                }
+            }
+
+            // default config for detached head commit
+            return new GitVersionDetails(headCommit, COMMIT, headCommit, new VersionDescription() {{
+                versionFormat = DEFAULT_COMMIT_VERSION_FORMAT;
+            }});
+        }
+
+        // branch
+        {
+            String headBranch = gitSituation.getHeadBranch();
+            for (VersionDescription branchConfig : config.branches) {
+                if (branchConfig.pattern == null || headBranch.matches(branchConfig.pattern)) {
+                    return new GitVersionDetails(headCommit, BRANCH, headBranch, branchConfig);
+                }
+            }
+
+            // default config for branch
+            return new GitVersionDetails(headCommit, BRANCH, headBranch, new VersionDescription() {{
+                versionFormat = DEFAULT_BRANCH_VERSION_FORMAT;
+            }});
+        }
+    }
+
+    private String getGitVersion(String originalProjectVersion) {
+        final Map<String, String> placeholderMap = generateFormatPlaceholderMap(originalProjectVersion);
+        return substituteText(gitVersionDetails.getConfig().versionFormat, placeholderMap)
+                // replace invalid version characters
+                .replace("/", "-");
+    }
+
+    private String getGitProjectPropertyValue(String key, String originalValue, String originalProjectVersion) {
+        PropertyDescription propertyConfig = gitVersioningPropertyDescriptionMap.get(key);
+        if (propertyConfig == null) {
+            return originalValue;
+        }
+        final Map<String, String> placeholderMap = generateFormatPlaceholderMap(originalProjectVersion);
+        placeholderMap.put("value", originalValue);
+        return substituteText(propertyConfig.valueFormat, placeholderMap);
+    }
+
+    private Map<String, String> generateFormatPlaceholderMap(String originalProjectVersion) {
+        final Map<String, String> placeholderMap = new HashMap<>();
+        placeholderMap.putAll(formatPlaceholderMap);
+        placeholderMap.putAll(generateFormatPlaceholderMapFromVersion(originalProjectVersion));
+        for (Entry<String, ?> property : rootProject.getProperties().entrySet()) {
+            if (property.getValue() instanceof String) {
+                placeholderMap.put(property.getKey(), (String) property.getValue());
+            }
+        }
+        return placeholderMap;
+    }
+
+    private static Map<String, String> generateGitPlaceholderMapFromGit(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
+        final Map<String, String> placeholderMap = new HashMap<>();
+
+        String headCommit = gitSituation.getHeadCommit();
+        placeholderMap.put("commit", headCommit);
+        placeholderMap.put("commit.short", headCommit.substring(0, 7));
+
+        ZonedDateTime headCommitDateTime = gitSituation.getHeadCommitDateTime();
+        placeholderMap.put("commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
+        placeholderMap.put("commit.timestamp.year", String.valueOf(headCommitDateTime.getYear()));
+        placeholderMap.put("commit.timestamp.month", leftPad(String.valueOf(headCommitDateTime.getMonthValue()), 2, "0"));
+        placeholderMap.put("commit.timestamp.day", leftPad(String.valueOf(headCommitDateTime.getDayOfMonth()), 2, "0"));
+        placeholderMap.put("commit.timestamp.hour", leftPad(String.valueOf(headCommitDateTime.getHour()), 2, "0"));
+        placeholderMap.put("commit.timestamp.minute", leftPad(String.valueOf(headCommitDateTime.getMinute()), 2, "0"));
+        placeholderMap.put("commit.timestamp.second", leftPad(String.valueOf(headCommitDateTime.getSecond()), 2, "0"));
+        placeholderMap.put("commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
+                ? headCommitDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss"))
+                : "00000000.000000");
+
+        String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
+        String refName = gitVersionDetails.getRefName();
+        String refNameSlug = slugify(refName);
+        placeholderMap.put("ref", refName);
+        placeholderMap.put("ref.slug", refNameSlug);
+        placeholderMap.put(refTypeName, refName);
+        placeholderMap.put(refTypeName + ".slug", refNameSlug);
+        String refPattern = gitVersionDetails.getConfig().pattern;
+        if (refPattern != null) {
+            Map<String, String> refNameValueGroupMap = valueGroupMap(refName, refPattern);
+            placeholderMap.putAll(refNameValueGroupMap);
+            placeholderMap.putAll(refNameValueGroupMap.entrySet().stream()
+                    .collect(toMap(entry -> entry.getKey() + ".slug", entry -> slugify(entry.getValue()))));
+        }
+
+        placeholderMap.put("dirty", gitSituation.isClean() ? "" : "-DIRTY");
+
+        return placeholderMap;
+    }
+
+    private static Map<String, String> generateFormatPlaceholderMapFromVersion(String originalProjectVersion) {
+        Map<String, String> placeholderMap = new HashMap<>();
+        placeholderMap.put("version", originalProjectVersion);
+        placeholderMap.put("version.release", originalProjectVersion.replaceFirst("-SNAPSHOT$", ""));
+        return placeholderMap;
+    }
+
+    private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
+        Map<String, String> properties = new HashMap<>();
+
+        properties.put("git.commit", gitVersionDetails.getCommit());
+
+        ZonedDateTime headCommitDateTime = gitSituation.getHeadCommitDateTime();
+        properties.put("git.commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
+        properties.put("git.commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
+                ? headCommitDateTime.format(ISO_INSTANT) : "0000-00-00T00:00:00Z");
+
+        String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
+        String refName = gitVersionDetails.getRefName();
+        String refNameSlug = slugify(refName);
+        properties.put("git.ref", refName);
+        properties.put("git.ref.slug", refNameSlug);
+        properties.put("git." + refTypeName, refName);
+        properties.put("git." + refTypeName + ".slug", refNameSlug);
+
+        properties.put("git.dirty", Boolean.toString(!gitSituation.isClean()));
+
+        return properties;
+    }
+
+
+    // ---- configuration ----------------------------------------------------------------------------------------------
+
+    private void setDefaults(GitVersioningPluginConfig config) {
+        for (VersionDescription versionDescription : config.branches) {
+            if (versionDescription.versionFormat == null) {
+                versionDescription.versionFormat = DEFAULT_BRANCH_VERSION_FORMAT;
+            }
+        }
+        for (VersionDescription versionDescription : config.tags) {
+            if (versionDescription.versionFormat == null) {
+                versionDescription.versionFormat = DEFAULT_TAG_VERSION_FORMAT;
+            }
+        }
+        if (config.commit != null) {
+            if (config.commit.versionFormat == null) {
+                config.commit.versionFormat = DEFAULT_COMMIT_VERSION_FORMAT;
+            }
+        }
+    }
+
+    private String getCommandOption(final String name) {
+        String value = (String) rootProject.getProperties().get(name);
         if (value == null) {
             String plainName = name.replaceFirst("^versioning\\.", "");
             String environmentVariableName = "VERSIONING_"
@@ -129,9 +350,9 @@ public class GitVersioningPluginExtension {
         return value;
     }
 
-    private static boolean getPreferTagsOption(final Project project, GitVersioningPluginConfig config) {
+    private boolean getPreferTagsOption(GitVersioningPluginConfig config) {
         final boolean preferTagsOption;
-        final String preferTagsCommandOption = getCommandOption(project, OPTION_PREFER_TAGS);
+        final String preferTagsCommandOption = getCommandOption(OPTION_PREFER_TAGS);
         if (preferTagsCommandOption != null) {
             preferTagsOption = parseBoolean(preferTagsCommandOption);
         } else {
@@ -140,13 +361,12 @@ public class GitVersioningPluginExtension {
         return preferTagsOption;
     }
 
-    private static String toTimestampDateTime(long timestamp) {
-        if (timestamp == 0) {
-            return "0000-00-00T00:00:00Z";
-        }
 
-        return DateTimeFormatter.ISO_DATE_TIME
-                .withZone(ZoneOffset.UTC)
-                .format(Instant.ofEpochSecond(timestamp));
+    // ---- misc -------------------------------------------------------------------------------------------------------
+
+    private static String slugify(String value) {
+        return value
+                .replace("/", "-")
+                .toLowerCase();
     }
 }
