@@ -17,7 +17,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -126,15 +125,15 @@ public class GitVersioningPluginExtension {
 
     private void updatePropertyValues(Project project, String originalProjectVersion) {
         // properties section
-        for (Entry<String, ?> property : project.getProperties().entrySet()) {
-            if (property.getValue() instanceof String) {
-                String gitPropertyValue = getGitProjectPropertyValue(property.getKey(), (String) property.getValue(), originalProjectVersion);
-                if (!gitPropertyValue.equals(property.getValue())) {
-                    project.getLogger().info("update property " + property.getKey() + ": " + gitPropertyValue);
-                    project.setProperty(property.getKey(), gitPropertyValue);
+        project.getProperties().forEach((key, value) -> {
+            if (value instanceof String) {
+                String gitPropertyValue = getGitProjectPropertyValue(key, (String) value, originalProjectVersion);
+                if (!gitPropertyValue.equals(value)) {
+                    project.getLogger().info("update property " + key + ": " + gitPropertyValue);
+                    project.setProperty(key, gitPropertyValue);
                 }
             }
-        }
+        });
     }
 
     private void addGitProperties(Project project) {
@@ -236,11 +235,11 @@ public class GitVersioningPluginExtension {
         final Map<String, String> placeholderMap = new HashMap<>();
         placeholderMap.putAll(formatPlaceholderMap);
         placeholderMap.putAll(generateFormatPlaceholderMapFromVersion(originalProjectVersion));
-        for (Entry<String, ?> property : rootProject.getProperties().entrySet()) {
-            if (property.getValue() instanceof String) {
-                placeholderMap.put(property.getKey(), (String) property.getValue());
+        rootProject.getProperties().forEach((key, value) -> {
+            if (value instanceof String) {
+                placeholderMap.put(key, (String) value);
             }
-        }
+        });
         return placeholderMap;
     }
 

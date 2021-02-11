@@ -1,11 +1,11 @@
 plugins {
-    id "com.github.ben-manes.versions" version "0.20.0"
+    id "com.github.ben-manes.versions" version "0.36.0"
 
     id "java"
     id "java-gradle-plugin"
-    id 'com.adarshr.test-logger' version '2.0.0'
+    id 'com.adarshr.test-logger' version '2.1.1'
 
-    id "com.gradle.plugin-publish" version "0.10.0"
+    id "com.gradle.plugin-publish" version "0.12.0"
     id "maven-publish" // for local testing only
 
     id "idea"
@@ -22,13 +22,12 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.eclipse.jgit:org.eclipse.jgit:5.2.1.201812262042-r'
-    implementation 'org.apache.maven:maven-artifact:3.6.0'
-    implementation 'com.google.guava:guava:27.0.1-jre'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:5.10.0.202012080955-r'
+    implementation 'org.apache.maven:maven-artifact:3.6.3'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.4.0-RC2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.4.0-RC2'
-    testImplementation 'org.assertj:assertj-core:3.11.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.0-M1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.0-M1'
+    testImplementation 'org.assertj:assertj-core:3.19.0'
 }
 
 test {
