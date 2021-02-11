@@ -228,6 +228,9 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
 - `${version.release}`
     - like `${version}` without `-SNAPSHOT` postfix
     - e.g. '1.0.0'
+
+- `${dirty}`
+    - if repository has untracked files or uncommited changes this placeholder will to `-DIRTY`, otherwise it will resolve to an empty string.  
   
 - `${value}` - Only available within property format
     - value of matching property
