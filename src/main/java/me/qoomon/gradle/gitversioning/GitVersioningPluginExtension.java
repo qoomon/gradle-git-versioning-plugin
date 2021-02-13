@@ -161,6 +161,16 @@ public class GitVersioningPluginExtension {
             throw new RuntimeException(e);
         }
 
+        // handle version
+        if (gradlePropertiesConfig.containsKey("version")) {
+            Object gradlePropertyVersion = gradlePropertiesConfig.getProperty("version");
+            Object projectVersion = project.getVersion();
+            if (!Objects.equals(projectVersion, gradlePropertyVersion)) {
+                gradlePropertiesConfig.setProperty("version", projectVersion);
+            }
+        }
+
+        // handle properties
         Map<String, ?> projectProperties = project.getProperties();
         gitVersionDetails.getConfig().properties.forEach(property -> {
             String propertyName = property.name;
