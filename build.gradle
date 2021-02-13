@@ -24,7 +24,7 @@ repositories {
 dependencies {
     implementation 'org.eclipse.jgit:org.eclipse.jgit:5.10.0.202012080955-r'
     implementation 'org.apache.maven:maven-artifact:3.6.3'
-    implementation 'org.apache.commons:commons-configuration2:2.3'
+    implementation 'org.apache.commons:commons-configuration2:2.7'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.0-M1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.0-M1'
