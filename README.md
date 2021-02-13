@@ -122,6 +122,9 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
 - *optional* `<disable>` global disable(`true`)/enable(`false`) extension.
     - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables].
 
+- *optional* `updateGradleProperties` global enable(`true`)/disable(`false`) version and properties update in `gradle.properties` file.
+    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables].
+
 - *optional* `preferTags` global enable(`true`)/disable(`false`) prefer tag rules over branch rules if both match.
 
 - `branch` specific version format definition.
@@ -130,6 +133,7 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
     - `property` A property definition to update the value of a property
         - `name` The property name
         - `valueFormat` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+    - *optional* `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update in `gradle.properties` file. (will override global `updateGradleProperties` value)
     - ⚠ **considered if...**
         * HEAD attached to a branch `git checkout <BRANCH>`<br>
         * Or branch name is provided by environment variable or command line parameter
@@ -140,6 +144,7 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
     - `property` A property definition to update the value of a property
         - `name` The property name
         - `valueFormat` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
+    - *optional* `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update in `gradle.properties` file. (will override global `updateGradleProperties` value)
     - ⚠ **considered if...**
         * HEAD is detached `git checkout <TAG>`<br>
         * Or tag name is provided by environment variable or command line parameter
@@ -253,6 +258,12 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
         - `gradle ... -Pgit.tag=$PROVIDED_TAG_NAME`
   
   ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
+
+- Update `gradle.properties`
+    - **Environment Variables**
+        - `export VERSIONING_UPDATE_GRADLE_PROPERTIES=true`
+    - **Command Line Parameters**
+        - `gradle ... -Dversioning.updateGradleProperties=true`
 
 - **Prefer Tags** for Versioning instead of Branches
     - **Environment Variables**

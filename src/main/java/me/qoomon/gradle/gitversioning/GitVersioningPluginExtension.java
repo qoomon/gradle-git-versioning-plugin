@@ -5,18 +5,20 @@ import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.GitUtil;
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.PropertyDescription;
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.VersionDescription;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -37,13 +39,14 @@ public class GitVersioningPluginExtension {
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_PREFER_TAGS = "versioning.preferTags";
+    private static final String OPTION_UPDATE_GRADLE_PROPERTIES = "versioning.updateGradleProperties";
 
     private static final String DEFAULT_BRANCH_VERSION_FORMAT = "${branch}-SNAPSHOT";
     private static final String DEFAULT_TAG_VERSION_FORMAT = "${tag}";
     private static final String DEFAULT_COMMIT_VERSION_FORMAT = "${commit}";
 
     public final Project rootProject;
-    public final Logger logger;
+    public final Logger logger; // TODO logging is not working
 
     public GitVersionDetails gitVersionDetails;
     public Map<String, PropertyDescription> gitVersioningPropertyDescriptionMap;
@@ -93,7 +96,7 @@ public class GitVersioningPluginExtension {
         logger.debug("  head tags: " + gitSituation.getHeadTags());
 
         boolean preferTagsOption = getPreferTagsOption(config);
-        logger.debug("option -  prefer tags: " + preferTagsOption);
+        logger.debug("option - prefer tags: " + preferTagsOption);
 
         // determine git version details
         gitVersionDetails = getGitVersionDetails(gitSituation, config, preferTagsOption);
@@ -104,6 +107,9 @@ public class GitVersioningPluginExtension {
         formatPlaceholderMap = generateGitPlaceholderMapFromGit(gitSituation, gitVersionDetails);
         gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
+        boolean updateGradlePropertiesFileOption = getUpdateGradlePropertiesFileOption(config, gitVersionDetails.getConfig());
+        logger.debug("option - update gradle.properties file: " + updateGradlePropertiesFileOption);
+
         rootProject.getAllprojects().forEach(project -> {
             String originalProjectVersion = project.getVersion().toString();
 
@@ -111,6 +117,12 @@ public class GitVersioningPluginExtension {
             updatePropertyValues(project, originalProjectVersion);
 
             addGitProperties(project);
+            if (updateGradlePropertiesFileOption) {
+                File gradleProperties = project.file("gradle.properties");
+                if (gradleProperties.exists()) {
+                    updateGradlePropertiesFile(gradleProperties, project);
+                }
+            }
         });
     }
 
@@ -141,6 +153,32 @@ public class GitVersioningPluginExtension {
         gitProjectProperties.forEach(extraProperties::set);
     }
 
+    private void updateGradlePropertiesFile(File gradleProperties, Project project) {
+        PropertiesConfiguration gradlePropertiesConfig = new PropertiesConfiguration();
+        try (FileReader reader = new FileReader(gradleProperties)) {
+            gradlePropertiesConfig.read(reader);
+        } catch (IOException | ConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+
+        Map<String, ?> projectProperties = project.getProperties();
+        gitVersionDetails.getConfig().properties.forEach(property -> {
+            String propertyName = property.name;
+            if (gradlePropertiesConfig.containsKey(propertyName)) {
+                Object gradlePropertyValue = gradlePropertiesConfig.getProperty(propertyName);
+                Object projectPropertyValue = projectProperties.get(propertyName);
+                if (!Objects.equals(projectPropertyValue, gradlePropertyValue)) {
+                    gradlePropertiesConfig.setProperty(propertyName, projectPropertyValue);
+                }
+            }
+        });
+
+        try (FileWriter writer = new FileWriter(gradleProperties)) {
+            gradlePropertiesConfig.write(writer);
+        } catch (IOException | ConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     // ---- versioning -------------------------------------------------------------------------------------------------
     private GitSituation getGitSituation(File executionRootDirectory) throws IOException {
@@ -358,6 +396,23 @@ public class GitVersioningPluginExtension {
             preferTagsOption = config.preferTags;
         }
         return preferTagsOption;
+    }
+
+    private boolean getUpdateGradlePropertiesFileOption(final GitVersioningPluginConfig config, final VersionDescription gitRefConfig) {
+        final String updatePomCommandOption = getCommandOption(OPTION_UPDATE_GRADLE_PROPERTIES);
+        if (updatePomCommandOption != null) {
+            return parseBoolean(updatePomCommandOption);
+        }
+
+        if (gitRefConfig.updateGradleProperties != null) {
+            return gitRefConfig.updateGradleProperties;
+        }
+
+        if (config.updateGradleProperties != null) {
+            return config.updateGradleProperties;
+        }
+
+        return false;
     }
 
 

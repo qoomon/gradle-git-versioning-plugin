@@ -3,7 +3,11 @@
 ## 4.0.0
 * Major refactoring
 * **Features** 
-    * Add option to disable extension by default and enable on demand.
+    * Add option to disable plugin by default and enable on demand.
+    * Add option to modify project `gradle.properties` file accordingly to plugin related changes.
+        * commandline property `gradle ... -Pversioning.updateGradleProperties`
+        * Environment variable `OPTION_UPDATE_GRADLE_PROPERTIES=true`
+        * Plugin Config `updateGradleProperties=true` global and branch/tag specific.
     * Project `<Dependency>` and `<Plugin>` versions will be updated accordingly to git versions
       * Add config option `<disable>true</disable>` to disable extension by default.
       * Add format placeholder:
