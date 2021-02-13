@@ -235,7 +235,9 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
     - e.g. '1.0.0'
 
 - `${dirty}`
-    - if repository has untracked files or uncommited changes this placeholder will to `-DIRTY`, otherwise it will resolve to an empty string.  
+    - if repository has untracked files or uncommited changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.  
+- `${dirty.snapshot}`
+    - if repository has untracked files or uncommited changes this placeholder will resolve to `-SNAPSHOT`, otherwise it will resolve to an empty string.
   
 - `${value}` - Only available within property format
     - value of matching property

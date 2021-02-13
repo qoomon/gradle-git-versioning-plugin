@@ -9,15 +9,16 @@
         * Environment variable `OPTION_UPDATE_GRADLE_PROPERTIES=true`
         * Plugin Config `updateGradleProperties=true` global and branch/tag specific.
     * Project `<Dependency>` and `<Plugin>` versions will be updated accordingly to git versions
-      * Add config option `<disable>true</disable>` to disable extension by default.
-      * Add format placeholder:
+    * Add config option `<disable>true</disable>` to disable extension by default.
+    * Add format placeholder:
+        * `${dirty.snapshot}`
         * `${commit.timestamp.year}`
         * `${commit.timestamp.month}`
         * `${commit.timestamp.day}`
         * `${commit.timestamp.hour}`
         * `${commit.timestamp.minute}`
         * `${commit.timestamp.second}`
-        * Gradle CLI properties e.g. `gradle ... -Pfoo=bar` will be accessable by `${foo}` placeholder
+        * Gradle CLI properties e.g. `gradle ... -Pfoo=bar` will be accessible by `${foo}` placeholder
     * **BREAKING CHANGES**
       * default version format on a branch changed to `${branch}-SNAPSHOT` was `${commit}`
       * Replace property regex pattern match with simple name match
