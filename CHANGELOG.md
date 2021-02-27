@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.1.0
+* **Features**
+  * add ability to define default or overwrite values for version and property format.
+    * default value if parameter value is not set `${paramter:-<DEFAULT_VALUE>}` e.g. `${buildNumber:-0}`
+    * overwrite value if parameter has a value `${paramter:+<OVERWRITE_VALUE>}` e.g. `${dirty:+-SNAPSHOT}`
+  
 ## 4.0.0
 * Major refactoring
 * **Features** 

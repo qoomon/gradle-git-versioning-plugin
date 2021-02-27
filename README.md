@@ -161,6 +161,10 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
 
 ℹ whole `versionFormat` will be slugified automatically, that means all `/` characters replaced by `-`
 
+ℹ define placeholder default value (placeholder is not defined) like this `${name:-default_value}` 
+
+ℹ define placeholder overwrite value (placeholder is defined) like this `${name:+overwrite_value}` 
+ 
 - `${ref}`
     - current ref name (branch name, tag name or commit hash)
 - `${ref.slug}`
