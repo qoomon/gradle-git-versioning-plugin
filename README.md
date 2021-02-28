@@ -114,7 +114,7 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
             pattern = "v(?<tagVersion>[0-9].*)"
             versionFormat = "\${tagVersion}"
         })
-        commit(closureOf<CommitVersionDescription>{
+        commit(closureOf<VersionDescription>{
           versionFormat = "\${commit.short}"
         })
 })
