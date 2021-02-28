@@ -33,6 +33,7 @@
   * Remove property value pattern `branch|tag|commit { property { valuePattern = 'xyz' } }`
   * Remove format placeholder `${property.name}`
   * Rename format placeholder `${property.value}` to just `${value}`
+  * Remove `CommitVersionDescription`, use `VersionDescription` instead.
 
 
 ## 3.0.0
