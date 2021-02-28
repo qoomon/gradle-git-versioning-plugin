@@ -25,14 +25,14 @@
         * `${commit.timestamp.minute}`
         * `${commit.timestamp.second}`
         * Gradle CLI properties e.g. `gradle ... -Pfoo=bar` will be accessible by `${foo}` placeholder
-    * **BREAKING CHANGES**
-      * default version format on a branch changed to `${branch}-SNAPSHOT` was `${commit}`
-      * Replace property regex pattern match with simple name match
-        * old regex pattern config `branch|tag|commit { property { pattern = 'abc' } }` 
-        * new property name config `branch|tag|commit { property { name = 'abc' } }` 
-      * Remove property value pattern `branch|tag|commit { property { valuePattern = 'xyz' } }`
-      * Remove format placeholder `${property.name}`
-      * Rename format placeholder `${property.value}` to just `${value}`
+* **BREAKING CHANGES**
+  * default version format on a branch changed to `${branch}-SNAPSHOT` was `${commit}`
+  * Replace property regex pattern match with simple name match
+    * old regex pattern config `branch|tag|commit { property { pattern = 'abc' } }` 
+    * new property name config `branch|tag|commit { property { name = 'abc' } }` 
+  * Remove property value pattern `branch|tag|commit { property { valuePattern = 'xyz' } }`
+  * Remove format placeholder `${property.name}`
+  * Rename format placeholder `${property.value}` to just `${value}`
 
 
 ## 3.0.0
