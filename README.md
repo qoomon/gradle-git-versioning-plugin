@@ -20,9 +20,9 @@ This extension will set project versions, based on current **Git branch** or **G
 
 ![Example](doc/GradleGitVersioningPlugin.png)
 
-## Install
+## Usage
 
-### Add Plugin
+### Add Plugin to Gradle Project
 
 ⚠️ You should apply git versioning (`gitVersioning.apply{...}`) directly after version declaration.
 
@@ -57,7 +57,7 @@ gitVersioning.apply {
 
 ℹ Consider [CI/CD](#cicd-setup) section when running this plugin in a CI/CD environment 
 
-## Configure Extension
+## Configure Plugin
 
 You can configure the final version format for specific branches and tags separately.
 
