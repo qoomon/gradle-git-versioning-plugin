@@ -68,7 +68,7 @@ You can configure the final version format for specific branches and tags separa
 version = '0.0.0-SNAPSHOT'
 gitVersioning.apply {
   branch {
-    pattern = 'master'
+    pattern = 'main'
     versionFormat = '${version}'
   }
   branch {
@@ -83,9 +83,6 @@ gitVersioning.apply {
     pattern = 'v(?<tagVersion>[0-9].*)'
     versionFormat = '${tagVersion}'
   }
-  commit {
-    versionFormat = '${commit.short}'
-  }
 }
 ```
 
@@ -99,7 +96,7 @@ import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.*
 version = "0.0.0-SNAPSHOT"
 gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
         branch(closureOf<VersionDescription>{
-            pattern = "master"
+            pattern = "main"
             versionFormat = "\${version}"
         })
         branch(closureOf<VersionDescription>{
@@ -113,9 +110,6 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
         tag(closureOf<VersionDescription>{
             pattern = "v(?<tagVersion>[0-9].*)"
             versionFormat = "\${tagVersion}"
-        })
-        commit(closureOf<VersionDescription>{
-          versionFormat = "\${commit.short}"
         })
 })
 ```
