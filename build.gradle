@@ -61,5 +61,4 @@ pluginBundle {
 // local install
 // ./gradlew publishToMavenLocal
 // Publishes this plugin to the Gradle Plugin portal.
-// ./gradlew login
-// ./gradlew publishPlugins
+// ./gradlew login && ./gradlew publishPlugins
