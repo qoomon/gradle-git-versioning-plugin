@@ -50,7 +50,7 @@ public class GitVersioningPluginExtension {
 
     public GitVersionDetails gitVersionDetails;
     public Map<String, PropertyDescription> gitVersioningPropertyDescriptionMap;
-    public Map<String, String> formatPlaceholderMap;
+    public Map<String, String> globalFormatPlaceholderMap;
     public Map<String, String> gitProjectProperties;
 
     public GitVersioningPluginExtension(Project project) {
@@ -104,7 +104,7 @@ public class GitVersioningPluginExtension {
         gitVersioningPropertyDescriptionMap = gitVersionDetails.getConfig().properties.stream()
                 .collect(toMap(property -> property.name, property -> property));
 
-        formatPlaceholderMap = generateGitPlaceholderMapFromGit(gitSituation, gitVersionDetails);
+        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, rootProject);
         gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         boolean updateGradlePropertiesFileOption = getUpdateGradlePropertiesFileOption(config, gitVersionDetails.getConfig());
@@ -281,17 +281,12 @@ public class GitVersioningPluginExtension {
 
     private Map<String, String> generateFormatPlaceholderMap(String originalProjectVersion) {
         final Map<String, String> placeholderMap = new HashMap<>();
-        placeholderMap.putAll(formatPlaceholderMap);
+        placeholderMap.putAll(globalFormatPlaceholderMap);
         placeholderMap.putAll(generateFormatPlaceholderMapFromVersion(originalProjectVersion));
-        rootProject.getProperties().forEach((key, value) -> {
-            if (value instanceof String) {
-                placeholderMap.put(key, (String) value);
-            }
-        });
         return placeholderMap;
     }
 
-    private static Map<String, String> generateGitPlaceholderMapFromGit(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
+    private static Map<String, String> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, Project rootProject) {
         final Map<String, String> placeholderMap = new HashMap<>();
 
         String headCommit = gitSituation.getHeadCommit();
@@ -327,6 +322,16 @@ public class GitVersioningPluginExtension {
 
         placeholderMap.put("dirty", !gitSituation.isClean() ? "-DIRTY" : "");
         placeholderMap.put("dirty.snapshot", !gitSituation.isClean() ? "-SNAPSHOT" : "");
+
+        // command parameters e.g. mvn -Pfoo=123 will be available as ${foo}
+        rootProject.getProperties().forEach((key, value) -> {
+            if (value instanceof String) {
+                placeholderMap.put(key, (String) value);
+            }
+        });
+
+        // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
+        System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, value));
 
         return placeholderMap;
     }

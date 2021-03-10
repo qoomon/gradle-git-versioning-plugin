@@ -241,7 +241,9 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
   
 - `${value}` - Only available within property format
     - value of matching property
-    
+
+- `${env.VARIABLE}`
+    - value of environment variable `VARIABLE`   
 
 ### Parameters & Environment Variables
 
