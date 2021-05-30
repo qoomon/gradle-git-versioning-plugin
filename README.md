@@ -104,7 +104,7 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
             versionFormat = "\${feature}-SNAPSHOT"
         })
         branch(closureOf<VersionDescription>{
-            pattern = "pull/.+)"
+            pattern = "pull/(.+)"
             versionFormat = "\${branch}-SNAPSHOT"
         })
         tag(closureOf<VersionDescription>{
