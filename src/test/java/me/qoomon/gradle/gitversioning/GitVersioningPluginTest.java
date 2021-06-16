@@ -43,7 +43,7 @@ class GitVersioningPluginTest {
         assertThat(buildresult.task(":version")).satisfies(it ->
                 assertThat(it.getOutcome()).isEqualTo(TaskOutcome.SUCCESS)
         );
-        assertThat(buildresult.getOutput()).isEqualTo(givenVersion + "\n");
+        assertThat(buildresult.getOutput()).isEqualTo(givenVersion + System.lineSeparator());
     }
 
     @Test
