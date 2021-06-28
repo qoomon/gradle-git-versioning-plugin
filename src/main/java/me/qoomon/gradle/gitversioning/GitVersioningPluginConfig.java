@@ -48,7 +48,7 @@ public class GitVersioningPluginConfig {
         public String pattern;
         public String versionFormat;
         public List<PropertyDescription> properties = new ArrayList<>();
-        public Boolean updateGradleProperties = false;
+        public Boolean updateGradleProperties;
 
         public void property(PropertyDescription propertyDescription) {
             this.properties.add(propertyDescription);
