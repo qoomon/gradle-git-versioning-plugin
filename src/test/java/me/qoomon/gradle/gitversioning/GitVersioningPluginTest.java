@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.jgit.lib.Constants.MASTER;
 import static org.gradle.util.GFileUtils.writeFile;
 
 class GitVersioningPluginTest {
@@ -50,7 +51,7 @@ class GitVersioningPluginTest {
     void apply() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         RevCommit commit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
