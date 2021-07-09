@@ -16,6 +16,7 @@ public class GitVersioningPluginConfig {
     public boolean disable = false;
     public boolean preferTags = false;
     public Boolean updateGradleProperties = false;
+    public String describeTagPattern;
 
     public void commit(Closure<?> closure) {
         VersionDescription versionDescription = new VersionDescription();
@@ -49,6 +50,7 @@ public class GitVersioningPluginConfig {
         public String versionFormat;
         public List<PropertyDescription> properties = new ArrayList<>();
         public Boolean updateGradleProperties;
+        public String describeTagPattern;
 
         public void property(PropertyDescription propertyDescription) {
             this.properties.add(propertyDescription);

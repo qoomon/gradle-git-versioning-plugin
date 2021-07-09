@@ -1,5 +1,16 @@
 # Changelog
 
+## 6.3.0 (unreleased)
+* **Features**
+    * add git describe version placeholders
+      enable describe feature by set config `describeTagPattern` at root level or at branch/tag config level
+        * new placeholders
+            * `${describe}`
+            * `${describe.tag}`
+                * `${describe.<TAG_PATTERN_GROUP_NAME or TAG_PATTERN_GROUP_INDEX>}`
+            * `${describe.distance}`
+
+    
 ## 4.1.0
 * **Features**
   * add ability to define default or overwrite values for version and property format.

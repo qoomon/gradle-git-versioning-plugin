@@ -1,13 +1,15 @@
 package me.qoomon.gradle.gitversioning;
 
 import groovy.lang.Closure;
+import me.qoomon.gitversioning.commons.GitDescription;
 import me.qoomon.gitversioning.commons.GitSituation;
-import me.qoomon.gitversioning.commons.GitUtil;
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.PropertyDescription;
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.VersionDescription;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
@@ -19,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -49,6 +52,7 @@ public class GitVersioningPluginExtension {
     public final Logger logger; // TODO logging is not working
 
     public GitVersionDetails gitVersionDetails;
+    public Pattern describeTagPattern;
     public Map<String, PropertyDescription> gitVersioningPropertyDescriptionMap;
     public Map<String, String> globalFormatPlaceholderMap;
     public Map<String, String> gitProjectProperties;
@@ -88,12 +92,6 @@ public class GitVersioningPluginExtension {
             logger.warn("skip - project is not part of a git repository");
             return;
         }
-        logger.debug("git situation: " + gitSituation.getRootDirectory());
-        logger.debug("  root directory: " + gitSituation.getRootDirectory());
-        logger.debug("  head commit: " + gitSituation.getHeadCommit());
-        logger.debug("  head commit timestamp: " + gitSituation.getHeadCommitTimestamp());
-        logger.debug("  head branch: " + gitSituation.getHeadBranch());
-        logger.debug("  head tags: " + gitSituation.getHeadTags());
 
         boolean preferTagsOption = getPreferTagsOption(config);
         logger.debug("option - prefer tags: " + preferTagsOption);
@@ -107,8 +105,24 @@ public class GitVersioningPluginExtension {
         globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, rootProject);
         gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
+        describeTagPattern = getDescribeTagPattern(config, gitVersionDetails.getConfig());
+        logger.debug("option: git describe: " + describeTagPattern);
+
         boolean updateGradlePropertiesFileOption = getUpdateGradlePropertiesFileOption(config, gitVersionDetails.getConfig());
         logger.debug("option - update gradle.properties file: " + updateGradlePropertiesFileOption);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("git situation:");
+            logger.debug("  root directory: " + gitSituation.getRootDirectory());
+            logger.debug("  head commit: " + gitSituation.getHash());
+            logger.debug("  head commit timestamp: " + gitSituation.getTimestamp());
+            logger.debug("  head branch: " + gitSituation.getBranch());
+            logger.debug("  head tags: " + gitSituation.getTags());
+            if (describeTagPattern != null) {
+                logger.debug("  description: " + gitSituation.getDescription());
+                logger.debug("  description.commit: " + gitSituation.getDescription().getCommit());
+            }
+        }
 
         rootProject.getAllprojects().forEach(project -> {
             String originalProjectVersion = project.getVersion().toString();
@@ -192,36 +206,36 @@ public class GitVersioningPluginExtension {
 
     // ---- versioning -------------------------------------------------------------------------------------------------
     private GitSituation getGitSituation(File executionRootDirectory) throws IOException {
-        GitSituation gitSituation = GitUtil.situation(executionRootDirectory);
-        if (gitSituation == null) {
+        final FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(executionRootDirectory);
+        if (repositoryBuilder.getGitDir() == null) {
             return null;
         }
+
+        final Repository repository = repositoryBuilder.build();
+        final GitSituation gitSituation = new GitSituation(repository, describeTagPattern);
+
         String providedTag = getCommandOption(OPTION_NAME_GIT_TAG);
         if (providedTag != null) {
             logger.debug("set git head tag by command option: " + providedTag);
-            gitSituation = GitSituation.Builder.of(gitSituation)
-                    .setHeadBranch(null)
-                    .setHeadTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag))
-                    .build();
+            gitSituation.setBranch(null);
+            gitSituation.setTags(providedTag.isEmpty() ? emptyList() : singletonList(providedTag));
         }
         String providedBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
         if (providedBranch != null) {
             logger.debug("set git head branch by command option: " + providedBranch);
-            gitSituation = GitSituation.Builder.of(gitSituation)
-                    .setHeadBranch(providedBranch)
-                    .build();
+            gitSituation.setBranch(providedBranch);
         }
 
         return gitSituation;
     }
 
     private static GitVersionDetails getGitVersionDetails(GitSituation gitSituation, GitVersioningPluginConfig config, boolean preferTags) {
-        String headCommit = gitSituation.getHeadCommit();
+        String headCommit = gitSituation.getHash();
 
         // detached tag
-        if (!gitSituation.getHeadTags().isEmpty() && (gitSituation.isDetached() || preferTags)) {
+        if (!gitSituation.getTags().isEmpty() && (gitSituation.isDetached() || preferTags)) {
             // sort tags by maven version logic
-            List<String> sortedHeadTags = gitSituation.getHeadTags().stream()
+            List<String> sortedHeadTags = gitSituation.getTags().stream()
                     .sorted(comparing(DefaultArtifactVersion::new)).collect(toList());
             for (VersionDescription tagConfig : config.tags) {
                 for (String headTag : sortedHeadTags) {
@@ -248,7 +262,7 @@ public class GitVersioningPluginExtension {
 
         // branch
         {
-            String headBranch = gitSituation.getHeadBranch();
+            String headBranch = gitSituation.getBranch();
             for (VersionDescription branchConfig : config.branches) {
                 if (branchConfig.pattern == null || headBranch.matches(branchConfig.pattern)) {
                     return new GitVersionDetails(headCommit, BRANCH, headBranch, branchConfig);
@@ -286,14 +300,14 @@ public class GitVersioningPluginExtension {
         return placeholderMap;
     }
 
-    private static Map<String, String> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, Project rootProject) {
+    private Map<String, String> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, Project rootProject) {
         final Map<String, String> placeholderMap = new HashMap<>();
 
-        String headCommit = gitSituation.getHeadCommit();
+        String headCommit = gitSituation.getHash();
         placeholderMap.put("commit", headCommit);
         placeholderMap.put("commit.short", headCommit.substring(0, 7));
 
-        ZonedDateTime headCommitDateTime = gitSituation.getHeadCommitDateTime();
+        ZonedDateTime headCommitDateTime = gitSituation.getTimestamp();
         placeholderMap.put("commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
         placeholderMap.put("commit.timestamp.year", String.valueOf(headCommitDateTime.getYear()));
         placeholderMap.put("commit.timestamp.month", leftPad(String.valueOf(headCommitDateTime.getMonthValue()), 2, "0"));
@@ -320,8 +334,25 @@ public class GitVersioningPluginExtension {
                     .collect(toMap(entry -> entry.getKey() + ".slug", entry -> slugify(entry.getValue()))));
         }
 
+        // TODO add on demand only (config option) to prevent performance issues in large projects
         placeholderMap.put("dirty", !gitSituation.isClean() ? "-DIRTY" : "");
         placeholderMap.put("dirty.snapshot", !gitSituation.isClean() ? "-SNAPSHOT" : "");
+
+        if (describeTagPattern != null) {
+            GitDescription description = gitSituation.getDescription();
+            placeholderMap.put("describe", description.toString());
+            placeholderMap.put("describe.tag", description.getTag());
+            Map<String, String> describeTagNameValueGroupMap = valueGroupMap(description.getTag(), describeTagPattern);
+            placeholderMap.putAll(describeTagNameValueGroupMap.entrySet().stream().collect(toMap(
+                    entry -> "describe." + entry.getKey(),
+                    entry -> entry.getValue() != null ? entry.getValue() : ""
+            )));
+            placeholderMap.putAll(describeTagNameValueGroupMap.entrySet().stream().collect(toMap(
+                    entry -> "describe." + entry.getKey() + ".slug",
+                    entry -> slugify(entry.getValue() != null ? entry.getValue() : "")
+            )));
+            placeholderMap.put("describe.distance", String.valueOf(description.getDistance()));
+        }
 
         // command parameters e.g. mvn -Pfoo=123 will be available as ${foo}
         rootProject.getProperties().forEach((key, value) -> {
@@ -348,7 +379,7 @@ public class GitVersioningPluginExtension {
 
         properties.put("git.commit", gitVersionDetails.getCommit());
 
-        ZonedDateTime headCommitDateTime = gitSituation.getHeadCommitDateTime();
+        ZonedDateTime headCommitDateTime = gitSituation.getTimestamp();
         properties.put("git.commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
         properties.put("git.commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
                 ? headCommitDateTime.format(ISO_INSTANT) : "0000-00-00T00:00:00Z");
@@ -431,6 +462,18 @@ public class GitVersioningPluginExtension {
         return false;
     }
 
+    private Pattern getDescribeTagPattern(final GitVersioningPluginConfig config, final VersionDescription gitRefConfig) {
+
+        if (gitRefConfig.describeTagPattern != null) {
+            return Pattern.compile(gitRefConfig.describeTagPattern);
+        }
+
+        if (config.describeTagPattern != null) {
+            return Pattern.compile(config.describeTagPattern);
+        }
+
+        return null;
+    }
 
     // ---- misc -------------------------------------------------------------------------------------------------------
 

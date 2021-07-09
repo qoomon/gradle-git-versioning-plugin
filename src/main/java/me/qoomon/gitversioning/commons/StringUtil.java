@@ -37,20 +37,27 @@ public final class StringUtil {
 
     /**
      * @param text  to parse
-     * @param regex pattern
+     * @param regex regular expression
      * @return a map of group-index and group-name to matching value
      */
     public static Map<String, String> valueGroupMap(String text, String regex) {
+        return valueGroupMap(text, Pattern.compile(regex));
+    }
+    /**
+     * @param text  to parse
+     * @param pattern pattern
+     * @return a map of group-index and group-name to matching value
+     */
+    public static Map<String, String> valueGroupMap(String text, Pattern pattern) {
         Map<String, String> result = new HashMap<>();
-        Pattern groupPattern = Pattern.compile(regex);
-        Matcher groupMatcher = groupPattern.matcher(text);
+        Matcher groupMatcher = pattern.matcher(text);
         if (groupMatcher.find()) {
             // add group index to value entries
             for (int i = 1; i <= groupMatcher.groupCount(); i++) {
                 result.put(String.valueOf(i), groupMatcher.group(i));
             }
 
-            for (String groupName : patternGroupNames(groupPattern)) {
+            for (String groupName : patternGroupNames(pattern)) {
                 result.put(groupName, groupMatcher.group(groupName));
             }
         }

@@ -2,7 +2,6 @@ package me.qoomon.gitversioning.commons;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
