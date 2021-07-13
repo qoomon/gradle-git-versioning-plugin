@@ -66,6 +66,10 @@ public final class GitUtil {
     public static GitDescription describe(Repository repository, ObjectId revObjectId, Pattern tagPattern,
                                           Map<ObjectId, List<Ref>> reverseTagRefMap) throws IOException {
 
+        if(revObjectId == null) {
+            return new GitDescription(NO_COMMIT, "root", 0);
+        }
+
         // Walk back commit ancestors looking for tagged one
         try (RevWalk walk = new RevWalk(repository)) {
             walk.setRetainBody(false);

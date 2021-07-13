@@ -4,18 +4,20 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class StringUtil {
 
-    public static String substituteText(String text, Map<String, String> replacements) {
+    public static String substituteText(String text, Map<String, Supplier<String>> replacements) {
         StringBuffer result = new StringBuffer();
         Pattern placeholderPattern = Pattern.compile("\\$\\{(?<key>[^}:]+)(?::(?<modifier>[-+])(?<value>[^}]*))?}");
         Matcher placeholderMatcher = placeholderPattern.matcher(text);
         while (placeholderMatcher.find()) {
             String placeholderKey = placeholderMatcher.group("key");
-            String replacement = replacements.get(placeholderKey);
+            Supplier<String> replacementSupplier = replacements.get(placeholderKey);
+            String replacement = replacementSupplier != null ? replacementSupplier.get() : null;
             String placeholderModifier = placeholderMatcher.group("modifier");
             if(placeholderModifier != null){
                 if (placeholderModifier.equals("-") && replacement == null) {
@@ -40,15 +42,15 @@ public final class StringUtil {
      * @param regex regular expression
      * @return a map of group-index and group-name to matching value
      */
-    public static Map<String, String> valueGroupMap(String text, String regex) {
-        return valueGroupMap(text, Pattern.compile(regex));
+    public static Map<String, String> patternGroupValues(String text, String regex) {
+        return patternGroupValues(Pattern.compile(regex), text);
     }
     /**
-     * @param text  to parse
      * @param pattern pattern
+     * @param text  to parse
      * @return a map of group-index and group-name to matching value
      */
-    public static Map<String, String> valueGroupMap(String text, Pattern pattern) {
+    public static Map<String, String> patternGroupValues(Pattern pattern, String text) {
         Map<String, String> result = new HashMap<>();
         Matcher groupMatcher = pattern.matcher(text);
         if (groupMatcher.find()) {
@@ -57,14 +59,14 @@ public final class StringUtil {
                 result.put(String.valueOf(i), groupMatcher.group(i));
             }
 
-            for (String groupName : patternGroupNames(pattern)) {
+            for (String groupName : patternGroups(pattern)) {
                 result.put(groupName, groupMatcher.group(groupName));
             }
         }
         return result;
     }
 
-    private static Set<String> patternGroupNames(Pattern groupPattern) {
+    public static Set<String> patternGroups(Pattern groupPattern) {
         Set<String> groupNames = new HashSet<>();
         Pattern groupNamePattern = Pattern.compile("\\(\\?<(?<name>[a-zA-Z][a-zA-Z0-9]*)>");
         Matcher groupNameMatcher = groupNamePattern.matcher(groupPattern.toString());

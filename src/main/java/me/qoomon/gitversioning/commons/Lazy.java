@@ -1,14 +1,17 @@
 package me.qoomon.gitversioning.commons;
 
 
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
+
 import static java.util.Objects.requireNonNull;
 
-public final class Lazy<T> {
+public final class Lazy<T> implements Supplier<T> {
 
-    private volatile Initializer<T> initializer;
-    private T object;
+    private volatile Callable<T> initializer;
+    private volatile T value;
 
-    public Lazy(Initializer<T> initializer) {
+    public Lazy(Callable<T> initializer) {
         this.initializer = requireNonNull(initializer);
     }
 
@@ -17,27 +20,29 @@ public final class Lazy<T> {
             synchronized (this) {
                 if (initializer != null) {
                     try {
-                        object = initializer.get();
-                        initializer = null;
+                        value = initializer.call();
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
+                    initializer = null;
                 }
             }
         }
-        return object;
+        return value;
     }
 
     public static <T> Lazy<T> of(T value) {
         return new Lazy<>(() -> value);
     }
 
-    public static <T> Lazy<T> of(Initializer<T> initializer) {
-        return new Lazy<>(initializer);
+    public static <T> Lazy<T> by(Callable<T> supplier) {
+        return new Lazy<>(supplier);
     }
 
-    @FunctionalInterface
-    public interface Initializer<T> {
-        T get() throws Exception;
+    public static <V> V get(Lazy<V> value) {
+        if (value != null) {
+            return value.get();
+        }
+        return null;
     }
 }

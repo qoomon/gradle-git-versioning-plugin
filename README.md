@@ -160,7 +160,14 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
 
 ℹ define placeholder overwrite value (placeholder is defined) like this `${name:+OVERWRITE_VALUE}`<br>
   e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
-  
+
+- `${version}`
+    - `version` set in `pom.xml`
+    - e.g. '1.0.0-SNAPSHOT'
+- `${version.release}`
+    - like `${version}` without `-SNAPSHOT` postfix
+    - e.g. '1.0.0'
+    
 - `${ref}`
     - current ref name (branch name, tag name or commit hash)
 - `${ref.slug}`
@@ -227,18 +234,20 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
             versionFormat = '${1}'
             ```
           
-- `${version}`
-    - `version` set in `pom.xml`
-    - e.g. '1.0.0-SNAPSHOT'
-- `${version.release}`
-    - like `${version}` without `-SNAPSHOT` postfix
-    - e.g. '1.0.0'
+- `${describe}`
+    - will resolve to `git describe` output
+    - ⚠️ may lead to performance issue on very large projects
+- `${describe.tag}`
+    - the matching tag of `git describe`
+- `${describe.distance}`
+    - the distance count to last matching tag
 
 - `${dirty}`
-    - if repository has untracked files or uncommited changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.  
+    - if repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.
+    - ⚠️ may lead to performance issue on very large projects
 - `${dirty.snapshot}`
-    - if repository has untracked files or uncommited changes this placeholder will resolve to `-SNAPSHOT`, otherwise it will resolve to an empty string.
-  
+    - like `${dirty}`, but will resolve to `-SNAPSHOT`
+
 - `${value}` - Only available within property format
     - value of matching property
 
@@ -286,8 +295,6 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
     - `git.tag.slug` like `git.tag` with all `/` replaced by `-`
 - `git.commit.timestamp` e.g. '1560694278'
 - `git.commit.timestamp.datetime` e.g. '2019-11-16T14:37:10Z'
-- `git.dirty` repository's dirty state indicator `true` or `false`
-
 
 ## Gradle Tasks
 

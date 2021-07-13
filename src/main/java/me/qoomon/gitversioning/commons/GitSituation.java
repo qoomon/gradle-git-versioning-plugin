@@ -9,15 +9,17 @@ import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import static java.time.Instant.EPOCH;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static me.qoomon.gitversioning.commons.GitUtil.NO_COMMIT;
 import static org.eclipse.jgit.lib.Constants.HEAD;
 
-//TODO rename to GitSituation
+
 public class GitSituation {
 
     private final Repository repository;
@@ -25,28 +27,24 @@ public class GitSituation {
 
     private final ObjectId head;
     private final String hash;
-    private final Lazy<ZonedDateTime> timestamp = Lazy.of(this::timestamp);
-    private Lazy<String> branch = Lazy.of(this::branch);
+    private final Supplier<ZonedDateTime> timestamp = Lazy.by(this::timestamp);
+    private Supplier<String> branch = Lazy.by(this::branch);
 
-    private final Lazy<Map<ObjectId, List<Ref>>> reverseTagRefMap = Lazy.of(this::reverseTagRefMap);
-    private Lazy<List<String>> tags = Lazy.of(this::tags);
+    private final Supplier<Map<ObjectId, List<Ref>>> reverseTagRefMap = Lazy.by(this::reverseTagRefMap);
+    private Supplier<List<String>> tags = Lazy.by(this::tags);
 
-    private final Lazy<Boolean> clean = Lazy.of(this::clean);
+    private final Supplier<Boolean> clean = Lazy.by(this::clean);
 
-    private final Pattern describeTagPattern;
-    private final Lazy<GitDescription> description = Lazy.of(this::describe);
+    private Pattern describeTagPattern = Pattern.compile(".*");
+    private Supplier<GitDescription> description = Lazy.by(this::describe);
 
-    public GitSituation(Repository repository, Pattern describeTagPattern) throws IOException {
+    public GitSituation(Repository repository) throws IOException {
         this.repository = repository;
         this.rootDirectory = repository.getWorkTree();
         this.head = repository.resolve(HEAD);
         this.hash = head != null ? head.getName() : NO_COMMIT;
-        this.describeTagPattern = describeTagPattern != null ? describeTagPattern : Pattern.compile(".*");
     }
 
-    public GitSituation(Repository repository) throws IOException {
-        this(repository, null);
-    }
 
     public File getRootDirectory() {
         return rootDirectory;
@@ -65,7 +63,7 @@ public class GitSituation {
     }
 
     public void setBranch(String branch) {
-        this.branch = Lazy.of(branch);
+        this.branch = () -> branch;
     }
 
     public boolean isDetached() {
@@ -77,11 +75,20 @@ public class GitSituation {
     }
 
     public void setTags(List<String> tags) {
-        this.tags = Lazy.of(tags);
+        this.tags = () -> requireNonNull(tags);
     }
 
     public boolean isClean() {
         return clean.get();
+    }
+
+    public void setDescribeTagPattern(Pattern describeTagPattern) {
+        this.describeTagPattern = requireNonNull(describeTagPattern);
+        this.description = Lazy.by(this::describe);
+    }
+
+    public Pattern getDescribeTagPattern() {
+        return describeTagPattern;
     }
 
     public GitDescription getDescription() {

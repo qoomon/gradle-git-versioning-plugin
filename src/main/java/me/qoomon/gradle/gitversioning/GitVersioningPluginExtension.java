@@ -3,6 +3,7 @@ package me.qoomon.gradle.gitversioning;
 import groovy.lang.Closure;
 import me.qoomon.gitversioning.commons.GitDescription;
 import me.qoomon.gitversioning.commons.GitSituation;
+import me.qoomon.gitversioning.commons.Lazy;
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.PropertyDescription;
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.VersionDescription;
 import org.apache.commons.configuration2.PropertiesConfiguration;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import static java.lang.Boolean.parseBoolean;
@@ -31,8 +33,7 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
-import static me.qoomon.gitversioning.commons.StringUtil.substituteText;
-import static me.qoomon.gitversioning.commons.StringUtil.valueGroupMap;
+import static me.qoomon.gitversioning.commons.StringUtil.*;
 import static org.apache.commons.lang3.StringUtils.leftPad;
 import static org.gradle.util.ConfigureUtil.configure;
 
@@ -52,9 +53,8 @@ public class GitVersioningPluginExtension {
     public final Logger logger; // TODO logging is not working
 
     public GitVersionDetails gitVersionDetails;
-    public Pattern describeTagPattern;
-    public Map<String, PropertyDescription> gitVersioningPropertyDescriptionMap;
-    public Map<String, String> globalFormatPlaceholderMap;
+    public Map<String, PropertyDescription> propertyDescriptionMap;
+    public Map<String, Supplier<String>> globalFormatPlaceholderMap;
     public Map<String, String> gitProjectProperties;
 
     public GitVersioningPluginExtension(Project project) {
@@ -93,24 +93,6 @@ public class GitVersioningPluginExtension {
             return;
         }
 
-        boolean preferTagsOption = getPreferTagsOption(config);
-        logger.debug("option - prefer tags: " + preferTagsOption);
-
-        // determine git version details
-        gitVersionDetails = getGitVersionDetails(gitSituation, config, preferTagsOption);
-        logger.info("git " + gitVersionDetails.getRefType().name().toLowerCase() + ": " + gitVersionDetails.getRefName());
-        gitVersioningPropertyDescriptionMap = gitVersionDetails.getConfig().properties.stream()
-                .collect(toMap(property -> property.name, property -> property));
-
-        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, rootProject);
-        gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
-
-        describeTagPattern = getDescribeTagPattern(config, gitVersionDetails.getConfig());
-        logger.debug("option: git describe: " + describeTagPattern);
-
-        boolean updateGradlePropertiesFileOption = getUpdateGradlePropertiesFileOption(config, gitVersionDetails.getConfig());
-        logger.debug("option - update gradle.properties file: " + updateGradlePropertiesFileOption);
-
         if (logger.isDebugEnabled()) {
             logger.debug("git situation:");
             logger.debug("  root directory: " + gitSituation.getRootDirectory());
@@ -118,11 +100,28 @@ public class GitVersioningPluginExtension {
             logger.debug("  head commit timestamp: " + gitSituation.getTimestamp());
             logger.debug("  head branch: " + gitSituation.getBranch());
             logger.debug("  head tags: " + gitSituation.getTags());
-            if (describeTagPattern != null) {
-                logger.debug("  description: " + gitSituation.getDescription());
-                logger.debug("  description.commit: " + gitSituation.getDescription().getCommit());
-            }
+            logger.debug("  head description: " + gitSituation.getDescription());
         }
+
+        boolean preferTagsOption = getPreferTagsOption(config);
+        logger.debug("option - prefer tags: " + preferTagsOption);
+
+        // determine git version details
+        gitVersionDetails = getGitVersionDetails(gitSituation, config, preferTagsOption);
+        logger.info("git ref: " + gitVersionDetails.getRefName()
+                + " (" + gitVersionDetails.getRefType().name().toLowerCase() + ")");
+        propertyDescriptionMap = gitVersionDetails.getConfig().properties.stream()
+                .collect(toMap(property -> property.name, property -> property));
+
+        boolean updateGradlePropertiesFileOption = getUpdateGradlePropertiesFileOption(config, gitVersionDetails.getConfig());
+        logger.debug("option: update gradle.properties file: " + updateGradlePropertiesFileOption);
+
+        Pattern describeTagPattern = getDescribeTagPattern(config, gitVersionDetails.getConfig());
+        logger.debug("option: git describe: " + describeTagPattern);
+        gitSituation.setDescribeTagPattern(describeTagPattern);
+
+        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, rootProject);
+        gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         rootProject.getAllprojects().forEach(project -> {
             String originalProjectVersion = project.getVersion().toString();
@@ -212,7 +211,7 @@ public class GitVersioningPluginExtension {
         }
 
         final Repository repository = repositoryBuilder.build();
-        final GitSituation gitSituation = new GitSituation(repository, describeTagPattern);
+        final GitSituation gitSituation = new GitSituation(repository);
 
         String providedTag = getCommandOption(OPTION_NAME_GIT_TAG);
         if (providedTag != null) {
@@ -277,100 +276,99 @@ public class GitVersioningPluginExtension {
     }
 
     private String getGitVersion(String originalProjectVersion) {
-        final Map<String, String> placeholderMap = generateFormatPlaceholderMap(originalProjectVersion);
+        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(originalProjectVersion);
         return substituteText(gitVersionDetails.getConfig().versionFormat, placeholderMap)
                 // replace invalid version characters
                 .replace("/", "-");
     }
 
     private String getGitProjectPropertyValue(String key, String originalValue, String originalProjectVersion) {
-        PropertyDescription propertyConfig = gitVersioningPropertyDescriptionMap.get(key);
+        PropertyDescription propertyConfig = propertyDescriptionMap.get(key);
         if (propertyConfig == null) {
             return originalValue;
         }
-        final Map<String, String> placeholderMap = generateFormatPlaceholderMap(originalProjectVersion);
-        placeholderMap.put("value", originalValue);
+        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(originalProjectVersion);
+        placeholderMap.put("value", () -> originalValue);
         return substituteText(propertyConfig.valueFormat, placeholderMap);
     }
 
-    private Map<String, String> generateFormatPlaceholderMap(String originalProjectVersion) {
-        final Map<String, String> placeholderMap = new HashMap<>();
-        placeholderMap.putAll(globalFormatPlaceholderMap);
-        placeholderMap.putAll(generateFormatPlaceholderMapFromVersion(originalProjectVersion));
+    private Map<String, Supplier<String>> generateFormatPlaceholderMap(String originalProjectVersion) {
+        final Map<String, Supplier<String>> placeholderMap = new HashMap<>(globalFormatPlaceholderMap);
+        placeholderMap.put("version", () -> originalProjectVersion);
+        placeholderMap.put("version.release", Lazy.by(
+                () -> originalProjectVersion.replaceFirst("-SNAPSHOT$", "")));
         return placeholderMap;
     }
 
-    private Map<String, String> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, Project rootProject) {
-        final Map<String, String> placeholderMap = new HashMap<>();
+    private Map<String, Supplier<String>> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, Project rootProject) {
 
-        String headCommit = gitSituation.getHash();
-        placeholderMap.put("commit", headCommit);
-        placeholderMap.put("commit.short", headCommit.substring(0, 7));
+        final Map<String, Supplier<String>> placeholderMap = new HashMap<>();
 
-        ZonedDateTime headCommitDateTime = gitSituation.getTimestamp();
-        placeholderMap.put("commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
-        placeholderMap.put("commit.timestamp.year", String.valueOf(headCommitDateTime.getYear()));
-        placeholderMap.put("commit.timestamp.month", leftPad(String.valueOf(headCommitDateTime.getMonthValue()), 2, "0"));
-        placeholderMap.put("commit.timestamp.day", leftPad(String.valueOf(headCommitDateTime.getDayOfMonth()), 2, "0"));
-        placeholderMap.put("commit.timestamp.hour", leftPad(String.valueOf(headCommitDateTime.getHour()), 2, "0"));
-        placeholderMap.put("commit.timestamp.minute", leftPad(String.valueOf(headCommitDateTime.getMinute()), 2, "0"));
-        placeholderMap.put("commit.timestamp.second", leftPad(String.valueOf(headCommitDateTime.getSecond()), 2, "0"));
-        placeholderMap.put("commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
-                ? headCommitDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss"))
-                : "00000000.000000");
+        final Lazy<String> hash = Lazy.by(gitSituation::getHash);
+        placeholderMap.put("commit", hash);
+        placeholderMap.put("commit.short", Lazy.by(() -> hash.get().substring(0, 7)));
 
-        String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
-        String refName = gitVersionDetails.getRefName();
-        String refNameSlug = slugify(refName);
-        placeholderMap.put("ref", refName);
+        final Lazy<ZonedDateTime> headCommitDateTime = Lazy.by(gitSituation::getTimestamp);
+        placeholderMap.put("commit.timestamp", Lazy.by(() -> String.valueOf(headCommitDateTime.get().toEpochSecond())));
+        placeholderMap.put("commit.timestamp.year", Lazy.by(() -> String.valueOf(headCommitDateTime.get().getYear())));
+        placeholderMap.put("commit.timestamp.month", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMonthValue()), 2, "0")));
+        placeholderMap.put("commit.timestamp.day", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getDayOfMonth()), 2, "0")));
+        placeholderMap.put("commit.timestamp.hour", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getHour()), 2, "0")));
+        placeholderMap.put("commit.timestamp.minute", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getMinute()), 2, "0")));
+        placeholderMap.put("commit.timestamp.second", Lazy.by(() -> leftPad(String.valueOf(headCommitDateTime.get().getSecond()), 2, "0")));
+        placeholderMap.put("commit.timestamp.datetime", Lazy.by(() -> headCommitDateTime.get().toEpochSecond() > 0
+                ? headCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000"));
+
+        final String refName = gitVersionDetails.getRefName();
+        final Lazy<String> refNameSlug = Lazy.by(() -> slugify(refName));
+        placeholderMap.put("ref", () -> refName);
         placeholderMap.put("ref.slug", refNameSlug);
-        placeholderMap.put(refTypeName, refName);
+        final String refTypeName = gitVersionDetails.getRefType().name().toLowerCase();
+        placeholderMap.put(refTypeName, () ->refName);
         placeholderMap.put(refTypeName + ".slug", refNameSlug);
-        String refPattern = gitVersionDetails.getConfig().pattern;
+
+        // ref pattern groups
+        final String refPattern = gitVersionDetails.getConfig().pattern;
         if (refPattern != null) {
-            Map<String, String> refNameValueGroupMap = valueGroupMap(refName, refPattern);
-            placeholderMap.putAll(refNameValueGroupMap);
-            placeholderMap.putAll(refNameValueGroupMap.entrySet().stream()
-                    .collect(toMap(entry -> entry.getKey() + ".slug", entry -> slugify(entry.getValue()))));
+            for (Map.Entry<String, String> patternGroup : patternGroupValues(refName, refPattern).entrySet()) {
+                final String groupName = patternGroup.getKey();
+                final String value = patternGroup.getValue() != null ? patternGroup.getValue() : "";
+                placeholderMap.put(groupName, () -> value);
+                placeholderMap.put(groupName + ".slug", Lazy.by(() -> slugify(value)));
+            }
         }
 
-        // TODO add on demand only (config option) to prevent performance issues in large projects
-        placeholderMap.put("dirty", !gitSituation.isClean() ? "-DIRTY" : "");
-        placeholderMap.put("dirty.snapshot", !gitSituation.isClean() ? "-SNAPSHOT" : "");
+        // dirty
+        final Lazy<Boolean> dirty = Lazy.by(() -> !gitSituation.isClean());
+        placeholderMap.put("dirty", Lazy.by(() -> dirty.get() ? "-DIRTY" : ""));
+        placeholderMap.put("dirty.snapshot", Lazy.by(() -> dirty.get() ? "-SNAPSHOT" : ""));
 
-        if (describeTagPattern != null) {
-            GitDescription description = gitSituation.getDescription();
-            placeholderMap.put("describe", description.toString());
-            placeholderMap.put("describe.tag", description.getTag());
-            Map<String, String> describeTagNameValueGroupMap = valueGroupMap(description.getTag(), describeTagPattern);
-            placeholderMap.putAll(describeTagNameValueGroupMap.entrySet().stream().collect(toMap(
-                    entry -> "describe." + entry.getKey(),
-                    entry -> entry.getValue() != null ? entry.getValue() : ""
-            )));
-            placeholderMap.putAll(describeTagNameValueGroupMap.entrySet().stream().collect(toMap(
-                    entry -> "describe." + entry.getKey() + ".slug",
-                    entry -> slugify(entry.getValue() != null ? entry.getValue() : "")
-            )));
-            placeholderMap.put("describe.distance", String.valueOf(description.getDistance()));
+        // describe
+        final Lazy<GitDescription> description = Lazy.by(gitSituation::getDescription);
+        placeholderMap.put("describe", Lazy.by(() -> description.get().toString()));
+        final Lazy<String> descriptionTag = Lazy.by(() -> description.get().getTag());
+        placeholderMap.put("describe.tag", descriptionTag);
+        placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
+
+        // describe tag pattern groups
+        final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
+                () -> patternGroupValues(gitSituation.getDescribeTagPattern(), descriptionTag.get()));
+        for (String groupName : patternGroups(gitSituation.getDescribeTagPattern())) {
+            Lazy<String> value = Lazy.by(() -> describeTagPatternValues.get().get(groupName));
+            placeholderMap.put("describe." + groupName, value);
+            placeholderMap.put("describe." + groupName + ".slug", Lazy.by(() -> slugify(value.get())));
         }
 
-        // command parameters e.g. mvn -Pfoo=123 will be available as ${foo}
+        // command parameters e.g. mvn -Dfoo=123 will be available as ${foo}
         rootProject.getProperties().forEach((key, value) -> {
             if (value instanceof String) {
-                placeholderMap.put(key, (String) value);
+                placeholderMap.put(key, () -> (String) value);
             }
         });
 
         // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
-        System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, value));
+        System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
 
-        return placeholderMap;
-    }
-
-    private static Map<String, String> generateFormatPlaceholderMapFromVersion(String originalProjectVersion) {
-        Map<String, String> placeholderMap = new HashMap<>();
-        placeholderMap.put("version", originalProjectVersion);
-        placeholderMap.put("version.release", originalProjectVersion.replaceFirst("-SNAPSHOT$", ""));
         return placeholderMap;
     }
 
@@ -472,7 +470,7 @@ public class GitVersioningPluginExtension {
             return Pattern.compile(config.describeTagPattern);
         }
 
-        return null;
+        return Pattern.compile(".*");
     }
 
     // ---- misc -------------------------------------------------------------------------------------------------------
