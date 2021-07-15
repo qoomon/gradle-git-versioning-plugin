@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.3.0 (unreleased)
+## 4.3.0
 * **Features**
     * add git describe version placeholders
         * new placeholders
