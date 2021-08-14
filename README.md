@@ -6,193 +6,197 @@
 [![Build Workflow](https://github.com/qoomon/gradle-git-versioning-plugin/workflows/Build/badge.svg)](https://github.com/qoomon/gradle-git-versioning-plugin/actions)
 [![LGTM Grade](https://img.shields.io/lgtm/grade/java/github/qoomon/gradle-git-versioning-plugin)](https://lgtm.com/projects/g/qoomon/gradle-git-versioning-plugin)
 
-
 **ℹ Also available as [Maven Extension](https://github.com/qoomon/maven-git-versioning-extension)**
 
+This extension can virtually set project version and properties, based on current **Git status**.
 
-This extension will set project versions, based on current **Git branch** or **Git tag**.
+ℹ **No files will be modified, version and properties are modified in memory only.**
 
-ℹ **No files will be modified, versions are modified in memory only.**
 * Get rid of...
     * editing `build.gradle`
-    * managing project versions with Git tags and within files
-    * Git merge conflicts
-
-![Example](doc/GradleGitVersioningPlugin.png)
+    * managing project versions within files and Git tags
+    * git merge conflicts
+* Highly customizable configuration, see example below
+  ![Example](doc/GradleGitVersioningPlugin.png)
 
 ## Usage
 
 ### Add Plugin to Gradle Project
 
-⚠️ You should apply git versioning (`gitVersioning.apply{...}`) directly after version declaration.
+⚠️ You should apply git versioning (`gitVersioning.patch{...}`) directly after version declaration and only once at root
+project.
 
 #### Groovy DSL `build.gradle`
+
 ```groovy
 plugins {
-    id 'me.qoomon.git-versioning' version '4.2.0'
+    id 'me.qoomon.git-versioning' version '5.0.0'
 }
 
-// ...
-
 version = '0.0.0-SNAPSHOT'
-gitVersioning.apply {
-  // see configuration documentation below
+gitVersioning.patch {
+    // see configuration documentation below
 }
 ```
 
 #### Kotlin DSL `build.gradle.kts`
+
 ```kotlin
 plugins {
-    id("me.qoomon.git-versioning") version "4.2.0"
+    id("me.qoomon.git-versioning") version "5.0.0"
 }
 
 
 // ...
 
 version = "0.0.0-SNAPSHOT"
-gitVersioning.apply {
-  // see configuration documentation below
+gitVersioning.patch {
+    // see configuration documentation below
 }
 ```
-
-ℹ Consider [CI/CD](#cicd-setup) section when running this plugin in a CI/CD environment 
 
 ## Configure Plugin
 
-You can configure the final version format for specific branches and tags separately.
+ℹ Consider [CI/CD](#cicd-setup) section when running this plugin in a CI/CD environment
 
-### Example Configuration
+You can configure the version and properties adjustments for specific branches and tags.
 
-##### Groovy DSL `build.gradle` 
+**Groovy DSL Example:** `build.gradle`
+
 ```groovy
 version = '0.0.0-SNAPSHOT'
 gitVersioning.apply {
-  branch {
-    pattern = 'main'
-    versionFormat = '${version}'
-  }
-  branch {
-    pattern = 'feature/(?<feature>.+)'
-    versionFormat = '${feature}-SNAPSHOT'
-  }
-  branch {
-    pattern = 'pull/.+'
-    versionFormat = '${branch}-SNAPSHOT'
-  }
-  tag {
-    pattern = 'v(?<tagVersion>[0-9].*)'
-    versionFormat = '${tagVersion}'
-  }
+    refs {
+        branch('.+') {
+            version = '${ref}-SNAPSHOT'
+        }
+        tag('v(?<version>.*)') {
+            version = '${ref.version}'
+        }
+    }
+
+    // optional fallback configuration in case of no matching ref configuration
+    rev {
+        version = '${commit}'
+    }
 }
 ```
 
-#### Kotlin DSL `build.gradle.kts`
+**Kotlin DSL Example:** `build.gradle.kts`
+
 ```kotlin
-import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig
-import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.*
-
-//...
-
 version = "0.0.0-SNAPSHOT"
-gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
-        branch(closureOf<VersionDescription>{
-            pattern = "main"
-            versionFormat = "\${version}"
-        })
-        branch(closureOf<VersionDescription>{
-            pattern = "feature/(?<feature>.+)"
-            versionFormat = "\${feature}-SNAPSHOT"
-        })
-        branch(closureOf<VersionDescription>{
-            pattern = "pull/(.+)"
-            versionFormat = "\${branch}-SNAPSHOT"
-        })
-        tag(closureOf<VersionDescription>{
-            pattern = "v(?<tagVersion>[0-9].*)"
-            versionFormat = "\${tagVersion}"
-        })
-})
+gitVersioning.apply {
+    refs {
+        branch(".+") {
+            version = "\${ref}-SNAPSHOT"
+        }
+        tag('v(?<version>.*)') {
+            version = "\${ref.version}"
+        }
+    }
+
+    // optional fallback configuration in case of no matching ref configuration
+    rev {
+        version = "\${commit}"
+    }
+}
 ```
-- *optional* `<disable>` global disable(`true`)/enable(`false`) extension.
-    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables].
 
-- *optional* `updateGradleProperties` global enable(`true`)/disable(`false`) version and properties update in `gradle.properties` file.
-    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables].
+### Configuration Options
 
-- *optional* `preferTags` global enable(`true`)/disable(`false`) prefer tag rules over branch rules if both match.
+- `disable` global disable(`true`)/enable(`false`) extension, default is `false`.
+    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables]
 
-- `branch` specific version format definition.
-    - `pattern` An arbitrary regex to match branch names (has to be a **full match pattern** e.g. `feature/.+` )
-    - `versionFormat` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
-    - `property` A property definition to update the value of a property
-        - `name` The property name
-        - `valueFormat` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
-    - *optional* `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update in `gradle.properties` file. (will override global `updateGradleProperties` value)
-    - ⚠ **considered if...**
-        * HEAD attached to a branch `git checkout <BRANCH>`<br>
-        * Or branch name is provided by environment variable or command line parameter
+- `describeTagPattern` An arbitrary regex to match tag names for git describe command (has to be a **full match
+  pattern** e.g. `v.+`), default is `.*`
+- `updateGradleProperties` Enable(`true`)/disable(`false`) version and properties update in `gradle.properties` file,
+  default is `false`
+    - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables]
+      .
 
-- `tag` specific version format definition.
-    - `pattern` An arbitrary regex to match tag names (has to be a **full match pattern** e.g. `v[0-9].*` )
-    - `versionFormat` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
-    - `property` A property definition to update the value of a property
-        - `name` The property name
-        - `valueFormat` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
-    - *optional* `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update in `gradle.properties` file. (will override global `updateGradleProperties` value)
-    - ⚠ **considered if...**
-        * HEAD is detached `git checkout <TAG>`<br>
-        * Or tag name is provided by environment variable or command line parameter
-  
-- `commit` specific version format definition.
-    - `versionFormat` An arbitrary string, see [Version Format & Placeholders](#version-format--placeholders)
-    - `property` A property definition to update the value of a property
-        - `name` The property name
-        - `valueFormat` The new value format of the property, see [Version Format & Placeholders](#version-format--placeholders)
-    - ⚠ **considered if...**
-        * HEAD is detached `git checkout <COMMIT>` and no matching version tag is pointing to HEAD<br>
+- `refs` List of ref configurations, ordered by priority. First matching configuration will be used.
+    - `considerTagsOnBranches` By default, tags pointing at current commit will be ignored if HEAD is attached to a
+      branch. If this option is `true` tags will always be taken into account.
+        - ⚠️ If enabled this behaviour can lead to performance issue on projects with a lot of tags.
+          <br><br>
 
-#### Format Placeholders
+    - `branch(pattern)`/`tag(pattern)` specific ref patch definition.
+        - `pattern` An arbitrary regex to match ref names
+            - has to be a **full match pattern** e.g. `main` or `feature/.+`
+              <br><br>
 
-ℹ whole `versionFormat` will be slugified automatically, that means all `/` characters replaced by `-`
+        - `describeTagPattern` An arbitrary regex to match tag names for git describe command
+            - has to be a **full match pattern** e.g. `v.+`)
+            - will override global `describeTagPattern` value
+        - `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update
+          in `gradle.properties` file
+            - will override global `updateGradleProperties` value
+              <br><br>
+
+        - `version` The new version format, see [Format Placeholders](#format-placeholders)
+        - `properties.put(name, value)` A property definition to update the value of a property. - `name` The property
+          name - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
+
+- `rev` Rev configuration will be used if no ref configuration is matching current git situation.
+    - same as `branch(pattern)`/`tag(pattern)` configuration, except `pattern` parameter.
+
+### Format Placeholders
+
+ℹ `….slug` placeholders means all `/` characters will be replaced by `-`.
+
+ℹ Final `version` will be slugified automatically, so no need to use `${….slug}` placeholders in `version` format.
 
 ℹ define placeholder default value (placeholder is not defined) like this `${name:-DEFAULT_VALUE}`<br>
-  e.g `${env.BUILD_NUMBER:-0}` or `${env.BUILD_NUMBER:-local}` 
+e.g `${env.BUILD_NUMBER:-0}` or `${env.BUILD_NUMBER:-local}`
 
 ℹ define placeholder overwrite value (placeholder is defined) like this `${name:+OVERWRITE_VALUE}`<br>
-  e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
+
+###### Placeholders
+
+- `${env.VARIABLE}`
+    - Value of environment variable `VARIABLE`
+- `${property.name}`
+    - Value of commandline property `-Pname=value`
+      <br><br>
 
 - `${version}`
-    - `version` set in `pom.xml`
+    - project `version` (probably set in `build.gradle`)
     - e.g. '1.0.0-SNAPSHOT'
 - `${version.release}`
     - like `${version}` without `-SNAPSHOT` postfix
     - e.g. '1.0.0'
-    
-- `${ref}`
-    - current ref name (branch name, tag name or commit hash)
-- `${ref.slug}`
-    - like `${ref}` with all `/` replaced by `-`
+      <br><br>
 
-- `${branch}` (only available within branch configuration)
-    - The branch name of `HEAD`
-    - e.g. 'master', 'feature/next-big-thing', ...
-- `${branch.slug}`
-    - like `${branch}` with all `/` replaced by `-`    
- 
-- `${tag}` (only available within tag configuration)
-    - The tag name that points at `HEAD`, if multiple tags point at `HEAD` latest version is selected
-    - e.g. 'version/1.0.1', 'v1.2.3', ...
-- `${tag.slug}`
-    - like `${tag}` with all `/` replaced by `-`    
-    
+- `${ref}` `${ref.slug}`
+    - HEAD ref name (branch or tag name or commit hash)
+- `Ref Pattern Groups`
+    - Content of regex groups in branch/tag `pattern` can be addressed like this:
+    - `${ref.GROUP_NAME}` `${ref.GROUP_NAME.slug}`
+      `${ref.GROUP_INDEX}` `${ref.GROUP_INDEX.slug}`
+    - Named Group Example
+      
+        **groovy**
+        ```groovy
+        branch('feature/(?<feature>.+)') {
+            version = '${ref.feature}-SNAPSHOT'
+        }
+        ```
+        **kotlin**
+        ```kotlin
+        branch("feature/(?<feature>.+)") {
+            version = "\${ref.feature}-SNAPSHOT"
+        }
+        ```
+        <br>
+
 - `${commit}`
     - The `HEAD` commit hash
     - e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
-
 - `${commit.short}`
     - The short `HEAD` commit hash (7 characters)
     - e.g. '0fc2045'
-
 - `${commit.timestamp}`
     - The `HEAD` commit timestamp (epoch seconds)
     - e.g. '1560694278'
@@ -217,126 +221,140 @@ gitVersioning.apply(closureOf<GitVersioningPluginConfig> {
 - `${commit.timestamp.datetime}`
     - The `HEAD` commit timestamp formatted as `yyyyMMdd.HHmmss`
     - e.g. '20190616.161442'
+      <br><br>
 
-- `Pattern Groups`
-    - Contents of group in the regex pattern can be addressed `${GROUP_NAME}` or `${GROUP_INDEX}`
-    - `${GROUP_NAME.slug}` or `${GROUP_INDEX.slug}`
-        - like `${GROUP_NAME}` or `${GROUP_INDEX}` with all `/` replaced by `-`  
-    - Examples
-        - Named Group
-            ```groovy
-            pattern = 'feature/(?<feature>.+)'
-            versionFormat = '${feature}-SNAPSHOT'    
-            ```
-        - Group Index
-            ```groovy
-            pattern = 'v([0-9].*)'
-            versionFormat = '${1}'
-            ```
-          
 - `${describe}`
-    - will resolve to `git describe` output
-    - ⚠️ may lead to performance issue on very large projects
-- `${describe.tag}`
-    - the matching tag of `git describe`
+    - Will resolve to `git describe` output
+    - ⚠️ Can lead to performance issue on projects with a lot of tags
 - `${describe.distance}`
-    - the distance count to last matching tag
+    - The distance count to last matching tag
+- `${describe.tag}`
+    - The matching tag of `git describe`
+    - Describe Tag Pattern Groups
+        - Content of regex groups in `describeTagPattern` can be addressed like this:
+        - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
+          `${describe.tag.GROUP_INDEX}` `${describe.tag.GROUP_INDEX.slug}`
+        - Named Group Example
+          
+            **groovy**
+            ```groovy
+            branch('main') {
+                describeTagPattern = 'v(?<version>.*)'
+                version = '${ref.feature}-SNAPSHOT'
+            }
+            ```
+            **kotlin**
+            ```kotlin
+            branch("main") {
+                describeTagPattern = "v(?<version>.*)"
+                version = "\${describe.tag.version}-SNAPSHOT"
+            }
+            ```
+            <br> 
 
 - `${dirty}`
-    - if repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.
-    - ⚠️ may lead to performance issue on very large projects
+    - If repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it
+      will resolve to an empty string.
+    - ⚠️ Can lead to performance issue on very large projects
 - `${dirty.snapshot}`
-    - like `${dirty}`, but will resolve to `-SNAPSHOT`
+    - Like `${dirty}`, but will resolve to `-SNAPSHOT`
+      <br><br>
 
 - `${value}` - Only available within property format
-    - value of matching property
-
-- `${env.VARIABLE}`
-    - value of environment variable `VARIABLE`   
+    - Original value of matching property
 
 ### Parameters & Environment Variables
 
-- Disable Plugin
+- Disable Extension
     - **Environment Variables**
         - `export VERSIONING_DISABLE=true`
     - **Command Line Parameters**
-        - `gradle ... -Pversioning.disable=true`
+        - `mvn … -Dversioning.disable`
 
 - Provide **branch** or **tag** name
     - **Environment Variables**
-        - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME`
-        - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME`
+        - `export VERSIONING_GIT_REF=$PROVIDED_REF` e.g. `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
+        - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME` e.g. `main` or `refs/heads/main`
+        - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME` e.g. `v1.0.0` or `refs/tags/v1.0.0`
     - **Command Line Parameters**
-        - `gradle ... -Pgit.branch=$PROVIDED_BRANCH_NAME`
-        - `gradle ... -Pgit.tag=$PROVIDED_TAG_NAME`
-  
+        - `mvn … -Dgit.ref=$PROVIDED_REF`
+        - `mvn … -Dgit.branch=$PROVIDED_BRANCH_NAME`
+        - `mvn … -Dgit.tag=$PROVIDED_TAG_NAME`
+
   ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
 
-- Update `gradle.properties`
+- Update `gradle.properties` file
     - **Environment Variables**
         - `export VERSIONING_UPDATE_GRADLE_PROPERTIES=true`
     - **Command Line Parameters**
-        - `gradle ... -Dversioning.updateGradleProperties=true`
-
-- **Prefer Tags** for Versioning instead of Branches
-    - **Environment Variables**
-        - `export VERSIONING_PREFER_TAGS=true`
-    - **Command Line Parameters**
-        - `gradle ... -Pversioning.preferTags=true`
+        - `mvn … -Dversioning.updateGradleProperties`
 
 ## Provided Project Properties
 
 - `git.commit` e.g. '0fc20459a8eceb2c4abb9bf0af45a6e8af17b94b'
-- `git.ref` value of branch or tag name or commit hash
-    - `git.ref.slug` like `git.ref` with all `/` replaced by `-`
-- `git.branch` e.g. 'feature/next-big-thing', only set for branch versioning
-    - `git.branch.slug` like `git.branch` with all `/` replaced by `-`
-- `git.tag` e.g. 'v1.2.3', only set for tag versioning
-    - `git.tag.slug` like `git.tag` with all `/` replaced by `-`
+- `git.commit.short` e.g. '0fc2045'
 - `git.commit.timestamp` e.g. '1560694278'
 - `git.commit.timestamp.datetime` e.g. '2019-11-16T14:37:10Z'
+
+- `git.ref` `git.ref.slug` HEAD ref name (branch or tag name or commit hash)
+
+---
 
 ## Gradle Tasks
 
 * **version**
-  * Print project version e.g. `gradle :version -q`
+    * Print project version e.g. `gradle :version -q`
+
+## CI/CD Setup
+
+Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide
+environment variables with this information. You can provide those, by
+using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for
+common CI/CD systems.
+
+### Native Support
+
+* GitHub Actions: if `$GITHUB_ACTIONS == true`, `GITHUB_REF` is considered
+* GitLab CI: if `$GITLAB_CI == true`, `CI_COMMIT_BRANCH` and `CI_COMMIT_TAG` are considered
+* Circle CI: if `$CIRCLECI == true`, `CIRCLE_BRANCH` and `CIRCLE_TAG` are considered
+* Jenkins: if `JENKINS_HOME` is set, `BRANCH_NAME` and `TAG_NAME` are considered
+
+### Manual Setup
+
+Set following environment variables before running your `mvn` command
+
+```shell
+export VERSIONING_GIT_REF=$PROVIDED_REF;
+```
+
+`$PROVIDED_REF` value examples: `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
+
+or
+
+```shell
+export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH;
+export VERSIONING_GIT_TAG=$PROVIDED_TAG;
+```
+
+`$PROVIDED_BRANCH` value examples: `main`, `refs/heads/main` or `refs/pull/1000/head`
+`$PROVIDED_TAG` value examples: `v1.0.0` or `refs/tags/v1.0.0`
+
+---
 
 ## Miscellaneous Hints
 
-### CI/CD Setup
-Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information. You can provide those, by using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for common CI/CD systems.
+### Commandline To Print Project Version
 
-#### GitHub Actions Setup
-execute this snippet before running your `gradle` command
-```shell
-if  [[ "$GITHUB_REF" = refs/tags/* ]]; then
-    export VERSIONING_GIT_TAG=${GITHUB_REF#refs/tags/};
-elif [[ "$GITHUB_REF" = refs/heads/* ]]; then
-    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/heads/};
-elif [[ "$GITHUB_REF" = refs/pull/*/merge ]]; then
-    export VERSIONING_GIT_BRANCH=${GITHUB_REF#refs/pull/};
-fi
-```
+`gradle :version -q`
 
-#### GitLab CI Setup
-execute this snippet before running your `gradle` command
-```shell
-before_script:
-  - export VERSIONING_GIT_TAG=$CI_COMMIT_TAG;
-    export VERSIONING_GIT_BRANCH=$CI_COMMIT_BRANCH;
-```
+---
 
-#### Jenkins Setup
-execute this snippet before running your `gradle` command
-```shell
-if [[ "$GIT_BRANCH" = origin/tags/* ]]; then e
-    export VERSIONING_GIT_TAG=${GIT_BRANCH#origin/tags/};
-else 
-    export VERSIONING_GIT_BRANCH=${GIT_BRANCH#origin/};
-fi
-```
+## Build & Release
 
-## Build
 ```shell
-  - ./gradlew build
+  ./gradlew build
+  # Publishes this plugin to local Maven
+  ./gradlew publishToMavenLocal
+  # Publishes this plugin to Gradle Plugin portal.
+  ./gradlew login && ./gradlew publishPlugins
 ```
