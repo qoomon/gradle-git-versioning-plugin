@@ -23,8 +23,7 @@ This extension can virtually set project version and properties, based on curren
 
 ### Add Plugin to Gradle Project
 
-⚠️ You should apply git versioning (`gitVersioning.patch{...}`) directly after version declaration and only once at root
-project.
+⚠️ You should apply git versioning (`gitVersioning.apply{...}`) directly after `version` declaration at root project only.
 
 #### Groovy DSL `build.gradle`
 
