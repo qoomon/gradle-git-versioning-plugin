@@ -34,7 +34,7 @@ plugins {
 }
 
 version = '0.0.0-SNAPSHOT'
-gitVersioning.patch {
+gitVersioning.apply {
     // see configuration documentation below
 }
 ```
@@ -50,7 +50,7 @@ plugins {
 // ...
 
 version = "0.0.0-SNAPSHOT"
-gitVersioning.patch {
+gitVersioning.apply {
     // see configuration documentation below
 }
 ```
@@ -108,17 +108,14 @@ gitVersioning.apply {
 - `disable` global disable(`true`)/enable(`false`) extension, default is `false`.
     - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables]
 
-- `describeTagPattern` An arbitrary regex to match tag names for git describe command (has to be a **full match
-  pattern** e.g. `v.+`), default is `.*`
-- `updateGradleProperties` Enable(`true`)/disable(`false`) version and properties update in `gradle.properties` file,
-  default is `false`
+- `describeTagPattern` An arbitrary regex to match tag names for git describe command (has to be a **full match pattern** e.g. `v.+`), default is `.*`
+- `updateGradleProperties` Enable(`true`)/disable(`false`) version and properties update in `gradle.properties` file, default is `false`
     - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables]
-      .
 
 - `refs` List of ref configurations, ordered by priority. First matching configuration will be used.
-    - `considerTagsOnBranches` By default, tags pointing at current commit will be ignored if HEAD is attached to a
-      branch. If this option is `true` tags will always be taken into account.
-        - ⚠️ If enabled this behaviour can lead to performance issue on projects with a lot of tags.
+    - `considerTagsOnBranches` By default, tags pointing at current commit will be ignored if HEAD is attached to a branch.
+        - If this option is `true` tags will always be taken into account.
+        - ⚠️ This feature can lead to performance issue on projects with a lot of tags.
           <br><br>
 
     - `branch(pattern)`/`tag(pattern)` specific ref patch definition.
@@ -129,14 +126,16 @@ gitVersioning.apply {
         - `describeTagPattern` An arbitrary regex to match tag names for git describe command
             - has to be a **full match pattern** e.g. `v.+`)
             - will override global `describeTagPattern` value
-        - `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update
-          in `gradle.properties` file
-            - will override global `updateGradleProperties` value
               <br><br>
 
         - `version` The new version format, see [Format Placeholders](#format-placeholders)
-        - `properties.put(name, value)` A property definition to update the value of a property. - `name` The property
-          name - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
+        - `properties.put(name, value)` A property definition to update the value of a property. 
+            - `name` The property name 
+            - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
+              <br><br>  
+
+        - `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update in `gradle.properties` file
+            - will override global `updateGradleProperties` value
 
 - `rev` Rev configuration will be used if no ref configuration is matching current git situation.
     - same as `branch(pattern)`/`tag(pattern)` configuration, except `pattern` parameter.
@@ -253,8 +252,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
             <br> 
 
 - `${dirty}`
-    - If repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it
-      will resolve to an empty string.
+    - If repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.
     - ⚠️ Can lead to performance issue on very large projects
 - `${dirty.snapshot}`
     - Like `${dirty}`, but will resolve to `-SNAPSHOT`
@@ -307,10 +305,8 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 ## CI/CD Setup
 
-Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide
-environment variables with this information. You can provide those, by
-using [Parameters & Environment Variables](#parameters--environment-variables). Below you'll find some setup example for
-common CI/CD systems.
+Most CI/CD systems do checkouts in a detached HEAD state so no branch information is available, however they provide environment variables with this information. 
+You can provide those, by using [Parameters & Environment Variables](#parameters--environment-variables).
 
 ### Native Support
 
