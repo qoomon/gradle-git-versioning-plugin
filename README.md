@@ -269,7 +269,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - **Environment Variables**
         - `export VERSIONING_DISABLE=true`
     - **Command Line Parameters**
-        - `mvn … -Dversioning.disable`
+        - `gradle … -Dversioning.disable`
 
 - Provide **branch** or **tag** name
     - **Environment Variables**
@@ -277,9 +277,9 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
         - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME` e.g. `main` or `refs/heads/main`
         - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME` e.g. `v1.0.0` or `refs/tags/v1.0.0`
     - **Command Line Parameters**
-        - `mvn … -Dgit.ref=$PROVIDED_REF`
-        - `mvn … -Dgit.branch=$PROVIDED_BRANCH_NAME`
-        - `mvn … -Dgit.tag=$PROVIDED_TAG_NAME`
+        - `gradle … -Dgit.ref=$PROVIDED_REF`
+        - `gradle … -Dgit.branch=$PROVIDED_BRANCH_NAME`
+        - `gradle … -Dgit.tag=$PROVIDED_TAG_NAME`
 
   ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
 
@@ -287,7 +287,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - **Environment Variables**
         - `export VERSIONING_UPDATE_GRADLE_PROPERTIES=true`
     - **Command Line Parameters**
-        - `mvn … -Dversioning.updateGradleProperties`
+        - `gradle … -Dversioning.updateGradleProperties`
 
 ## Provided Project Properties
 
@@ -321,7 +321,7 @@ common CI/CD systems.
 
 ### Manual Setup
 
-Set following environment variables before running your `mvn` command
+Set following environment variables before running your `gradle` command
 
 ```shell
 export VERSIONING_GIT_REF=$PROVIDED_REF;
