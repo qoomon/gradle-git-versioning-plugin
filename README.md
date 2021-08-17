@@ -299,7 +299,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 ## Gradle Tasks
 
-* **version**
+* `version`
     * Print project version e.g. `gradle :version -q`
 
 ## CI/CD Setup
