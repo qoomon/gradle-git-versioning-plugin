@@ -113,28 +113,28 @@ gitVersioning.apply {
 
 - `refs` List of ref configurations, ordered by priority. First matching configuration will be used.
     - `considerTagsOnBranches` By default, tags pointing at current commit will be ignored if HEAD is attached to a branch.
-        - If this option is `true` tags will always be taken into account.
-        - ⚠️ This feature can lead to performance issue on projects with a lot of tags.
-          <br><br>
+     - If this option is `true` tags will always be taken into account.
+     - ⚠️ This feature can lead to performance issue on projects with a lot of tags.
+       <br><br>
 
     - `branch(pattern)`/`tag(pattern)` specific ref patch definition.
-        - `pattern` An arbitrary regex to match ref names
-            - has to be a **full match pattern** e.g. `main` or `feature/.+`
-              <br><br>
+     - `pattern` An arbitrary regex to match ref names
+      - has to be a **full match pattern** e.g. `main` or `feature/.+`
+        <br><br>
 
-        - `describeTagPattern` An arbitrary regex to match tag names for git describe command
-            - has to be a **full match pattern** e.g. `v.+`)
-            - will override global `describeTagPattern` value
-              <br><br>
+     - `describeTagPattern` An arbitrary regex to match tag names for git describe command
+      - has to be a **full match pattern** e.g. `v.+`)
+      - will override global `describeTagPattern` value
+        <br><br>
 
-        - `version` The new version format, see [Format Placeholders](#format-placeholders)
-        - `properties.put(name, value)` A property definition to update the value of a property. 
-            - `name` The property name 
-            - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
-              <br><br>  
+     - `version` The new version format, see [Format Placeholders](#format-placeholders)
+     - `properties.put(name, value)` A property definition to update the value of a property. 
+      - `name` The property name 
+      - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
+        <br><br>  
 
-        - `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update in `gradle.properties` file
-            - will override global `updateGradleProperties` value
+     - `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update in `gradle.properties` file
+      - will override global `updateGradleProperties` value
 
 - `rev` Rev configuration will be used if no ref configuration is matching current git situation.
     - same as `branch(pattern)`/`tag(pattern)` configuration, except `pattern` parameter.
@@ -172,7 +172,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `Ref Pattern Groups`
     - Content of regex groups in branch/tag `pattern` can be addressed like this:
     - `${ref.GROUP_NAME}` `${ref.GROUP_NAME.slug}`
-      `${ref.GROUP_INDEX}` `${ref.GROUP_INDEX.slug}`
+    - `${ref.GROUP_INDEX}` `${ref.GROUP_INDEX.slug}`
     - Named Group Example
       
         **groovy**
@@ -228,27 +228,27 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - The distance count to last matching tag
 - `${describe.tag}`
     - The matching tag of `git describe`
-    - Describe Tag Pattern Groups
-        - Content of regex groups in `describeTagPattern` can be addressed like this:
-        - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
-          `${describe.tag.GROUP_INDEX}` `${describe.tag.GROUP_INDEX.slug}`
-        - Named Group Example
-          
-            **groovy**
-            ```groovy
-            branch('main') {
-                describeTagPattern = 'v(?<version>.*)'
-                version = '${ref.feature}-SNAPSHOT'
-            }
-            ```
-            **kotlin**
-            ```kotlin
-            branch("main") {
-                describeTagPattern = "v(?<version>.*)"
-                version = "\${describe.tag.version}-SNAPSHOT"
-            }
-            ```
-            <br> 
+ - Describe Tag Pattern Groups
+     - Content of regex groups in `describeTagPattern` can be addressed like this:
+     - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`
+     - `${describe.tag.GROUP_INDEX}` `${describe.tag.GROUP_INDEX.slug}`
+     - Named Group Example
+
+         **groovy**
+         ```groovy
+         branch('main') {
+             describeTagPattern = 'v(?<version>.*)'
+             version = '${ref.feature}-SNAPSHOT'
+         }
+         ```
+         **kotlin**
+         ```kotlin
+         branch("main") {
+             describeTagPattern = "v(?<version>.*)"
+             version = "\${describe.tag.version}-SNAPSHOT"
+         }
+         ```
+         <br> 
 
 - `${dirty}`
     - If repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.
@@ -264,27 +264,27 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 
 - Disable Extension
     - **Environment Variables**
-        - `export VERSIONING_DISABLE=true`
+     - `export VERSIONING_DISABLE=true`
     - **Command Line Parameters**
-        - `gradle … -Dversioning.disable`
+     - `gradle … -Dversioning.disable`
 
 - Provide **branch** or **tag** name
     - **Environment Variables**
-        - `export VERSIONING_GIT_REF=$PROVIDED_REF` e.g. `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
-        - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME` e.g. `main` or `refs/heads/main`
-        - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME` e.g. `v1.0.0` or `refs/tags/v1.0.0`
+     - `export VERSIONING_GIT_REF=$PROVIDED_REF` e.g. `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
+     - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME` e.g. `main` or `refs/heads/main`
+     - `export VERSIONING_GIT_TAG=$PROVIDED_TAG_NAME` e.g. `v1.0.0` or `refs/tags/v1.0.0`
     - **Command Line Parameters**
-        - `gradle … -Dgit.ref=$PROVIDED_REF`
-        - `gradle … -Dgit.branch=$PROVIDED_BRANCH_NAME`
-        - `gradle … -Dgit.tag=$PROVIDED_TAG_NAME`
+     - `gradle … -Dgit.ref=$PROVIDED_REF`
+     - `gradle … -Dgit.branch=$PROVIDED_BRANCH_NAME`
+     - `gradle … -Dgit.tag=$PROVIDED_TAG_NAME`
 
   ℹ Especially useful for **CI builds** see [Miscellaneous Hints](#miscellaneous-hints)
 
 - Update `gradle.properties` file
     - **Environment Variables**
-        - `export VERSIONING_UPDATE_GRADLE_PROPERTIES=true`
+     - `export VERSIONING_UPDATE_GRADLE_PROPERTIES=true`
     - **Command Line Parameters**
-        - `gradle … -Dversioning.updateGradleProperties`
+     - `gradle … -Dversioning.updateGradleProperties`
 
 ## Provided Project Properties
 
