@@ -16,4 +16,5 @@ jobs:
         ./gradlew assemble
     - name: Test with Gradle
       run: |
+        unset GITHUB_ACTIONS
         ./gradlew test

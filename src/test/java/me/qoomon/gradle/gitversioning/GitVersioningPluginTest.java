@@ -27,7 +27,7 @@ class GitVersioningPluginTest {
     @Test
     void runVersionTask() throws GitAPIException {
         // given
-        Git.init().setDirectory(projectDir.toFile()).call();
+        Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
 
         File buildFile = projectDir.resolve("build.gradle").toFile();
         String givenVersion = "1.2.3";
@@ -61,20 +61,24 @@ class GitVersioningPluginTest {
         GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
                 .getByName("gitVersioning");
 
-        GitVersioningPluginConfig config = new GitVersioningPluginConfig();
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            rev = new PatchDescription() {{
+                version = "${commit}";
+            }};
+        }};
 
         // when
         extension.apply(config);
 
         // then
-        assertThat(project.getVersion()).isEqualTo("master-SNAPSHOT");
+        assertThat(project.getVersion()).isEqualTo(commit.getName());
     }
 
     @Test
     void apply_with_extension_commit_description() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
@@ -85,9 +89,9 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            branches.add(new VersionDescription() {{
-                versionFormat = "branch-gitVersioning";
-            }});
+            refs.branch(".*", patch -> {
+                patch.version = "branch-gitVersioning";
+            });
         }};
 
         // when
@@ -101,7 +105,7 @@ class GitVersioningPluginTest {
     void apply_with_extension_branch_description() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenBranch = "feature/sandbox";
         git.branchCreate().setName(givenBranch).call();
@@ -115,9 +119,9 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            branch(new VersionDescription() {{
-                versionFormat = "${branch}-gitVersioning";
-            }});
+            refs.branch(".*", patch -> {
+                patch.version = "${ref}-gitVersioning";
+            });
         }};
 
         // when
@@ -131,7 +135,7 @@ class GitVersioningPluginTest {
     void apply_with_extension_tag_description() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setDirectory(projectDir.toFile()).call();
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
         git.tag().setName(givenTag).call();
@@ -145,9 +149,9 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            tag(new VersionDescription() {{
-                versionFormat = "${tag}-gitVersioning";
-            }});
+            refs.tag(".*", patch -> {
+                patch.version = "${ref}-gitVersioning";
+            });
         }};
 
         // when
@@ -161,7 +165,7 @@ class GitVersioningPluginTest {
     void apply_normalizeVersion() throws GitAPIException, IOException {
 
         // given
-        Git.init().setDirectory(projectDir.toFile()).call();
+        Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
 
         Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
 
@@ -171,9 +175,9 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            branches.add(new VersionDescription() {{
-                versionFormat = "a/b/c";
-            }});
+            refs.branch(".*", patch -> {
+                patch.version = "a/b/c";
+            });
         }};
 
         // when

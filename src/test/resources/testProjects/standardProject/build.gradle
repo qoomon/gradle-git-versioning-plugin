@@ -1,39 +1,19 @@
 plugins {
-    id 'me.qoomon.git-versioning' version '2.1.1'
+    id 'me.qoomon.git-versioning' version '5.0.0'
 }
 
 group 'me.qoomon'
 version '1.0.0-SNAPSHOT'
 gitVersioning.apply {
 
-    commit {
-        versionFormat = 'headCommit-${commit.short}-vGIT'
-    }
-
-    branch {
-        pattern = 'master'
-        versionFormat = 'headBranch-master-${branch}-vGIT'
-        property {
-            pattern = "foo"
-            value {
-                pattern = ".*"
-                format = "srdgfngjhgfgasdghfg"
-            }
+    refs {
+        considerTagsOnBranches = false
+        branch('release/.*') {
+            version = '${ref}-SNAPSHOT'
+            properties.put("foo", "bar")
         }
     }
-
-    branch {
-        pattern = 'feature/(?<feature>.*)'
-        versionFormat = 'headBranch-feature-${feature}-vGIT'
-    }
-
-    branch {
-        pattern = ".*"
-        versionFormat = 'headBranch-fallback-${branch}-vGIT'
-    }
-
-    tag {
-        pattern = 'v(?<release>[0-9]+)'
-        versionFormat = 'tag-version-${release}-vGIT'
+    rev {
+        version = '${commit}-TEST'
     }
 }

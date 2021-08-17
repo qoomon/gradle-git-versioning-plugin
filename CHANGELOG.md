@@ -1,6 +1,71 @@
 # Changelog
 
+## 5.0.0
+
+##### Features
+* Add GitHub Actions, GitLab CI and Jenkins environment variable support
+    * GitHub Actions: if `$GITHUB_ACTIONS == true`, `GITHUB_REF` is considered
+    * GitLab CI: if `$GITLAB_CI == true`, `CI_COMMIT_BRANCH` and `CI_COMMIT_TAG` are considered
+    * Circle CI: if `$CIRCLECI == true`, `CIRCLE_BRANCH` and `CIRCLE_TAG` are considered
+    * Jenkins: if `JENKINS_HOME` is set, `BRANCH_NAME` and `TAG_NAME` are considered
+* Simplify configuration (also see BREAKING CHANGES)
+
+    **Groovy DSL Example:** `build.gradle`
+    ```groovy
+    version = '0.0.0-SNAPSHOT'
+    gitVersioning.apply {
+        refs {
+            branch('.+') {
+                version = '${ref}-SNAPSHOT'
+            }
+            tag('v(?<version>.*)') {
+                version = '${ref.version}'
+            }
+        }
+        
+        // optional fallback configuration in case of no matching ref configuration
+        rev {
+            version = '${commit}'
+        }
+    }
+    ```
+    
+    **Kotlin DSL Example:** `build.gradle.kts`
+    ```kotlin
+    version = "0.0.0-SNAPSHOT"
+    gitVersioning.apply {
+        refs {
+            branch(".+") {
+                version = "\${ref}-SNAPSHOT"
+            }
+            tag('v(?<version>.*)') {
+                version = "\${ref.version}"
+            }
+        }
+        
+        // optional fallback configuration in case of no matching ref configuration
+        rev {
+            version = "\${commit}"
+        }
+    }
+    ```
+* New option to consider tag configs on branches (attached HEAD), enabled by `refs { considerTagsOnBranches = true }`
+    * If enabled, first matching branch or tag config will be used for versioning
+
+##### BREAKING CHANGES
+* There is no default config anymore, if no `ref` configuration is matching current git situation and no `rev` configuration has been
+  defined a warning message will be logged and plugin execution will be skipped.
+* Placeholder Changes (old -> new)
+    * `${branch}` -> `${ref}`
+    * `${tag}` -> `${ref}`
+    * `${REF_PATTERN_GROUP}` -> `${ref.REF_PATTERN_GROUP}`
+    * `${describe.TAG_PATTERN_GROUP}` -> `${describe.tag.TAG_PATTERN_GROUP}`
+* `preferTags` option was removed
+    * use `refs { considerTagsOnBranches = true }` instead
+
+
 ## 4.3.0
+
 * **Features**
     * add git describe version placeholders
         * new placeholders
@@ -13,13 +78,17 @@
     * no longer provide project property `git.dirty` due to performance issues on larger projects,
       version format placeholder `${dirty}` is still available
     
+
 ## 4.1.0
+
 * **Features**
   * add ability to define default or overwrite values for version and property format.
     * default value if parameter value is not set `${paramter:-<DEFAULT_VALUE>}` e.g. `${buildNumber:-0}`
     * overwrite value if parameter has a value `${paramter:+<OVERWRITE_VALUE>}` e.g. `${dirty:+-SNAPSHOT}`
   
+
 ## 4.0.0 - **Major refactoring**
+
 * **Features** 
     * Add option to disable plugin by default and enable on demand.
     * Add option to modify project `gradle.properties` file accordingly to plugin related changes.
@@ -49,6 +118,7 @@
 
 
 ## 3.0.0
+
 #### Features
 * simplify `property` replacement configuration
 
@@ -84,9 +154,12 @@
     }
     ```
   
+
 ### 2.1.0
+
 * add `${dirty}` flag version format placeholder
 * add `git.dirty` property
+
 
 ### 2.0.0
 
