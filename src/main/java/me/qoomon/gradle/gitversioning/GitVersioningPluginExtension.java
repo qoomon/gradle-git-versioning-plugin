@@ -54,7 +54,6 @@ public class GitVersioningPluginExtension {
     public GitVersionDetails gitVersionDetails;
 
     public Map<String, Supplier<String>> globalFormatPlaceholderMap;
-    public Map<String, String> gitProjectProperties;
 
     public GitVersioningPluginExtension(Project project) {
         this.rootProject = project;
@@ -139,7 +138,7 @@ public class GitVersioningPluginExtension {
         }
 
         globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, rootProject);
-        gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
+        Map<String, String> gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         rootProject.getAllprojects().forEach(project -> {
             final String originalProjectVersion = project.getVersion().toString();
@@ -155,7 +154,7 @@ public class GitVersioningPluginExtension {
                 updatePropertyValues(project, propertyFormats, originalProjectVersion);
             }
 
-            addGitProperties(project);
+            addGitProjectProperties(project, gitProjectProperties);
 
             if (updateGradleProperties) {
                 File gradleProperties = project.file("gradle.properties");
@@ -204,7 +203,7 @@ public class GitVersioningPluginExtension {
         }
     }
 
-    private void addGitProperties(Project project) {
+    private void addGitProjectProperties(Project project, Map<String, String> gitProjectProperties) {
         ExtraPropertiesExtension extraProperties = project.getExtensions().getExtraProperties();
         gitProjectProperties.forEach(extraProperties::set);
     }

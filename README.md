@@ -8,7 +8,7 @@
 
 **ℹ Also available as [Maven Extension](https://github.com/qoomon/maven-git-versioning-extension)**
 
-This extension can virtually set project version and properties, based on current **Git status**.
+This plugin can virtually set project version and properties, based on current **Git status**.
 
 ℹ **No files will be modified, version and properties are modified in memory only.**
 

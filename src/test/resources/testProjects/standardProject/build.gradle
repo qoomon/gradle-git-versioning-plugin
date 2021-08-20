@@ -2,7 +2,6 @@ plugins {
     id 'me.qoomon.git-versioning' version '5.0.0'
 }
 
-group 'me.qoomon'
 version '1.0.0-SNAPSHOT'
 gitVersioning.apply {
 
@@ -10,10 +9,16 @@ gitVersioning.apply {
         considerTagsOnBranches = false
         branch('release/.*') {
             version = '${ref}-SNAPSHOT'
-            properties.put("foo", "bar")
+            properties.put("foo", "foo@gradle")
         }
     }
     rev {
         version = '${commit}-TEST'
     }
 }
+
+println(project.version)
+println(project.property("foo"))
+println(project.property("bar"))
+println(project.property("git.commit"))
+println(project.property("git.ref"))

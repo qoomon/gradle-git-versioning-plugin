@@ -1,5 +1,5 @@
 plugins {
-    id("me.qoomon.git-versioning") version "5.0.0"
+    id("me.qoomon.git-versioning") version "5.1.1"
 }
 
 version = "0.0.0-SNAPSHOT"
@@ -21,3 +21,5 @@ gitVersioning.apply {
 println(project.version)
 println(project.property("foo"))
 println(project.property("bar"))
+println(project.property("git.commit"))
+println(project.property("git.ref"))
