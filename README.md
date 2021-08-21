@@ -118,23 +118,23 @@ gitVersioning.apply {
        <br><br>
 
     - `branch(pattern)`/`tag(pattern)` specific ref patch definition.
-     - `pattern` An arbitrary regex to match ref names
-      - has to be a **full match pattern** e.g. `main` or `feature/.+`
-        <br><br>
+      - `pattern` An arbitrary regex to match ref names
+        - has to be a **full match pattern** e.g. `main` or `feature/.+`
+          <br><br>
 
-     - `describeTagPattern` An arbitrary regex to match tag names for git describe command
-      - has to be a **full match pattern** e.g. `v.+`)
-      - will override global `describeTagPattern` value
-        <br><br>
+      - `describeTagPattern` An arbitrary regex to match tag names for git describe command
+        - has to be a **full match pattern** e.g. `v.+`)
+        - will override global `describeTagPattern` value
+          <br><br>
 
-     - `version` The new version format, see [Format Placeholders](#format-placeholders)
-     - `properties.put(name, value)` A property definition to update the value of a property. 
-      - `name` The property name 
-      - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
-        <br><br>  
+      - `version` The new version format, see [Format Placeholders](#format-placeholders)
+      - `properties.put(name, value)` A property definition to update the value of a property. 
+        - `name` The property name 
+        - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
+          <br><br>  
 
-     - `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update in `gradle.properties` file
-      - will override global `updateGradleProperties` value
+      - `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update in `gradle.properties` file
+        - will override global `updateGradleProperties` value
 
 - `rev` Rev configuration will be used if no ref configuration is matching current git situation.
     - same as `branch(pattern)`/`tag(pattern)` configuration, except `pattern` parameter.
