@@ -113,9 +113,9 @@ gitVersioning.apply {
 
 - `refs` List of ref configurations, ordered by priority. First matching configuration will be used.
     - `considerTagsOnBranches` By default, tags pointing at current commit will be ignored if HEAD is attached to a branch.
-     - If this option is `true` tags will always be taken into account.
-     - ⚠️ This feature can lead to performance issue on projects with a lot of tags.
-       <br><br>
+      - If this option is `true` tags will always be taken into account.
+      - ⚠️ This feature can lead to performance issue on projects with a lot of tags.
+        <br><br>
 
     - `branch(pattern)`/`tag(pattern)` specific ref patch definition.
       - `pattern` An arbitrary regex to match ref names
