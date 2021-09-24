@@ -349,11 +349,8 @@ public class GitVersioningPluginExtension {
                     }
                 }
 
-                if (overrideBranch != null) {
+                if (overrideBranch != null || overrideTag != null) {
                     overrideBranch(overrideBranch);
-                }
-
-                if (overrideTag != null) {
                     overrideTags(overrideTag);
                 }
             }
