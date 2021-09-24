@@ -117,7 +117,6 @@ gitVersioning.apply {
 
     - `considerTagsOnBranches` By default, tags pointing at current commit will be ignored if HEAD is attached to a branch.
       - If this option is `true` tags will always be taken into account.
-      - ⚠️ This feature can lead to performance issue on projects with a lot of tags.
         <br><br>
 
     - `branch(pattern)`/`tag(pattern)` specific ref patch definition.
@@ -199,7 +198,6 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
   <br><br>
 
 - `${describe}` Will resolve to `git describe` output
-    - ⚠️ `${describe....}` placeholders can lead to performance issue on projects with a lot of tags
 - `${describe.distance}` The distance count to last matching tag
 - `${describe.tag}` The matching tag of `git describe`
 - Describe Tag Pattern Groups
@@ -225,7 +223,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
       <br> 
 
 - `${dirty}` If repository has untracked files or uncommitted changes this placeholder will resolve to `-DIRTY`, otherwise it will resolve to an empty string.
-    - ⚠️ Can lead to performance issue on very large projects
+    - ⚠️ Can lead to performance issue on very large projects (10,000+ files)
 - `${dirty.snapshot}` Like `${dirty}`, but will resolve to `-SNAPSHOT`
   <br><br>
 
