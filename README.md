@@ -88,7 +88,7 @@ gitVersioning.apply {
         branch(".+") {
             version = "\${ref}-SNAPSHOT"
         }
-        tag("v(?<version>.*)) {
+        tag("v(?<version>.*)") {
             version = "\${ref.version}"
         }
     }
