@@ -128,10 +128,28 @@ gitVersioning.apply {
           <br><br>
 
       - `version` The new version format, see [Format Placeholders](#format-placeholders)
-      - `properties.put(name, value)` A property definition to update the value of a property. 
+      - `properties` A property definitions to update the value of a property. 
         - `name` The property name 
         - `value` The new value format of the property, see [Format Placeholders](#format-placeholders)
-          <br><br>  
+          <br><br>
+          **groovy**
+          ```groovy
+          properties = [
+            "name" : "value",
+          ]
+          ```
+          ⚠️  `groovy.lang.MetaClass` hides `properties` config field. 
+          <br> 
+          If you need to call a method on `properties` config field, you need to use the alias field `properties_` e.g.
+          `properties_.put("name", "value")`
+          <br><br>
+          **kotlin**
+          ```kotlin
+          properties = mapOf(
+            "name" to "value",
+          )            
+          ```
+        <br>
 
       - `updateGradleProperties` Enable(`true`) or disable(`false`) version and properties update in `gradle.properties` file
         - will override global `updateGradleProperties` value

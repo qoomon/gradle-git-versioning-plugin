@@ -4,14 +4,11 @@ import groovy.lang.Closure;
 import me.qoomon.gitversioning.commons.GitRefType;
 import org.gradle.api.Action;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static me.qoomon.gitversioning.commons.GitRefType.*;
-import static org.gradle.util.ConfigureUtil.configure;
+import static org.gradle.util.internal.ConfigureUtil.configure;
 
 public class GitVersioningPluginConfig {
 
@@ -29,16 +26,16 @@ public class GitVersioningPluginConfig {
 
     // groovy support
     public void refs(Closure<RefPatchDescriptionList> closure) {
-        this.refs = configure(closure, new RefPatchDescriptionList());
+        configure(closure, this.refs);
     }
 
     public void rev(Closure<PatchDescription> closure) {
-        this.rev = configure(closure, new PatchDescription());
+        this.rev = new PatchDescription();
+        configure(closure, this.rev);
     }
 
     // kotlin support
     public void refs(Action<RefPatchDescriptionList> action) {
-        this.refs = new RefPatchDescriptionList();
         action.execute(this.refs);
     }
 
@@ -56,6 +53,15 @@ public class GitVersioningPluginConfig {
         public String version;
 
         public Map<String, String> properties = new HashMap<>();
+
+        // WORKAROUND Groovy MetaClass API properties field name conflict
+        public Map<String, String> getProperties_() {
+            return properties;
+        }
+        // WORKAROUND Groovy MetaClass properties API field name conflict
+        public void setProperties_(Map<String, String> properties) {
+            this.properties = properties;
+        }
     }
 
     public static class RefPatchDescription extends PatchDescription {
@@ -68,12 +74,12 @@ public class GitVersioningPluginConfig {
             this.pattern = pattern;
         }
 
-        public RefPatchDescription(GitRefType type, Pattern pattern, PatchDescription description) {
+        public RefPatchDescription(GitRefType type, Pattern pattern, PatchDescription patch) {
             this(type, pattern);
-            this.describeTagPattern = description.describeTagPattern;
-            this.updateGradleProperties = description.updateGradleProperties;
-            this.version = description.version;
-            this.properties = new HashMap<>(description.properties);
+            this.describeTagPattern = patch.describeTagPattern;
+            this.updateGradleProperties = patch.updateGradleProperties;
+            this.version = patch.version;
+            this.properties = patch.properties;
         }
     }
 
@@ -85,24 +91,28 @@ public class GitVersioningPluginConfig {
 
         // groovy support
         public void branch(String pattern, Closure<RefPatchDescription> closure) {
-            this.list.add(configure(closure, new RefPatchDescription(BRANCH, Pattern.compile(pattern))));
+            RefPatchDescription ref = new RefPatchDescription(BRANCH, Pattern.compile(pattern));
+            configure(closure, ref);
+            this.list.add(ref);
         }
 
         public void tag(String pattern, Closure<RefPatchDescription> closure) {
-            this.list.add(configure(closure, new RefPatchDescription(TAG, Pattern.compile(pattern))));
+            RefPatchDescription ref = new RefPatchDescription(TAG, Pattern.compile(pattern));
+            configure(closure, ref);
+            this.list.add(ref);
         }
 
         // kotlin support
         public void branch(String pattern, Action<RefPatchDescription> action) {
             RefPatchDescription ref = new RefPatchDescription(BRANCH, Pattern.compile(pattern));
-            this.list.add(ref);
             action.execute(ref);
+            this.list.add(ref);
         }
 
         public void tag(String pattern, Action<RefPatchDescription> action) {
             RefPatchDescription ref = new RefPatchDescription(TAG, Pattern.compile(pattern));
-            this.list.add(ref);
             action.execute(ref);
+            this.list.add(ref);
         }
     }
 }

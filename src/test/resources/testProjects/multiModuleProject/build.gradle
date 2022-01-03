@@ -1,29 +1,28 @@
 plugins {
-    id 'me.qoomon.git-versioning' version '4.0.0'
+    id 'me.qoomon.git-versioning' version '5.1.2'
 }
 
+version '1.0.0-SNAPSHOT'
 gitVersioning.apply {
 
-    commit {
-        versionFormat = 'headCommit-${commit.short}-vGIT'
-    }
-
-    branch {
-        pattern = 'master'
-        versionFormat = '${branch}-SNAPSHOT'
-        property {
-            name = "foo"
-            valueFormat = "srdgfngjhgfgasdghfg"
+    refs {
+        considerTagsOnBranches = false
+        branch('master') {
+            version = '${ref}-SNAPSHOT'
+            properties.put("foo", "foo@gradle")
         }
     }
-
-    branch {
-        pattern = 'feature/(?<feature>.*)'
-        versionFormat = 'feature-${feature}-SNAPSHOT'
+    rev {
+        version = '${commit}-TEST'
     }
+}
 
-    tag {
-        pattern = 'v(?<release>[0-9]+)'
-        versionFormat = '${release}'
+task debug {
+    doLast {
+        println(project.version)
+        println(project.property("foo"))
+        println(project.property("bar"))
+        println(project.property("git.commit"))
+        println(project.property("git.ref"))
     }
 }

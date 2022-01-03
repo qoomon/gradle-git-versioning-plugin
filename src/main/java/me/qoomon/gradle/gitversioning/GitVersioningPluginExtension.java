@@ -37,7 +37,8 @@ import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
 import static org.apache.commons.lang3.StringUtils.leftPad;
 import static org.apache.commons.lang3.StringUtils.rightPad;
-import static org.gradle.util.ConfigureUtil.configure;
+
+import static org.gradle.util.internal.ConfigureUtil.configure;
 
 public class GitVersioningPluginExtension {
 
@@ -61,7 +62,9 @@ public class GitVersioningPluginExtension {
 
     // groovy support
     public void apply(Closure<GitVersioningPluginConfig> closure) throws IOException {
-        apply(configure(closure, new GitVersioningPluginConfig()));
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig();
+        configure(closure, config);
+        apply(config);
     }
 
     // kotlin support

@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.1.2
+
+##### Fixes
+* `groovy` add special `properties_` field to work around groovy naming conflict of `properties` filed from `groovy.lang.MetaClass`  
+
+
 ## 5.1.1
 
 ##### Fixes

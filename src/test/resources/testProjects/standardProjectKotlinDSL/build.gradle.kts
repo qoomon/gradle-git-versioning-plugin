@@ -1,15 +1,16 @@
 plugins {
-    id("me.qoomon.git-versioning") version "5.1.1"
+    id("me.qoomon.git-versioning") version "5.1.2"
 }
 
-version = "0.0.0-SNAPSHOT"
 gitVersioning.apply {
 
     refs {
         considerTagsOnBranches = false
-        branch("release/.*") {
+        branch("master") {
             version = "\${ref}-SNAPSHOT"
-            properties.put("foo", "foo@gradle")
+            properties = mapOf(
+                "foo" to "foo@gradle",
+            )
         }
     }
 
@@ -18,8 +19,12 @@ gitVersioning.apply {
     }
 }
 
-println(project.version)
-println(project.property("foo"))
-println(project.property("bar"))
-println(project.property("git.commit"))
-println(project.property("git.ref"))
+tasks.register("debug") {
+    doLast {
+        println(project.version)
+        println(project.property("foo"))
+        println(project.property("bar"))
+        println(project.property("git.commit"))
+        println(project.property("git.ref"))
+    }
+}
