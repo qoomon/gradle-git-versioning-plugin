@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.1.3
+
+##### Fixes
+*  fix `rootDirectory` determination for sub working trees
+
+
 ## 5.1.2
 
 ##### Fixes
