@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.1.4
+
+##### Fixes
+* fix worktree handling
+
+
 ## 5.1.3
 
 ##### Fixes
