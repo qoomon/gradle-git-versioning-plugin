@@ -1,6 +1,5 @@
 package me.qoomon.gradle.gitversioning;
 
-import groovy.lang.Closure;
 import me.qoomon.gitversioning.commons.GitDescription;
 import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.Lazy;
@@ -13,11 +12,16 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import javax.inject.Inject;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -38,9 +42,7 @@ import static me.qoomon.gitversioning.commons.StringUtil.*;
 import static org.apache.commons.lang3.StringUtils.leftPad;
 import static org.apache.commons.lang3.StringUtils.rightPad;
 
-import static org.gradle.util.internal.ConfigureUtil.configure;
-
-public class GitVersioningPluginExtension {
+public abstract class GitVersioningPluginExtension {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(GitVersioningPluginExtension.class);
 
@@ -49,27 +51,22 @@ public class GitVersioningPluginExtension {
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_UPDATE_GRADLE_PROPERTIES = "versioning.updateGradleProperties";
+    
+    @Inject
+    protected abstract ObjectFactory getObjectFactory();
 
-    public final Project rootProject;
+    private final Project project;
 
     public GitVersionDetails gitVersionDetails;
 
     public Map<String, Supplier<String>> globalFormatPlaceholderMap;
 
     public GitVersioningPluginExtension(Project project) {
-        this.rootProject = project;
+        this.project = project;
     }
 
-    // groovy support
-    public void apply(Closure<GitVersioningPluginConfig> closure) throws IOException {
-        GitVersioningPluginConfig config = new GitVersioningPluginConfig();
-        configure(closure, config);
-        apply(config);
-    }
-
-    // kotlin support
     public void apply(Action<GitVersioningPluginConfig> action) throws IOException {
-        GitVersioningPluginConfig config = new GitVersioningPluginConfig();
+        GitVersioningPluginConfig config = getObjectFactory().newInstance(GitVersioningPluginConfig.class);
         action.execute(config);
         apply(config);
     }
@@ -93,7 +90,7 @@ public class GitVersioningPluginExtension {
             }
         }
 
-        final GitSituation gitSituation = getGitSituation(rootProject.getProjectDir());
+        final GitSituation gitSituation = getGitSituation(project.getProjectDir());
         if (gitSituation == null) {
             LOGGER.warn("skip - project is not part of a git repository");
             return;
@@ -140,10 +137,10 @@ public class GitVersioningPluginExtension {
             LOGGER.info("  updateGradleProperties: " + updateGradleProperties);
         }
 
-        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, rootProject);
+        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, project);
         Map<String, String> gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
-        rootProject.getAllprojects().forEach(project -> {
+        project.getAllprojects().forEach(project -> {
             final String originalProjectVersion = project.getVersion().toString();
 
             final String versionFormat = patchDescription.version;
@@ -567,7 +564,7 @@ public class GitVersioningPluginExtension {
     }
 
     private String getCommandOption(final String name) {
-        String value = (String) rootProject.getProperties().get(name);
+        String value = (String) project.getProperties().get(name);
         if (value == null) {
             String plainName = name.replaceFirst("^versioning\\.", "");
             String environmentVariableName = "VERSIONING_"

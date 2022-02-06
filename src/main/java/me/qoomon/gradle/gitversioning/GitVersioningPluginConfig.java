@@ -1,18 +1,27 @@
 package me.qoomon.gradle.gitversioning;
 
-import groovy.lang.Closure;
 import me.qoomon.gitversioning.commons.GitRefType;
 import org.gradle.api.Action;
+import org.gradle.api.model.ObjectFactory;
 
-import java.util.*;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
-import static me.qoomon.gitversioning.commons.GitRefType.*;
-import static org.gradle.util.internal.ConfigureUtil.configure;
+import static me.qoomon.gitversioning.commons.GitRefType.BRANCH;
+import static me.qoomon.gitversioning.commons.GitRefType.TAG;
 
 public class GitVersioningPluginConfig {
 
     private static final Pattern MATCH_ALL = Pattern.compile(".*");
+
+    @Inject
+    protected ObjectFactory getObjectFactory() {
+        return null;
+    }
 
     public Boolean disable = false;
 
@@ -20,27 +29,20 @@ public class GitVersioningPluginConfig {
 
     public Boolean updateGradleProperties;
 
-    public RefPatchDescriptionList refs = new RefPatchDescriptionList();
+    public final RefPatchDescriptionList refs = getObjectFactory() != null
+            ? getObjectFactory().newInstance(RefPatchDescriptionList.class)
+            : new RefPatchDescriptionList();
 
     public PatchDescription rev;
 
-    // groovy support
-    public void refs(Closure<RefPatchDescriptionList> closure) {
-        configure(closure, this.refs);
-    }
-
-    public void rev(Closure<PatchDescription> closure) {
-        this.rev = new PatchDescription();
-        configure(closure, this.rev);
-    }
-
-    // kotlin support
     public void refs(Action<RefPatchDescriptionList> action) {
         action.execute(this.refs);
     }
 
     public void rev(Action<PatchDescription> action) {
-        this.rev = new PatchDescription();
+        this.rev = getObjectFactory() != null
+                ? getObjectFactory().newInstance(PatchDescription.class)
+                : new PatchDescription();
         action.execute(this.rev);
     }
 
@@ -58,6 +60,7 @@ public class GitVersioningPluginConfig {
         public Map<String, String> getProperties_() {
             return properties;
         }
+
         // WORKAROUND Groovy MetaClass properties API field name conflict
         public void setProperties_(Map<String, String> properties) {
             this.properties = properties;
@@ -89,20 +92,6 @@ public class GitVersioningPluginConfig {
 
         public List<RefPatchDescription> list = new ArrayList<>();
 
-        // groovy support
-        public void branch(String pattern, Closure<RefPatchDescription> closure) {
-            RefPatchDescription ref = new RefPatchDescription(BRANCH, Pattern.compile(pattern));
-            configure(closure, ref);
-            this.list.add(ref);
-        }
-
-        public void tag(String pattern, Closure<RefPatchDescription> closure) {
-            RefPatchDescription ref = new RefPatchDescription(TAG, Pattern.compile(pattern));
-            configure(closure, ref);
-            this.list.add(ref);
-        }
-
-        // kotlin support
         public void branch(String pattern, Action<RefPatchDescription> action) {
             RefPatchDescription ref = new RefPatchDescription(BRANCH, Pattern.compile(pattern));
             action.execute(ref);

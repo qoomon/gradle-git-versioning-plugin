@@ -1,5 +1,5 @@
 plugins {
-    id("me.qoomon.git-versioning") version "5.1.2"
+    id("me.qoomon.git-versioning") version "5.1.5"
 }
 
 gitVersioning.apply {

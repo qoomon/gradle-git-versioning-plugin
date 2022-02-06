@@ -10,10 +10,11 @@ public class GitVersioningPlugin implements Plugin<Project> {
     /**
      * for main logic see {@link GitVersioningPluginExtension#apply}
      */
-    public void apply(@Nonnull Project rootProject) {
-        rootProject.getExtensions().create("gitVersioning", GitVersioningPluginExtension.class, rootProject);
+    public void apply(@Nonnull Project project) {
 
-        rootProject.getAllprojects().forEach(it -> it.getTasks().create("version", VersionTask.class));
+        project.getExtensions().create("gitVersioning", GitVersioningPluginExtension.class, project);
+
+        project.getAllprojects().forEach(it -> it.getTasks().create("version", VersionTask.class));
     }
 }
 
