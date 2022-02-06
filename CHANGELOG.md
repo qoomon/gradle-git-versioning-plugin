@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.1.5
+
+##### Fixes
+* replace deprecated class ConfigureUtil 
+
+
 ## 5.1.4
 
 ##### Fixes
