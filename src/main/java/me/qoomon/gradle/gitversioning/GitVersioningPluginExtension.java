@@ -432,23 +432,37 @@ public abstract class GitVersioningPluginExtension {
         return null;
     }
 
-    private String getGitVersion(String versionFormat, String originalProjectVersion) {
-        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(originalProjectVersion);
+    private String getGitVersion(String versionFormat, String projectVersion) {
+        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(projectVersion);
 
         return slugify(substituteText(versionFormat, placeholderMap));
     }
 
-    private String getGitPropertyValue(String propertyFormat, String originalValue, String originalProjectVersion) {
-        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(originalProjectVersion);
+    private String getGitPropertyValue(String propertyFormat, String originalValue, String projectVersion) {
+        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(projectVersion);
         placeholderMap.put("value", () -> originalValue);
         return substituteText(propertyFormat, placeholderMap);
     }
 
-    private Map<String, Supplier<String>> generateFormatPlaceholderMap(String originalProjectVersion) {
+    private Map<String, Supplier<String>> generateFormatPlaceholderMap(String projectVersion) {
         final Map<String, Supplier<String>> placeholderMap = new HashMap<>(globalFormatPlaceholderMap);
-        placeholderMap.put("version", Lazy.of(originalProjectVersion));
-        placeholderMap.put("version.release", Lazy.by(
-                () -> originalProjectVersion.replaceFirst("-SNAPSHOT$", "")));
+        final Lazy<String[]> versionComponents = Lazy.by(() -> projectVersion.replaceFirst("-.*$", "").split("\\."));
+        final Lazy<String> versionMajor = Lazy.by(() -> versionComponents.get().length > 0 ? versionComponents.get()[0] : "");
+        final Lazy<String> versionMinor = Lazy.by(() -> versionComponents.get().length > 1 ? versionComponents.get()[1] : "");
+        final Lazy<String> versionPatch = Lazy.by(() -> versionComponents.get().length > 1 ? versionComponents.get()[2] : "");
+        final Lazy<String> versionLabel = Lazy.by(() ->  projectVersion.replaceFirst("^[^-]*-?", ""));
+        placeholderMap.put("version", Lazy.of(projectVersion));
+        placeholderMap.put("version.major", versionMajor);
+        placeholderMap.put("version.minor", versionMinor);
+        placeholderMap.put("version.minor.prefixed", Lazy.by(() -> "." + versionMinor.get()));
+        placeholderMap.put("version.patch", versionPatch);
+        placeholderMap.put("version.patch.prefixed", Lazy.by(() -> "." + versionPatch.get()));
+        placeholderMap.put("version.label", versionLabel);
+        placeholderMap.put("version.label.prefixed", Lazy.by(() -> "-" + versionLabel.get()));
+
+        final Lazy<String> versionRelease = Lazy.by(() -> projectVersion.replaceFirst("-.*$", ""));
+        placeholderMap.put("version.release", versionRelease);
+
         return placeholderMap;
     }
 

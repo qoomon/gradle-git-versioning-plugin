@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.2.0
+
+##### Features
+* add additional version component placeholders (#182)
+- `${version.minor.prefixed}` like `${version.minor}` with version component separator e.g. '.2'
+- `${version.patch.prefixed}` like `${version.patch}`  with version component separator e.g. '.3'
+- `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
+    - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
+
 ## 5.1.5
 
 ##### Fixes
