@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.0.0
+- migrate to java 11
+
+##### BREAKING CHANGES
+- drop support for java 8
+
+
 ## 5.2.0
 
 ##### Features
@@ -8,6 +15,7 @@
 - `${version.patch.prefixed}` like `${version.patch}`  with version component separator e.g. '.3'
 - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
     - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
+
 
 ## 5.1.5
 
