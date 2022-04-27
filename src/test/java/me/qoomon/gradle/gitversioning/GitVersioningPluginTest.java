@@ -89,7 +89,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
+            refs.branch(".*", (patch, gitSituation) -> {
                 patch.version = "branch-gitVersioning";
             });
         }};
@@ -119,7 +119,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
+            refs.branch(".*", (patch, gitSituation) -> {
                 patch.version = "${ref}-gitVersioning";
             });
         }};
@@ -149,7 +149,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.tag(".*", patch -> {
+            refs.tag(".*", (patch, gitSituation) -> {
                 patch.version = "${ref}-gitVersioning";
             });
         }};
@@ -175,7 +175,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
+            refs.branch(".*", (patch, gitSituation) -> {
                 patch.version = "a/b/c";
             });
         }};

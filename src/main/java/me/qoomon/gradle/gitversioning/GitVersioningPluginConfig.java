@@ -1,18 +1,21 @@
 package me.qoomon.gradle.gitversioning;
 
-import me.qoomon.gitversioning.commons.GitRefType;
-import org.gradle.api.Action;
-import org.gradle.api.model.ObjectFactory;
+import static me.qoomon.gitversioning.commons.GitRefType.BRANCH;
+import static me.qoomon.gitversioning.commons.GitRefType.TAG;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import static me.qoomon.gitversioning.commons.GitRefType.BRANCH;
-import static me.qoomon.gitversioning.commons.GitRefType.TAG;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+import me.qoomon.gitversioning.commons.GitRefType;
+import me.qoomon.gitversioning.commons.GitSituation;
+import me.qoomon.gitversioning.commons.Lazy;
+import org.gradle.api.Action;
+import org.gradle.api.model.ObjectFactory;
+import org.jetbrains.annotations.Nullable;
 
 public class GitVersioningPluginConfig {
 
@@ -30,8 +33,8 @@ public class GitVersioningPluginConfig {
     public Boolean updateGradleProperties;
 
     public final RefPatchDescriptionList refs = getObjectFactory() != null
-            ? getObjectFactory().newInstance(RefPatchDescriptionList.class)
-            : new RefPatchDescriptionList();
+        ? getObjectFactory().newInstance(RefPatchDescriptionList.class)
+        : new RefPatchDescriptionList();
 
     public PatchDescription rev;
 
@@ -41,8 +44,8 @@ public class GitVersioningPluginConfig {
 
     public void rev(Action<PatchDescription> action) {
         this.rev = getObjectFactory() != null
-                ? getObjectFactory().newInstance(PatchDescription.class)
-                : new PatchDescription();
+            ? getObjectFactory().newInstance(PatchDescription.class)
+            : new PatchDescription();
         action.execute(this.rev);
     }
 
@@ -70,19 +73,42 @@ public class GitVersioningPluginConfig {
     public static class RefPatchDescription extends PatchDescription {
 
         public final GitRefType type;
+        @Nullable
         public final Pattern pattern;
+        @Nullable
+        private final RefPatchDescriptionProvider provider;
 
-        public RefPatchDescription(GitRefType type, Pattern pattern) {
+        public RefPatchDescription(
+            GitRefType type,
+            @Nullable
+            Pattern pattern,
+            @Nullable
+            RefPatchDescriptionProvider provider
+        ) {
             this.type = type;
             this.pattern = pattern;
+            this.provider = provider;
         }
 
-        public RefPatchDescription(GitRefType type, Pattern pattern, PatchDescription patch) {
-            this(type, pattern);
+        public RefPatchDescription(
+            GitRefType type,
+            @Nullable
+            Pattern pattern,
+            PatchDescription patch,
+            RefPatchDescriptionProvider provider
+        ) {
+            this(type, pattern, provider);
             this.describeTagPattern = patch.describeTagPattern;
             this.updateGradleProperties = patch.updateGradleProperties;
             this.version = patch.version;
             this.properties = patch.properties;
+        }
+
+        public RefPatchDescription evaluate(GitSituation gitSituation) {
+            if (provider != null) {
+                provider.action(this, gitSituation);
+            }
+            return this;
         }
     }
 
@@ -90,18 +116,35 @@ public class GitVersioningPluginConfig {
 
         public boolean considerTagsOnBranches = false;
 
-        public List<RefPatchDescription> list = new ArrayList<>();
+        private List<Lazy<RefPatchDescription>> descriptors = new ArrayList<>();
 
-        public void branch(String pattern, Action<RefPatchDescription> action) {
-            RefPatchDescription ref = new RefPatchDescription(BRANCH, Pattern.compile(pattern));
-            action.execute(ref);
-            this.list.add(ref);
+        private List<RefPatchDescription> evaluatedDescriptors = null;
+
+        public List<RefPatchDescription> descriptors(GitSituation gitSituation) {
+            if (evaluatedDescriptors == null) {
+                evaluatedDescriptors = descriptors.stream()
+                    .map(it -> it.get().evaluate(gitSituation))
+                    .collect(Collectors.toList());
+            }
+            return evaluatedDescriptors;
         }
 
-        public void tag(String pattern, Action<RefPatchDescription> action) {
-            RefPatchDescription ref = new RefPatchDescription(TAG, Pattern.compile(pattern));
-            action.execute(ref);
-            this.list.add(ref);
+        public void branch(String pattern, RefPatchDescriptionProvider action) {
+            var lazyDesc = new RefPatchDescription(
+                BRANCH,
+                Pattern.compile(pattern),
+                action
+            );
+            this.descriptors.add(Lazy.by(() -> lazyDesc));
+        }
+
+        public void tag(String pattern, RefPatchDescriptionProvider action) {
+            var lazyDesc = new RefPatchDescription(
+                TAG,
+                Pattern.compile(pattern),
+                action
+            );
+            this.descriptors.add(Lazy.by(() -> lazyDesc));
         }
     }
 }

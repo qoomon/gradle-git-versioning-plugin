@@ -5,6 +5,8 @@ plugins {
     id "java-gradle-plugin"
     id 'com.adarshr.test-logger' version '3.2.0'
 
+    id "org.jetbrains.kotlin.jvm" version "1.5.31"
+
     id "com.gradle.plugin-publish" version "1.0.0-rc-1"
     id "maven-publish" // for local testing only
 
@@ -39,7 +41,7 @@ gradlePlugin {
     plugins {
         gitVersioning {
             id = 'me.qoomon.git-versioning'
-            displayName= 'Git Versioning Plugin'
+            displayName = 'Git Versioning Plugin'
             description = 'This extension will adjust the project version, based on current git branch or tag.'
             implementationClass = 'me.qoomon.gradle.gitversioning.GitVersioningPlugin'
         }
@@ -51,4 +53,10 @@ pluginBundle {
     website = 'https://github.com/qoomon/gradle-git-versioning-plugin'
     vcsUrl = 'https://github.com/qoomon/gradle-git-versioning-plugin.git'
     tags = ['git', 'versioning', 'version', 'tag', 'branch', 'generated', 'plugin', 'artificial']
+}
+
+idea {
+    module {
+        downloadSources = true
+    }
 }

@@ -51,7 +51,7 @@ public abstract class GitVersioningPluginExtension {
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_UPDATE_GRADLE_PROPERTIES = "versioning.updateGradleProperties";
-    
+
     @Inject
     protected abstract ObjectFactory getObjectFactory();
 
@@ -72,7 +72,7 @@ public abstract class GitVersioningPluginExtension {
     }
 
     public void apply(GitVersioningPluginConfig config) throws IOException {
-        normalizeConfig(config);
+//        normalizeConfig(config);
 
         // check if extension is disabled by command option
         final String commandOptionDisable = getCommandOption(OPTION_NAME_DISABLE);
@@ -91,10 +91,12 @@ public abstract class GitVersioningPluginExtension {
         }
 
         final GitSituation gitSituation = getGitSituation(project.getProjectDir());
+
         if (gitSituation == null) {
             LOGGER.warn("skip - project is not part of a git repository");
             return;
         }
+        normalizeConfig(config, gitSituation);
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("git situation:");
@@ -114,7 +116,8 @@ public abstract class GitVersioningPluginExtension {
             LOGGER.warn("  branch: " + gitSituation.getBranch());
             LOGGER.warn("  tags: " + gitSituation.getTags());
             LOGGER.warn("defined ref configurations:");
-            config.refs.list.forEach(ref -> LOGGER.warn("  " + rightPad(ref.type.name(), 6) + " - pattern: " + ref.pattern));
+            config.refs.descriptors(gitSituation)
+                .forEach(ref -> LOGGER.warn("  " + rightPad(ref.type.name(), 6) + " - pattern: " + ref.pattern));
             return;
         }
 
@@ -397,7 +400,7 @@ public abstract class GitVersioningPluginExtension {
     private static GitVersionDetails getGitVersionDetails(GitSituation gitSituation, GitVersioningPluginConfig config) {
         final Lazy<List<String>> sortedTags = Lazy.by(() -> gitSituation.getTags().stream()
                 .sorted(comparing(DefaultArtifactVersion::new)).collect(toList()));
-        for (RefPatchDescription refConfig : config.refs.list) {
+        for (RefPatchDescription refConfig : config.refs.descriptors(gitSituation)) {
             switch (refConfig.type) {
                 case TAG: {
                     if (gitSituation.isDetached() || config.refs.considerTagsOnBranches) {
@@ -425,7 +428,7 @@ public abstract class GitVersioningPluginExtension {
 
         if (config.rev != null) {
             return new GitVersionDetails(gitSituation.getRev(), COMMIT, gitSituation.getRev(),
-                    new RefPatchDescription(COMMIT, null, config.rev));
+                    new RefPatchDescription(COMMIT, null, config.rev, null));
         }
 
 
@@ -561,9 +564,9 @@ public abstract class GitVersioningPluginExtension {
 
     // ---- configuration ----------------------------------------------------------------------------------------------
 
-    private void normalizeConfig(GitVersioningPluginConfig config) {
+    private void normalizeConfig(GitVersioningPluginConfig config, GitSituation gitSituation) {
         // consider global config
-        List<PatchDescription> patchDescriptions = new ArrayList<>(config.refs.list);
+        List<PatchDescription> patchDescriptions = new ArrayList<>(config.refs.descriptors(gitSituation));
         if (config.rev != null) {
             patchDescriptions.add(config.rev);
         }
