@@ -27,7 +27,7 @@ This plugin can virtually set project version and properties, based on current *
 
 ```groovy
 plugins {
-    id 'me.qoomon.git-versioning' version '5.1.1'
+    id 'me.qoomon.git-versioning' version '5.2.0'
 }
 
 version = '0.0.0-SNAPSHOT'
@@ -40,7 +40,7 @@ gitVersioning.apply {
 
 ```kotlin
 plugins {
-    id("me.qoomon.git-versioning") version "5.1.1"
+    id("me.qoomon.git-versioning") version "5.2.0"
 }
 
 
