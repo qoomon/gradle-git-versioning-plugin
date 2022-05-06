@@ -123,7 +123,7 @@ public abstract class GitVersioningPluginExtension {
         LOGGER.info("ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
         if (patchDescription.describeTagPattern != null) {
             LOGGER.info("  describeTagPattern: " + patchDescription.describeTagPattern);
-            gitSituation.setDescribeTagPattern(patchDescription.describeTagPattern);
+            gitSituation.setDescribeTagPattern(patchDescription.getDescribeTagPattern());
         }
         if (patchDescription.version != null) {
             LOGGER.info("  version: " + patchDescription.version);

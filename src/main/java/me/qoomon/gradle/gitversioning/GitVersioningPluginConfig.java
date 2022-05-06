@@ -25,7 +25,7 @@ public class GitVersioningPluginConfig {
 
     public Boolean disable = false;
 
-    public Pattern describeTagPattern = MATCH_ALL;
+    public String describeTagPattern = MATCH_ALL.pattern();
 
     public Boolean updateGradleProperties;
 
@@ -49,7 +49,12 @@ public class GitVersioningPluginConfig {
 
     public static class PatchDescription {
 
-        public Pattern describeTagPattern;
+        public String describeTagPattern;
+
+        public Pattern getDescribeTagPattern() {
+            return Pattern.compile(describeTagPattern);
+        }
+
         public Boolean updateGradleProperties;
 
         public String version;

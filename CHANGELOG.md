@@ -1,7 +1,12 @@
 # Changelog
 
 ## 6.0.0
+##### Features
 - migrate to java 11
+
+##### Fixes
+- migrate `describeTagPattern` config fields from Pattern to String
+
 
 ##### BREAKING CHANGES
 - drop support for java 8

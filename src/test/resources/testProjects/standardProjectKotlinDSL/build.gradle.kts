@@ -1,13 +1,18 @@
+import kotlin.reflect.full.declaredMemberExtensionProperties
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.declaredMembers
+
 plugins {
-    id("me.qoomon.git-versioning") version "5.1.5"
+    id("me.qoomon.git-versioning") version "6.0.0"
 }
 
 gitVersioning.apply {
-
+    describeTagPattern = "v.*"
     refs {
         considerTagsOnBranches = false
         branch("master") {
-            version = "\${ref}-SNAPSHOT"
+            describeTagPattern =  "v.*"
+            version = "\${describe}-SNAPSHOT"
             properties = mapOf(
                 "foo" to "foo@gradle",
             )
