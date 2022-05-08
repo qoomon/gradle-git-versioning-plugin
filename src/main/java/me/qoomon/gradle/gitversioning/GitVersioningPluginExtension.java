@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Boolean.parseBoolean;
@@ -36,6 +37,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
@@ -46,12 +48,14 @@ public abstract class GitVersioningPluginExtension {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(GitVersioningPluginExtension.class);
 
+    private static final Pattern VERSION_PATTERN = Pattern.compile("(:?(?<major>\\d+)(:?\\.(?<minor>\\d+)(:?\\.(?<patch>\\d+))?)?(:?-(?<label>.*))?)?");
+
     private static final String OPTION_NAME_GIT_REF = "git.ref";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
     private static final String OPTION_NAME_GIT_BRANCH = "git.branch";
     private static final String OPTION_NAME_DISABLE = "versioning.disable";
     private static final String OPTION_UPDATE_GRADLE_PROPERTIES = "versioning.updateGradleProperties";
-    
+
     @Inject
     protected abstract ObjectFactory getObjectFactory();
 
@@ -243,7 +247,7 @@ public abstract class GitVersioningPluginExtension {
             byte[] gitVersionedGradlePropertiesBytes = writer.toString().getBytes();
             byte[] existingGradlePropertiesBytes = readAllBytes(gradleProperties.toPath());
             // only write if there are changes
-            if (! Arrays.equals(gitVersionedGradlePropertiesBytes, existingGradlePropertiesBytes)) {
+            if (!Arrays.equals(gitVersionedGradlePropertiesBytes, existingGradlePropertiesBytes)) {
                 Files.write(gradleProperties.toPath(), gitVersionedGradlePropertiesBytes);
             }
         } catch (IOException | ConfigurationException e) {
@@ -446,19 +450,27 @@ public abstract class GitVersioningPluginExtension {
 
     private Map<String, Supplier<String>> generateFormatPlaceholderMap(String projectVersion) {
         final Map<String, Supplier<String>> placeholderMap = new HashMap<>(globalFormatPlaceholderMap);
-        final Lazy<String[]> versionComponents = Lazy.by(() -> projectVersion.replaceFirst("-.*$", "").split("\\."));
-        final Lazy<String> versionMajor = Lazy.by(() -> versionComponents.get().length > 0 ? versionComponents.get()[0] : "");
-        final Lazy<String> versionMinor = Lazy.by(() -> versionComponents.get().length > 1 ? versionComponents.get()[1] : "");
-        final Lazy<String> versionPatch = Lazy.by(() -> versionComponents.get().length > 1 ? versionComponents.get()[2] : "");
-        final Lazy<String> versionLabel = Lazy.by(() ->  projectVersion.replaceFirst("^[^-]*-?", ""));
+
         placeholderMap.put("version", Lazy.of(projectVersion));
-        placeholderMap.put("version.major", versionMajor);
-        placeholderMap.put("version.minor", versionMinor);
-        placeholderMap.put("version.minor.prefixed", Lazy.by(() -> "." + versionMinor.get()));
-        placeholderMap.put("version.patch", versionPatch);
-        placeholderMap.put("version.patch.prefixed", Lazy.by(() -> "." + versionPatch.get()));
-        placeholderMap.put("version.label", versionLabel);
-        placeholderMap.put("version.label.prefixed", Lazy.by(() -> "-" + versionLabel.get()));
+
+        final Lazy<Matcher> versionComponents = Lazy.by(() -> {
+            Matcher matcher = VERSION_PATTERN.matcher(projectVersion);
+            //noinspection ResultOfMethodCallIgnored
+            matcher.find();
+            return matcher;
+        });
+
+        placeholderMap.put("version.major", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("major"), "0")));
+        placeholderMap.put("version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.major").get())));
+
+        placeholderMap.put("version.minor", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("minor"), "0")));
+        placeholderMap.put("version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.minor").get())));
+
+        placeholderMap.put("version.patch", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("patch"), "0")));
+        placeholderMap.put("version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.patch").get())));
+
+        placeholderMap.put("version.label", Lazy.by(() -> requireNonNullElse(versionComponents.get().group("label"), "")));
+        placeholderMap.put("version.label.prefixed", Lazy.by(() -> "-" + placeholderMap.get("version.label").get()));
 
         final Lazy<String> versionRelease = Lazy.by(() -> projectVersion.replaceFirst("-.*$", ""));
         placeholderMap.put("version.release", versionRelease);
@@ -512,16 +524,39 @@ public abstract class GitVersioningPluginExtension {
         placeholderMap.put("describe", Lazy.by(() -> description.get().toString()));
         final Lazy<String> descriptionTag = Lazy.by(() -> description.get().getTag());
         placeholderMap.put("describe.tag", descriptionTag);
-        placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
-
         // describe tag pattern groups
         final Lazy<Map<String, String>> describeTagPatternValues = Lazy.by(
                 () -> patternGroupValues(gitSituation.getDescribeTagPattern(), descriptionTag.get()));
         for (String groupName : patternGroups(gitSituation.getDescribeTagPattern())) {
-            Lazy<String> value = Lazy.by(() -> describeTagPatternValues.get().get(groupName));
-            placeholderMap.put("describe.tag." + groupName, value);
-            placeholderMap.put("describe.tag." + groupName + ".slug", Lazy.by(() -> slugify(value.get())));
+            Lazy<String> groupValue = Lazy.by(() -> describeTagPatternValues.get().get(groupName));
+            placeholderMap.put("describe.tag." + groupName, groupValue);
+            placeholderMap.put("describe.tag." + groupName + ".slug", Lazy.by(() -> slugify(groupValue.get())));
         }
+
+        Supplier<String> descriptionTagVersion = placeholderMap.computeIfAbsent("describe.tag.version", key -> Lazy.by(() -> {
+            Matcher matcher = VERSION_PATTERN.matcher(descriptionTag.get());
+            return matcher.find() ? matcher.group() : "0.0.0";
+        }));
+
+        final Lazy<Matcher> descriptionTagVersionComponents = Lazy.by(() -> {
+            Matcher matcher = VERSION_PATTERN.matcher(descriptionTagVersion.get());
+            //noinspection ResultOfMethodCallIgnored
+            matcher.find();
+            return matcher;
+        });
+
+        placeholderMap.put("describe.tag.version.major", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("major"), "0")));
+        placeholderMap.put("describe.tag.version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.major").get())));
+
+        placeholderMap.put("describe.tag.version.minor", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("minor"), "0")));
+        placeholderMap.put("describe.tag.version.minor.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.minor").get())));
+
+        placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("patch"), "0")));
+        placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.patch").get())));
+
+        placeholderMap.put("describe.tag.version.version.label", Lazy.by(() -> requireNonNullElse(descriptionTagVersionComponents.get().group("label"), "")));
+
+        placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
 
         // command parameters e.g. gradle -Pfoo=123 will be available as ${property.foo}
         for (Entry<String, ?> property : rootProject.getProperties().entrySet()) {
@@ -614,5 +649,9 @@ public abstract class GitVersioningPluginExtension {
             return "";
         }
         return value.replace("/", "-");
+    }
+
+    private static String increaseStringNumber(String majorVersion) {
+        return String.format("%0" + majorVersion.length() + "d", Long.parseLong(majorVersion) + 1);
     }
 }

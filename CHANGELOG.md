@@ -1,8 +1,28 @@
 # Changelog
 
+## 6.1.0
+##### Features
+- placeholder
+    - new
+        - `${version.major.next}`
+        - `${version.minor.next}`
+        - `${version.patch.next}`
+        - `${describe.tag.version}`
+        - `${describe.tag.version.major}`
+        - `${describe.tag.version.major.next}`
+        - `${describe.tag.version.minor}`
+        - `${describe.tag.version.minor.next}`
+        - `${describe.tag.version.path}`
+        - `${describe.tag.version.patch.next}`
+    - removed
+        - `${version.minor.prefixed}`
+        - `${version.patch.prefixed}`
+  
 ## 6.0.0
+
 ##### Features
 - migrate to java 11
+
 
 ##### Fixes
 - migrate `describeTagPattern` config fields from Pattern to String
