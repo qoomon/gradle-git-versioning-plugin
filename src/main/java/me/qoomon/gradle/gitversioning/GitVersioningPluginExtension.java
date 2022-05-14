@@ -613,7 +613,7 @@ public abstract class GitVersioningPluginExtension {
     }
 
     private String getCommandOption(final String name) {
-        String value = (String) project.getProperties().get(name);
+        String value = null;
         if (value == null) {
             String plainName = name.replaceFirst("^versioning\\.", "");
             String environmentVariableName = "VERSIONING_"

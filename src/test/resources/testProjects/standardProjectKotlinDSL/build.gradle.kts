@@ -3,19 +3,17 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.declaredMembers
 
 plugins {
-    id("me.qoomon.git-versioning") version "6.0.0"
+    id("me.qoomon.git-versioning") version "6.1.1"
 }
 
 gitVersioning.apply {
     describeTagPattern = "v.*"
     refs {
         considerTagsOnBranches = false
-        branch("master") {
+        branch(".*") {
             describeTagPattern =  "v.*"
-            version = "\${describe}-SNAPSHOT"
-            properties = mapOf(
-                "foo" to "foo@gradle",
-            )
+            version = "\${ref}-\${describe}-SNAPSHOT"
+            properties["foo"] = "foo@gradle"
         }
     }
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 6.1.1
+##### Fixes
+- do not consider project properties for command options anymore
+
 ## 6.1.0
 ##### Features
 - placeholder
