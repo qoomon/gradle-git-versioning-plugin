@@ -1,11 +1,14 @@
 # Changelog
 
 ## 6.1.1
+
 ##### Fixes
 - do not consider project properties for command options anymore
 - prefer cli options e.g. `-Dgit.ref=...` over environment variables e.g. `VERSIONING_GIT_REF=...`)
 
+
 ## 6.1.0
+
 ##### Features
 - placeholder
     - new
@@ -23,6 +26,7 @@
         - `${version.minor.prefixed}`
         - `${version.patch.prefixed}`
   
+
 ## 6.0.0
 
 ##### Features
