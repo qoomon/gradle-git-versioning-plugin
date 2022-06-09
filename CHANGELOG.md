@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.1.3
+
+##### Fixes
+- fix git describe tag selection, if multiple tags point to head
+
+
 ## 6.1.1
 
 ##### Fixes
