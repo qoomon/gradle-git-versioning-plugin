@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.1.4
+
+##### Fixes
+- fix incompatibility with jre 8
+
 ## 6.1.3
 
 ##### Fixes
