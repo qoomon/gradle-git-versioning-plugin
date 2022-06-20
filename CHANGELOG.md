@@ -1,9 +1,16 @@
 # Changelog
 
+## 6.1.5
+
+##### Fixes
+- `version.label.prefixed` resolve to empty string if `version.label` is empty
+
+
 ## 6.1.4
 
 ##### Fixes
 - fix incompatibility with jre 8
+
 
 ## 6.1.3
 

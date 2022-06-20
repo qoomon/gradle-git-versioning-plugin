@@ -469,7 +469,10 @@ public abstract class GitVersioningPluginExtension {
         placeholderMap.put("version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.patch").get())));
 
         placeholderMap.put("version.label", Lazy.by(() -> notNullOrDefault(versionComponents.get().group("label"), "")));
-        placeholderMap.put("version.label.prefixed", Lazy.by(() -> "-" + placeholderMap.get("version.label").get()));
+        placeholderMap.put("version.label.prefixed", Lazy.by(() -> {
+            String label = placeholderMap.get("version.label").get();
+            return !label.isEmpty() ? "-" + label : "";
+        }));
 
         final Lazy<String> versionRelease = Lazy.by(() -> projectVersion.replaceFirst("-.*$", ""));
         placeholderMap.put("version.release", versionRelease);
