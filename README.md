@@ -221,7 +221,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${commit.timestamp.datetime}` commit timestamp formatted as `yyyyMMdd.HHmmss`e.g. '20190616.161442'
   <br><br>
 
-- `${describe}` Will resolve to `git describe` output
+- `${describe}` Will resolve to `git describe --tags --first-parent` output
 - `${describe.distance}` The distance count to last matching tag
 - `${describe.tag}` The matching tag of `git describe`
   - `${describe.tag.version}` the tag version determined by regex `\d+\.\d+\.\d+`
