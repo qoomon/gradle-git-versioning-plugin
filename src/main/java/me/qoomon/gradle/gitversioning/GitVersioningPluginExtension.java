@@ -463,7 +463,7 @@ public abstract class GitVersioningPluginExtension {
         placeholderMap.put("version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.major").get())));
 
         placeholderMap.put("version.minor", Lazy.by(() -> notNullOrDefault(versionComponents.get().group("minor"), "0")));
-        placeholderMap.put("version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.minor").get())));
+        placeholderMap.put("version.minor.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.minor").get())));
 
         placeholderMap.put("version.patch", Lazy.by(() -> notNullOrDefault(versionComponents.get().group("patch"), "0")));
         placeholderMap.put("version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.patch").get())));

@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.1.6
+
+##### Fixes
+- handle lightweight tags
+- set `${version.minor.next}` placeholders properly
+
 ## 6.1.5
 
 ##### Fixes
