@@ -49,5 +49,5 @@ gradlePlugin {
 pluginBundle {
     website = 'https://github.com/qoomon/gradle-git-versioning-plugin'
     vcsUrl = 'https://github.com/qoomon/gradle-git-versioning-plugin.git'
-    tags = ['git', 'versioning', 'version', 'tag', 'branch', 'generated', 'plugin', 'artificial']
+    tags = ['git', 'versioning', 'version', 'commit', 'branch', 'tag', 'generated']
 }
