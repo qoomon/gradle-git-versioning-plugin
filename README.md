@@ -176,6 +176,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
   <br><br>
 
 - `${version}` `version` set in `build.gradle` e.g. '1.0.0-SNAPSHOT'
+  - `${version.core}` the core version component of `${version}` e.g. '1.2.3'
   - `${version.major}` the major version component of `${version}` e.g. '1'
     - `${version.major.next}` the `${version.major}` increased by 1 e.g. '2'
   - `${version.minor}` the minor version component of `${version}` e.g. '2'
@@ -184,8 +185,27 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${version.patch.next}` the `${version.patch}` increased by 1 e.g. '4'
   - `${version.label}` the version label of `${version}` e.g. 'SNAPSHOT'
     - `${version.label.prefixed}` like `${version.label}` with label separator e.g. '-SNAPSHOT'
-  - `${version.release}` like `${version}` without version labels like `-SNAPSHOT` e.g. '1.2.3'
-    <br><br>
+- Project Version Pattern Groups
+  - Content of regex groups in `projectVersionPattern` can be addressed like this:
+  - `${version.GROUP_NAME}`
+  - `${version.GROUP_INDEX}`
+  - Named Group Example
+
+    **groovy**
+      ```groovy
+      projectVersionPattern = '^.+-(?<environment>.+)-SNAPSHOT$'
+      branch('main') {
+          version = '${version.environment}-SNAPSHOT'
+      }
+      ```
+    **kotlin**
+      ```kotlin
+      projectVersionPattern = '^.+-(?<environment>.+)-SNAPSHOT\$'
+      branch("main") {
+          version = "\${version.environment}-SNAPSHOT"
+      }
+      ```
+      <br> 
 
 - `${ref}` `${ref.slug}` ref name (branch or tag name or commit hash)
 - Ref Pattern Groups
@@ -225,6 +245,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `${describe.distance}` The distance count to last matching tag
 - `${describe.tag}` The matching tag of `git describe`
   - `${describe.tag.version}` the tag version determined by regex `\d+\.\d+\.\d+`
+    - `${describe.tag.version.core}` the core version component of `${describe.tag.version}` e.g. '1.2.3'
     - `${describe.tag.version.major}` the major version component of `${describe.tag.version}` e.g. '1'
       - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
     - `${describe.tag.version.minor}` the major version component of `${describe.tag.version}` e.g. '2'

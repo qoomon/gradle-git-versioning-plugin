@@ -1,10 +1,19 @@
 # Changelog
 
+## 6.2.0
+
+##### Features
+- add config option for `projectVersionPattern` to use special parts of the project version as placeholders e.g. `${version.environment}`
+- add placeholder `${version.core}` the core version component of `${version}` e.g. '1.2.3'
+    - `${version.release}` is marked as deprecated
+
+
 ## 6.1.6
 
 ##### Fixes
 - handle lightweight tags
 - set `${version.minor.next}` placeholders properly
+
 
 ## 6.1.5
 

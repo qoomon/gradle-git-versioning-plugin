@@ -25,7 +25,15 @@ public class GitVersioningPluginConfig {
 
     public Boolean disable = false;
 
-    public String describeTagPattern = MATCH_ALL.pattern();
+    public String projectVersionPattern = null;
+
+    public Pattern projectVersionPattern() {
+        return projectVersionPattern != null
+                ? Pattern.compile(projectVersionPattern)
+                : null;
+    }
+
+    public String describeTagPattern = null;
 
     public Boolean updateGradleProperties;
 

@@ -37,6 +37,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
@@ -47,7 +48,7 @@ public abstract class GitVersioningPluginExtension {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(GitVersioningPluginExtension.class);
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile("(:?(?<major>\\d+)(:?\\.(?<minor>\\d+)(:?\\.(?<patch>\\d+))?)?(:?-(?<label>.*))?)?");
+    private static final Pattern VERSION_PATTERN = Pattern.compile("(:?(?<core>(?<major>\\d+)(:?\\.(?<minor>\\d+)(:?\\.(?<patch>\\d+))?)?)(:?-(?<label>.*))?)?");
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
@@ -59,6 +60,8 @@ public abstract class GitVersioningPluginExtension {
     protected abstract ObjectFactory getObjectFactory();
 
     private final Project project;
+
+    private GitVersioningPluginConfig config;
 
     public GitVersionDetails gitVersionDetails;
 
@@ -75,8 +78,12 @@ public abstract class GitVersioningPluginExtension {
     }
 
     public void apply(GitVersioningPluginConfig config) throws IOException {
+        this.config = config;
         normalizeConfig(config);
+        apply();
+    }
 
+    private void apply() throws IOException {
         // check if extension is disabled by command option
         final String commandOptionDisable = getCommandOption(OPTION_NAME_DISABLE);
         if (commandOptionDisable != null) {
@@ -459,6 +466,8 @@ public abstract class GitVersioningPluginExtension {
             return matcher;
         });
 
+        placeholderMap.put("version.core", Lazy.by(() -> notNullOrDefault(versionComponents.get().group("core"), "0.0.0")));
+
         placeholderMap.put("version.major", Lazy.by(() -> notNullOrDefault(versionComponents.get().group("major"), "0")));
         placeholderMap.put("version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.major").get())));
 
@@ -474,8 +483,19 @@ public abstract class GitVersioningPluginExtension {
             return !label.isEmpty() ? "-" + label : "";
         }));
 
-        final Lazy<String> versionRelease = Lazy.by(() -> projectVersion.replaceFirst("-.*$", ""));
-        placeholderMap.put("version.release", versionRelease);
+
+        // deprecated
+        placeholderMap.put("version.release",  Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
+
+        final Pattern projectVersionPattern = config.projectVersionPattern();
+        if (projectVersionPattern != null) {
+            // ref pattern groups
+            for (Entry<String, String> patternGroup : patternGroupValues(projectVersionPattern, projectVersion).entrySet()) {
+                final String groupName = patternGroup.getKey();
+                final String value = patternGroup.getValue() != null ? patternGroup.getValue() : "";
+                placeholderMap.put("version." + groupName, () -> value);
+            }
+        }
 
         return placeholderMap;
     }
@@ -547,6 +567,8 @@ public abstract class GitVersioningPluginExtension {
             return matcher;
         });
 
+        placeholderMap.put("describe.tag.version.core", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("core"), "0")));
+
         placeholderMap.put("describe.tag.version.major", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("major"), "0")));
         placeholderMap.put("describe.tag.version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.major").get())));
 
@@ -615,7 +637,7 @@ public abstract class GitVersioningPluginExtension {
     }
 
     private String getCommandOption(final String name) {
-        String  value = System.getProperty(name);
+        String value = System.getProperty(name);
         if (value == null) {
             String plainName = name.replaceFirst("^versioning\\.", "");
             String environmentVariableName = "VERSIONING_"
