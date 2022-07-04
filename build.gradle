@@ -26,7 +26,7 @@ dependencies {
     implementation 'org.apache.commons:commons-configuration2:2.7'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0-M1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0-M1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0-RC1'
     testImplementation 'org.assertj:assertj-core:3.23.1'
 }
 
