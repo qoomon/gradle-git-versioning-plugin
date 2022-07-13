@@ -482,7 +482,7 @@ public abstract class GitVersioningPluginExtension {
             String label = placeholderMap.get("version.label").get();
             return !label.isEmpty() ? "-" + label : "";
         }));
-
+        placeholderMap.put("version.label.number", Lazy.by(() -> extractLabelNumber(versionComponents)));
 
         // deprecated
         placeholderMap.put("version.release",  Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
@@ -554,6 +554,7 @@ public abstract class GitVersioningPluginExtension {
             placeholderMap.put("describe.tag." + groupName, groupValue);
             placeholderMap.put("describe.tag." + groupName + ".slug", Lazy.by(() -> slugify(groupValue.get())));
         }
+        final Lazy<Integer> distance = Lazy.by(() -> description.get().getDistance());
 
         Supplier<String> descriptionTagVersion = placeholderMap.computeIfAbsent("describe.tag.version", key -> Lazy.by(() -> {
             Matcher matcher = VERSION_PATTERN.matcher(descriptionTag.get());
@@ -571,14 +572,20 @@ public abstract class GitVersioningPluginExtension {
 
         placeholderMap.put("describe.tag.version.major", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("major"), "0")));
         placeholderMap.put("describe.tag.version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.major").get())));
+        placeholderMap.put("describe.tag.version.major.nextByDistance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.major").get(), distance.get() + 1)));
 
         placeholderMap.put("describe.tag.version.minor", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("minor"), "0")));
         placeholderMap.put("describe.tag.version.minor.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.minor").get())));
+        placeholderMap.put("describe.tag.version.minor.nextByDistance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.minor").get(), distance.get() + 1)));
 
         placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("patch"), "0")));
         placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.patch").get())));
+        placeholderMap.put("describe.tag.version.patch.nextByDistance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.patch").get(), distance.get() + 1)));
 
         placeholderMap.put("describe.tag.version.version.label", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("label"), "")));
+        placeholderMap.put("describe.tag.version.label.number", Lazy.by(() -> extractLabelNumber(descriptionTagVersionComponents)));
+        placeholderMap.put("describe.tag.version.label.number.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.label.number").get())));
+        placeholderMap.put("describe.tag.version.label.number.nextByDistance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.label.number").get(), distance.get() + 1)));
 
         placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
 
@@ -596,6 +603,12 @@ public abstract class GitVersioningPluginExtension {
         System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
 
         return placeholderMap;
+    }
+
+    private String extractLabelNumber(Lazy<Matcher> versionComponents) {
+        String label = requireNonNullElse(versionComponents.get().group("label"), "0");
+        // This should throw a build-killing error if we are unparseable as a numeric
+        return String.valueOf(Integer.parseInt(label));
     }
 
     private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
@@ -673,7 +686,11 @@ public abstract class GitVersioningPluginExtension {
     }
 
     private static String increaseStringNumber(String majorVersion) {
-        return String.format("%0" + majorVersion.length() + "d", Long.parseLong(majorVersion) + 1);
+        return increaseStringNumberBy(majorVersion, 1);
+    }
+
+    private static String increaseStringNumberBy(String toIncrease, long by) {
+        return String.format("%0" + toIncrease.length() + "d", Long.parseLong(toIncrease) + by);
     }
 
     public static <T> T notNullOrDefault(T obj, T defaultObj) {
