@@ -40,7 +40,7 @@ gitVersioning.apply {
 
 ```kotlin
 plugins {
-    id("me.qoomon.git-versioning") version "5.2.0"
+    id("me.qoomon.git-versioning") version "6.2.0"
 }
 
 
