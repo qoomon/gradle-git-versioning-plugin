@@ -482,7 +482,6 @@ public abstract class GitVersioningPluginExtension {
             String label = placeholderMap.get("version.label").get();
             return !label.isEmpty() ? "-" + label : "";
         }));
-        placeholderMap.put("version.label.number", Lazy.by(() -> extractLabelNumber(versionComponents)));
 
         // deprecated
         placeholderMap.put("version.release",  Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
@@ -568,6 +567,8 @@ public abstract class GitVersioningPluginExtension {
             return matcher;
         });
 
+        final Lazy<String> labelAsInteger = Lazy.by(() -> extractLabelNumber(descriptionTagVersionComponents));
+
         placeholderMap.put("describe.tag.version.core", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("core"), "0")));
 
         placeholderMap.put("describe.tag.version.major", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("major"), "0")));
@@ -583,9 +584,8 @@ public abstract class GitVersioningPluginExtension {
         placeholderMap.put("describe.tag.version.patch.nextByDistance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.patch").get(), distance.get() + 1)));
 
         placeholderMap.put("describe.tag.version.version.label", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("label"), "")));
-        placeholderMap.put("describe.tag.version.label.number", Lazy.by(() -> extractLabelNumber(descriptionTagVersionComponents)));
-        placeholderMap.put("describe.tag.version.label.number.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.label.number").get())));
-        placeholderMap.put("describe.tag.version.label.number.nextByDistance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.label.number").get(), distance.get() + 1)));
+        placeholderMap.put("describe.tag.version.label.asInt.next", Lazy.by(() -> increaseStringNumber(labelAsInteger.get())));
+        placeholderMap.put("describe.tag.version.label.asInt.nextByDistance", Lazy.by(() -> increaseStringNumberBy(labelAsInteger.get(), distance.get() + 1)));
 
         placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
 
@@ -606,7 +606,7 @@ public abstract class GitVersioningPluginExtension {
     }
 
     private String extractLabelNumber(Lazy<Matcher> versionComponents) {
-        String label = requireNonNullElse(versionComponents.get().group("label"), "0");
+        String label = notNullOrDefault(versionComponents.get().group("label"), "0");
         // This should throw a build-killing error if we are unparseable as a numeric
         return String.valueOf(Integer.parseInt(label));
     }
