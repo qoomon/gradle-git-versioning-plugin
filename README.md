@@ -250,7 +250,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
       - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
     - `${describe.tag.version.minor}` the major version component of `${describe.tag.version}` e.g. '2'
       - `${describe.tag.version.minor.next}` the `${describe.tag.version.minor}` increased by 1 e.g. '3'
-    - `${describe.tag.version.path}` the major version component of `${describe.tag.version}` e.g. '3'
+    - `${describe.tag.version.patch}` the major version component of `${describe.tag.version}` e.g. '3'
       - `${describe.tag.version.patch.next}` the `${describe.tag.version.patch}` increased by 1 e.g. '4'
 - Describe Tag Pattern Groups
   - Content of regex groups in `describeTagPattern` can be addressed like this:
