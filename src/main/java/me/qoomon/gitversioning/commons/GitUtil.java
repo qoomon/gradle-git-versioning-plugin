@@ -16,7 +16,6 @@ import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -63,7 +62,7 @@ public final class GitUtil {
             Iterator<RevCommit> walkIterator = walk.iterator();
             int depth = 0;
             while (walkIterator.hasNext()) {
-                RevCommit rev = walkIterator.next();
+                 RevCommit rev = walkIterator.next();
                  Optional<String> matchingTag = objectIdListMap.getOrDefault(rev, emptyList()).stream()
                         .filter(tag -> tagPattern.matcher(tag).matches())
                         .findFirst();
