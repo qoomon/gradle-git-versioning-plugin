@@ -12,7 +12,7 @@ plugins {
 }
 
 group 'me.qoomon'
-version '6.2.0'
+version '6.3.0'
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 

@@ -3,6 +3,16 @@
 ## 6.2.0
 
 ##### Features
+- add new placeholders
+  - `${describe.tag.version.patch.plus.describe.distance}`
+  - `${describe.tag.version.patch.next.plus.describe.distance}`
+  - `${describe.tag.version.label.plus.describe.distance}`
+  - `${describe.tag.version.label.next.plus.describe.distance}`
+
+
+## 6.2.0
+
+##### Features
 - add config option for `projectVersionPattern` to use special parts of the project version as placeholders e.g. `${version.environment}`
 - add placeholder `${version.core}` the core version component of `${version}` e.g. '1.2.3'
     - `${version.release}` is marked as deprecated
