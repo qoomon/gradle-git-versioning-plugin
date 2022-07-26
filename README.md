@@ -27,7 +27,7 @@ This plugin can virtually set project version and properties, based on current *
 
 ```groovy
 plugins {
-    id 'me.qoomon.git-versioning' version '5.2.0'
+    id 'me.qoomon.git-versioning' version '6.2.0'
 }
 
 version = '0.0.0-SNAPSHOT'
@@ -40,7 +40,7 @@ gitVersioning.apply {
 
 ```kotlin
 plugins {
-    id("me.qoomon.git-versioning") version "5.2.0"
+    id("me.qoomon.git-versioning") version "6.2.0"
 }
 
 
@@ -248,10 +248,16 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - `${describe.tag.version.core}` the core version component of `${describe.tag.version}` e.g. '1.2.3'
     - `${describe.tag.version.major}` the major version component of `${describe.tag.version}` e.g. '1'
       - `${describe.tag.version.major.next}` the `${describe.tag.version.major}` increased by 1 e.g. '2'
-    - `${describe.tag.version.minor}` the major version component of `${describe.tag.version}` e.g. '2'
+    - `${describe.tag.version.minor}` the minor version component of `${describe.tag.version}` e.g. '2'
       - `${describe.tag.version.minor.next}` the `${describe.tag.version.minor}` increased by 1 e.g. '3'
-    - `${describe.tag.version.patch}` the major version component of `${describe.tag.version}` e.g. '3'
+    - `${describe.tag.version.patch}` the patch version component of `${describe.tag.version}` e.g. '3'
       - `${describe.tag.version.patch.next}` the `${describe.tag.version.patch}` increased by 1 e.g. '4'
+      - `${describe.tag.version.patch.next.plus.describe.distance}` the `${describe.tag.version.patch.next}` increased by `${describe.distance}` e.g. '3'
+      - `${describe.tag.version.patch.plus.describe.distance}` the `${describe.tag.version.patch}` increased by `${describe.distance}` e.g. '2'
+    - `${describe.tag.version.label}` the label version component of `${describe.tag.version}` e.g. 'SNAPSHOT'
+      - `${describe.tag.version.label.next}` the `${describe.tag.version.label}` converted to an integer and increased by 1 e.g. '6'
+      - `${describe.tag.version.label.next.plus.describe.distance}` the `${describe.tag.version.label.next}` increased by `${describe.distance}` e.g. '3'
+      - `${describe.tag.version.label.plus.describe.distance}` the `${describe.tag.version.label}` increased by `${describe.distance}` e.g. '2'
 - Describe Tag Pattern Groups
   - Content of regex groups in `describeTagPattern` can be addressed like this:
   - `${describe.tag.GROUP_NAME}` `${describe.tag.GROUP_NAME.slug}`

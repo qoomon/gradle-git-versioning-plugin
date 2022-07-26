@@ -186,4 +186,111 @@ class GitVersioningPluginTest {
         // then
         assertThat(project.getVersion()).isEqualTo("a-b-c");
     }
+
+    @Test
+    void apply_emptyRepoGivesExpectedPlusDistanceResult() throws GitAPIException, IOException {
+        // This can only be a local build so the specifics of the build number don't really matter, but 0 makes reasonable sense
+        // given
+        Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            refs.branch(".*", patch -> {
+                patch.version = "${describe.tag.version.label.plus.describe.distance}";
+            });
+        }};
+
+        // when
+        extension.apply(config);
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("0");
+    }
+
+    @Test
+    void apply_singleCommitUntaggedRepoGivesExpectedPlusDistanceResult() throws GitAPIException, IOException {
+        // given
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            refs.branch(".*", patch -> {
+                patch.version = "${describe.tag.version.label.plus.describe.distance}";
+            });
+        }};
+
+        // when
+        extension.apply(config);
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("1");
+    }
+
+    @Test
+    void apply_NoCommitsSinceLastTagGivesExpectedPlusDistanceResult() throws GitAPIException, IOException {
+        // given
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "2.0.4-677";
+        git.tag().setName(givenTag).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            refs.branch(".*", patch -> {
+                patch.version = "${describe.tag.version.label.plus.describe.distance}";
+            });
+        }};
+
+        // when
+        extension.apply(config);
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("677");
+    }
+    @Test
+    void apply_TwoCommitsSinceLastTagGivesExpectedPlusDistanceResult() throws GitAPIException, IOException {
+        // given
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "2.0.4-677";
+        git.tag().setName(givenTag).call();
+        git.commit().setMessage("commit two").setAllowEmpty(true).call();
+        git.commit().setMessage("commit three").setAllowEmpty(true).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            refs.branch(".*", patch -> {
+                patch.version = "${describe.tag.version.label.plus.describe.distance}";
+            });
+        }};
+
+        // when
+        extension.apply(config);
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("679");
+    }
 }

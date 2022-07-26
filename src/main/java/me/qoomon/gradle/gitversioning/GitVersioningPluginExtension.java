@@ -37,7 +37,6 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
-import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
@@ -469,20 +468,19 @@ public abstract class GitVersioningPluginExtension {
         placeholderMap.put("version.core", Lazy.by(() -> notNullOrDefault(versionComponents.get().group("core"), "0.0.0")));
 
         placeholderMap.put("version.major", Lazy.by(() -> notNullOrDefault(versionComponents.get().group("major"), "0")));
-        placeholderMap.put("version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.major").get())));
+        placeholderMap.put("version.major.next", Lazy.by(() -> increase(placeholderMap.get("version.major").get(), 1)));
 
         placeholderMap.put("version.minor", Lazy.by(() -> notNullOrDefault(versionComponents.get().group("minor"), "0")));
-        placeholderMap.put("version.minor.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.minor").get())));
+        placeholderMap.put("version.minor.next", Lazy.by(() -> increase(placeholderMap.get("version.minor").get(), 1)));
 
         placeholderMap.put("version.patch", Lazy.by(() -> notNullOrDefault(versionComponents.get().group("patch"), "0")));
-        placeholderMap.put("version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("version.patch").get())));
+        placeholderMap.put("version.patch.next", Lazy.by(() -> increase(placeholderMap.get("version.patch").get(), 1)));
 
         placeholderMap.put("version.label", Lazy.by(() -> notNullOrDefault(versionComponents.get().group("label"), "")));
         placeholderMap.put("version.label.prefixed", Lazy.by(() -> {
             String label = placeholderMap.get("version.label").get();
             return !label.isEmpty() ? "-" + label : "";
         }));
-
 
         // deprecated
         placeholderMap.put("version.release",  Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
@@ -570,17 +568,25 @@ public abstract class GitVersioningPluginExtension {
         placeholderMap.put("describe.tag.version.core", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("core"), "0")));
 
         placeholderMap.put("describe.tag.version.major", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("major"), "0")));
-        placeholderMap.put("describe.tag.version.major.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.major").get())));
+        placeholderMap.put("describe.tag.version.major.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.major").get(), 1)));
 
         placeholderMap.put("describe.tag.version.minor", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("minor"), "0")));
-        placeholderMap.put("describe.tag.version.minor.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.minor").get())));
+        placeholderMap.put("describe.tag.version.minor.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.minor").get(), 1)));
 
         placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("patch"), "0")));
-        placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.patch").get())));
+        placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), 1)));
 
         placeholderMap.put("describe.tag.version.version.label", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("label"), "")));
+        placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), 1)));
 
-        placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
+        final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
+        placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(descriptionDistance.get())));
+
+        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get() )));
+        placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
+
+        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.version.label").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
 
         // command parameters e.g. gradle -Pfoo=123 will be available as ${property.foo}
         for (Entry<String, ?> property : rootProject.getProperties().entrySet()) {
@@ -672,8 +678,9 @@ public abstract class GitVersioningPluginExtension {
         return value.replace("/", "-");
     }
 
-    private static String increaseStringNumber(String majorVersion) {
-        return String.format("%0" + majorVersion.length() + "d", Long.parseLong(majorVersion) + 1);
+    private static String increase(String number, long increment) {
+        String sanitized = number.isEmpty() ? "0" : number;
+        return String.format("%0" + sanitized.length() + "d", Long.parseLong(number.isEmpty() ? "0" : number) + increment);
     }
 
     public static <T> T notNullOrDefault(T obj, T defaultObj) {
