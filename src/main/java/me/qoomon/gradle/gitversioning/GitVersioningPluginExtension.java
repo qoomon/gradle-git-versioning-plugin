@@ -37,7 +37,6 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
-import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
@@ -553,7 +552,6 @@ public abstract class GitVersioningPluginExtension {
             placeholderMap.put("describe.tag." + groupName, groupValue);
             placeholderMap.put("describe.tag." + groupName + ".slug", Lazy.by(() -> slugify(groupValue.get())));
         }
-        final Lazy<Integer> distance = Lazy.by(() -> description.get().getDistance());
 
         Supplier<String> descriptionTagVersion = placeholderMap.computeIfAbsent("describe.tag.version", key -> Lazy.by(() -> {
             Matcher matcher = VERSION_PATTERN.matcher(descriptionTag.get());
@@ -567,8 +565,6 @@ public abstract class GitVersioningPluginExtension {
             return matcher;
         });
 
-        final Lazy<String> labelAsInteger = Lazy.by(() -> extractLabelNumber(descriptionTagVersionComponents));
-
         placeholderMap.put("describe.tag.version.core", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("core"), "0")));
 
         placeholderMap.put("describe.tag.version.major", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("major"), "0")));
@@ -579,15 +575,16 @@ public abstract class GitVersioningPluginExtension {
 
         placeholderMap.put("describe.tag.version.patch", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("patch"), "0")));
         placeholderMap.put("describe.tag.version.patch.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.patch").get())));
-        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.patch").get(), distance.get() )));
-        placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(placeholderMap.get("describe.tag.version.patch").get(), distance.get() + 1)));
 
         placeholderMap.put("describe.tag.version.version.label", Lazy.by(() -> notNullOrDefault(descriptionTagVersionComponents.get().group("label"), "")));
-        placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increaseStringNumber(labelAsInteger.get())));
-        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(labelAsInteger.get(), distance.get())));
-        placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increaseStringNumberBy(labelAsInteger.get(), distance.get() + 1)));
+        placeholderMap.put("describe.tag.version.label.next", Lazy.by(() -> increaseStringNumber(placeholderMap.get("describe.tag.version.label").get())));
 
-        placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(description.get().getDistance())));
+        final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
+        placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get() )));
+        placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get() + 1)));
+        placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.version.label").get(), descriptionDistance.get())));
+        placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
 
         // command parameters e.g. gradle -Pfoo=123 will be available as ${property.foo}
         for (Entry<String, ?> property : rootProject.getProperties().entrySet()) {
@@ -603,12 +600,6 @@ public abstract class GitVersioningPluginExtension {
         System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
 
         return placeholderMap;
-    }
-
-    private String extractLabelNumber(Lazy<Matcher> versionComponents) {
-        String label = notNullOrDefault(versionComponents.get().group("label"), "0");
-        // This should throw a build-killing error if we are unparseable as a numeric
-        return String.valueOf(Integer.parseInt(label));
     }
 
     private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
@@ -686,11 +677,12 @@ public abstract class GitVersioningPluginExtension {
     }
 
     private static String increaseStringNumber(String majorVersion) {
-        return increaseStringNumberBy(majorVersion, 1);
+        return increase(majorVersion, 1);
     }
 
-    private static String increaseStringNumberBy(String toIncrease, long by) {
-        return String.format("%0" + toIncrease.length() + "d", Long.parseLong(toIncrease) + by);
+    private static String increase(String toIncrease, long by) {
+        String sanitized = toIncrease.isEmpty() ? "0" : toIncrease;
+        return String.format("%0" + sanitized.length() + "d", Long.parseLong(toIncrease.isEmpty() ? "0" : toIncrease) + by);
     }
 
     public static <T> T notNullOrDefault(T obj, T defaultObj) {
