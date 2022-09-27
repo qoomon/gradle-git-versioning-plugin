@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.3.2
+
+##### Fixes
+- Extend gitlab ci support for env var CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+
+
 ## 6.3.0
 
 ##### Features

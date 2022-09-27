@@ -315,12 +315,14 @@ public abstract class GitVersioningPluginExtension {
                 if (overrideBranch == null && overrideTag == null) {
                     final String gitlabEnv = System.getenv("GITLAB_CI");
                     if (gitlabEnv != null && gitlabEnv.equals("true")) {
-                        LOGGER.info("gather git situation from GitLab CI environment variables: CI_COMMIT_BRANCH and CI_COMMIT_TAG");
+                        LOGGER.info("gather git situation from GitLab CI environment variables: CI_COMMIT_BRANCH, CI_COMMIT_TAG and CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
                         String commitBranch = System.getenv("CI_COMMIT_BRANCH");
                         String commitTag = System.getenv("CI_COMMIT_TAG");
+                        String mrSourceBranch = System.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
                         LOGGER.debug("  CI_COMMIT_BRANCH: " + commitBranch);
                         LOGGER.debug("  CI_COMMIT_TAG: " + commitTag);
-                        overrideBranch = commitBranch;
+                        LOGGER.debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: " + mrSourceBranch);
+                        overrideBranch = commitBranch == null ? mrSourceBranch : commitBranch;
                         overrideTag = commitTag;
                     }
                 }
