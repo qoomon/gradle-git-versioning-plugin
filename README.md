@@ -44,9 +44,6 @@ plugins {
     id("me.qoomon.git-versioning") version "6.3.2"
 }
 
-
-// ...
-
 version = "0.0.0-SNAPSHOT"
 gitVersioning.apply {
     // see configuration documentation below
