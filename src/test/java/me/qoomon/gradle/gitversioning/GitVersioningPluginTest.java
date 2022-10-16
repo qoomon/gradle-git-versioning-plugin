@@ -379,4 +379,35 @@ class GitVersioningPluginTest {
         // then
         assertThat(project.getVersion()).isEqualTo("2.0.5-2-featureA");
     }
+
+    @Test
+    void apply_GivenTwoVersionTagsUseTagMatchingDescribePattern() throws GitAPIException, IOException {
+        // given
+        Git git = Git.init().setInitialBranch("featureA").setDirectory(projectDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "v2.0.4";
+        git.tag().setName(givenTag).call();
+        String givenSecondaryTag = "35.1.3";
+        git.tag().setName(givenSecondaryTag).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            describeTagPattern = "v2.0.*";
+            refs.branch(".*", patch -> {
+                patch.version = "${describe.tag.version.core}";
+            });
+        }};
+
+        // when
+        extension.apply(config);
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("2.0.4");
+    }
 }
