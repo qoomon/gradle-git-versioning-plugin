@@ -349,4 +349,34 @@ class GitVersioningPluginTest {
         // then
         assertThat(project.getVersion()).isEqualTo("1.2.3");
     }
+
+    @Test
+    void apply_TwoCommitsSinceLastTagGivesExpectedPatchDistanceAndBranch() throws GitAPIException, IOException {
+        // given
+        Git git = Git.init().setInitialBranch("featureA").setDirectory(projectDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "v2.0.4";
+        git.tag().setName(givenTag).call();
+        git.commit().setMessage("commit two").setAllowEmpty(true).call();
+        git.commit().setMessage("commit three").setAllowEmpty(true).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            refs.branch(".*", patch -> {
+                patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch.next}-${describe.distance}-${ref.slug}";
+            });
+        }};
+
+        // when
+        extension.apply(config);
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("2.0.5-2-featureA");
+    }
 }
