@@ -293,4 +293,32 @@ class GitVersioningPluginTest {
         // then
         assertThat(project.getVersion()).isEqualTo("679");
     }
+
+    @Test
+    void apply_CommitWithLabelTagGivesExpectedLabel() throws GitAPIException, IOException {
+        // given
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "2.0.4-677-SNAPSHOT";
+        git.tag().setName(givenTag).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            refs.branch(".*", patch -> {
+                patch.version = "${describe.tag.version.label}";
+            });
+        }};
+
+        // when
+        extension.apply(config);
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("677-SNAPSHOT");
+    }
 }
