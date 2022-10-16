@@ -293,4 +293,60 @@ class GitVersioningPluginTest {
         // then
         assertThat(project.getVersion()).isEqualTo("679");
     }
+
+    @Test
+    void apply_TagWithSingleNonDigitPrefixGivesExpectedVersion() throws GitAPIException, IOException {
+        // given
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "v2.0.4";
+        git.tag().setName(givenTag).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            refs.branch(".*", patch -> {
+                patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch}";
+            });
+        }};
+
+        // when
+        extension.apply(config);
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("2.0.4");
+    }
+
+    @Test
+    void apply_TagWithSingleWordPrefixGivesExpectedVersion() throws GitAPIException, IOException {
+        // given
+        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git.commit().setMessage("initial commit").setAllowEmpty(true).call();
+        String givenTag = "alpha1.2.3";
+        git.tag().setName(givenTag).call();
+
+        Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
+
+        project.getPluginManager().apply(GitVersioningPlugin.class);
+
+        GitVersioningPluginExtension extension = (GitVersioningPluginExtension) project.getExtensions()
+                .getByName("gitVersioning");
+
+        GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
+            refs.branch(".*", patch -> {
+                patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch}";
+            });
+        }};
+
+        // when
+        extension.apply(config);
+
+        // then
+        assertThat(project.getVersion()).isEqualTo("1.2.3");
+    }
 }

@@ -47,7 +47,7 @@ public abstract class GitVersioningPluginExtension {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(GitVersioningPluginExtension.class);
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile("(:?(?<core>(?<major>\\d+)(:?\\.(?<minor>\\d+)(:?\\.(?<patch>\\d+))?)?)(:?-(?<label>.*))?)?");
+    private static final Pattern VERSION_PATTERN = Pattern.compile("(:?[^\\d]*(?<core>(?<major>\\d+)(:?\\.(?<minor>\\d+)(:?\\.(?<patch>\\d+))?)?)(:?-(?<label>.*))?)?");
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
