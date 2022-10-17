@@ -14,7 +14,13 @@ public class GitVersioningPlugin implements Plugin<Project> {
 
         project.getExtensions().create("gitVersioning", GitVersioningPluginExtension.class, project);
 
-        project.getAllprojects().forEach(it -> it.getTasks().create("version", VersionTask.class));
+        // Only Register version task for current project so the plugin may be applied
+        // on
+        // sub projects. It would be nice to only define this once for all project in
+        // a multi-module project, however there are a few other considerations that
+        // need
+        // to be made and this current change will make this plugin more composable.
+        project.getTasks().register("version", VersionTask.class);
     }
 }
 
