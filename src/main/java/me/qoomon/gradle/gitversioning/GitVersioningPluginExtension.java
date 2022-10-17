@@ -7,6 +7,7 @@ import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.PatchDescription
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.RefPatchDescription;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -461,10 +462,7 @@ public abstract class GitVersioningPluginExtension {
         placeholderMap.put("version", Lazy.of(projectVersion));
 
         final Lazy<Matcher> projectVersionMatcher = Lazy.by(() -> {
-            Matcher matcher = VERSION_PATTERN.matcher(projectVersion);
-            //noinspection ResultOfMethodCallIgnored
-            matcher.find();
-            return matcher;
+            return matchVersion(projectVersion);
         });
 
         placeholderMap.put("version.core", Lazy.by(() -> notNullOrDefault(projectVersionMatcher.get().group("core"), "0.0.0")));
@@ -556,10 +554,7 @@ public abstract class GitVersioningPluginExtension {
         }
 
         final Lazy<Matcher> descriptionTagVersionMatcher = Lazy.by(() -> {
-            Matcher matcher = VERSION_PATTERN.matcher(descriptionTag.get());
-            //noinspection ResultOfMethodCallIgnored
-            matcher.find();
-            return matcher;
+            return matchVersion(descriptionTag.get());
         });
 
         placeholderMap.put("describe.tag.version", Lazy.by(() -> notNullOrDefault(descriptionTagVersionMatcher.get().group(), "0.0.0")));
@@ -601,6 +596,17 @@ public abstract class GitVersioningPluginExtension {
         System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
 
         return placeholderMap;
+    }
+
+    private Matcher matchVersion(String input) {
+        Matcher matcher = VERSION_PATTERN.matcher(input);
+        //noinspection ResultOfMethodCallIgnored
+
+        do {
+            matcher.find();
+        } while (!matcher.hitEnd() && StringUtils.isEmpty(matcher.group()));
+
+        return matcher;
     }
 
     private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
