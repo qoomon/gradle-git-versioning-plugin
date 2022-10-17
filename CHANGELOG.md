@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.3.3
+
+##### Fixes
+- Fixes describe.tag.version.label #95
+
+
 ## 6.3.2
 
 ##### Fixes
