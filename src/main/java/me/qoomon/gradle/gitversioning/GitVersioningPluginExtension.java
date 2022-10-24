@@ -7,7 +7,6 @@ import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.PatchDescription
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.RefPatchDescription;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;

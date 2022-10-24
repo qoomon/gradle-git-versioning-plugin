@@ -5,12 +5,9 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.*;
 
-import java.io.IOException;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.Callable;
-
-import static org.eclipse.jgit.lib.Constants.OBJ_TAG;
 
 public class TagComparator implements Comparator<Ref> {
 

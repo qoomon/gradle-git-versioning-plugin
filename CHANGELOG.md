@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.3.4
+
+##### Fixes
+- Only register version task for the current project #97
+- Fix version pattern matcher. Ensure that matching groups are available. #96 
+
+
 ## 6.3.3
 
 ##### Fixes
