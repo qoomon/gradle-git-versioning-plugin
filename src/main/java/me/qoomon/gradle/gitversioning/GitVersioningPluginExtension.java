@@ -460,9 +460,7 @@ public abstract class GitVersioningPluginExtension {
 
         placeholderMap.put("version", Lazy.of(projectVersion));
 
-        final Lazy<Matcher> projectVersionMatcher = Lazy.by(() -> {
-            return matchVersion(projectVersion);
-        });
+        final Lazy<Matcher> projectVersionMatcher = Lazy.by(() -> matchVersion(projectVersion));
 
         placeholderMap.put("version.core", Lazy.by(() -> notNullOrDefault(projectVersionMatcher.get().group("core"), "0.0.0")));
 
@@ -552,9 +550,7 @@ public abstract class GitVersioningPluginExtension {
             placeholderMap.put("describe.tag." + groupName + ".slug", Lazy.by(() -> slugify(groupValue.get())));
         }
 
-        final Lazy<Matcher> descriptionTagVersionMatcher = Lazy.by(() -> {
-            return matchVersion(descriptionTag.get());
-        });
+        final Lazy<Matcher> descriptionTagVersionMatcher = Lazy.by(() -> matchVersion(descriptionTag.get()));
 
         placeholderMap.put("describe.tag.version", Lazy.by(() -> notNullOrDefault(descriptionTagVersionMatcher.get().group(), "0.0.0")));
 
