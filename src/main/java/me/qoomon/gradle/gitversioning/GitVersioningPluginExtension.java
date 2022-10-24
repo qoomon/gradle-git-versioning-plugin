@@ -48,8 +48,7 @@ public abstract class GitVersioningPluginExtension {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(GitVersioningPluginExtension.class);
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile("(?<core>(?<major>\\d+)(:?\\.(?<minor>\\d+)(:?\\.(?<patch>\\d+))?)?)(:?-(?<label>.*))?");
-    private static final Pattern VERSION_FALLBACK_PATTERN = Pattern.compile("(:?" + VERSION_PATTERN.pattern() + ")?");
+    private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?|");
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
@@ -602,12 +601,8 @@ public abstract class GitVersioningPluginExtension {
     private Matcher matchVersion(String input) {
         Matcher matcher = VERSION_PATTERN.matcher(input);
         //noinspection ResultOfMethodCallIgnored
-
-        if (!matcher.find()) {
-            matcher = VERSION_FALLBACK_PATTERN.matcher(input);
-            matcher.find();
-        }
-
+        matcher.find();
+        
         return matcher;
     }
 
