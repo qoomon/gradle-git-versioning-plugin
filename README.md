@@ -28,7 +28,7 @@ This plugin can virtually set project version and properties, based on current *
 
 ```groovy
 plugins {
-    id 'me.qoomon.git-versioning' version '6.3.4'
+    id 'me.qoomon.git-versioning' version '6.3.5'
 }
 
 version = '0.0.0-SNAPSHOT'
@@ -41,7 +41,7 @@ gitVersioning.apply {
 
 ```kotlin
 plugins {
-    id("me.qoomon.git-versioning") version "6.3.4"
+    id("me.qoomon.git-versioning") version "6.3.5"
 }
 
 version = "0.0.0-SNAPSHOT"
@@ -374,9 +374,8 @@ export VERSIONING_GIT_TAG=$PROVIDED_TAG;
 ## Build & Release
 
 ```shell
-  ./gradlew build
-  # Publishes this plugin to local Maven
-  ./gradlew publishToMavenLocal
+ # Publishes this plugin to local Maven
+  ./gradlew build publishToMavenLocal
   # Publishes this plugin to Gradle Plugin portal.
   ./gradlew login && ./gradlew publishPlugins
 ```
