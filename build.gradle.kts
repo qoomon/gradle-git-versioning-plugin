@@ -1,10 +1,14 @@
 plugins {
     `kotlin-dsl`
-    kotlin("jvm") version embeddedKotlinVersion
     `java-gradle-plugin`
+
+    kotlin("jvm") version embeddedKotlinVersion
 
     id("com.gradle.plugin-publish") version "1.0.0"
     `maven-publish` // for local testing only
+
+    id "com.github.ben-manes.versions" version "0.43.0"
+    id("com.adarshr.test-logger") version "3.2.0"
 
     idea
 }
