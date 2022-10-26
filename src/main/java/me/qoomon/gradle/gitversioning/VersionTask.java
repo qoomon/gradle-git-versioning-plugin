@@ -5,7 +5,7 @@ import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.TaskAction;
 
 public class VersionTask extends DefaultTask {
-    private final Provider<String> projectVersion = getProject().provider(() -> getProject().getVersion().toString());
+    private final Provider<Object> projectVersion = getProject().provider(() -> getProject().getVersion());
 
     @TaskAction
     void printProjectVersion() {
