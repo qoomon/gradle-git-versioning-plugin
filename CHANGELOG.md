@@ -1,9 +1,16 @@
 # Changelog
 
+## 6.3.6
+
+##### Fixes
+- fix value of describe.tag.version placeholder
+
+
 ## 6.3.5
 
 ##### Fixes
 - Improve compatibility with Gradle Configuration Cache #99
+
 
 ## 6.3.4
 

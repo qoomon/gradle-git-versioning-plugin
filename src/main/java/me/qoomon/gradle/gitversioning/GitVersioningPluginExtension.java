@@ -47,7 +47,7 @@ public abstract class GitVersioningPluginExtension {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(GitVersioningPluginExtension.class);
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?|");
+    private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?)|");
 
     private static final String OPTION_NAME_GIT_REF = "git.ref";
     private static final String OPTION_NAME_GIT_TAG = "git.tag";
@@ -552,7 +552,7 @@ public abstract class GitVersioningPluginExtension {
 
         final Lazy<Matcher> descriptionTagVersionMatcher = Lazy.by(() -> matchVersion(descriptionTag.get()));
 
-        placeholderMap.put("describe.tag.version", Lazy.by(() -> notNullOrDefault(descriptionTagVersionMatcher.get().group(), "0.0.0")));
+        placeholderMap.put("describe.tag.version", Lazy.by(() -> notNullOrDefault(descriptionTagVersionMatcher.get().group("version"), "0.0.0")));
 
         placeholderMap.put("describe.tag.version.core", Lazy.by(() -> notNullOrDefault(descriptionTagVersionMatcher.get().group("core"), "0")));
 
