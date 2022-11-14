@@ -54,6 +54,11 @@ testing.suites {
             implementation(project.dependencies.platform("org.junit:junit-bom:5.9.1"))
             implementation("org.junit.jupiter:junit-jupiter-api")
             implementation("org.junit.jupiter:junit-jupiter-engine")
+
+            implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
+
+            implementation(project.dependencies.platform("io.kotest:kotest-bom:5.5.4"))
+            implementation("io.kotest:kotest-assertions-core")
         }
     }
 }
