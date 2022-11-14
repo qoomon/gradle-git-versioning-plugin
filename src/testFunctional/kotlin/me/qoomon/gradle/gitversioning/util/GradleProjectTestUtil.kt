@@ -1,8 +1,8 @@
-package me.qoomon.gradle.gitversioning
+package me.qoomon.gradle.gitversioning.util
 
-import java.io.File
 import org.gradle.testkit.runner.GradleRunner
 import org.intellij.lang.annotations.Language
+import java.io.File
 
 
 // utils for testing using Gradle TestKit
@@ -11,6 +11,9 @@ import org.intellij.lang.annotations.Language
 abstract class GradleProjectTest {
     abstract val projectDir: File
     abstract val runner: GradleRunner
+
+    /** util for quickly inserting `\$` into multiline strings */
+    val slashDollar = "\\\$"
 
     fun createFile(filename: String, contents: String): File =
         projectDir.resolve(filename).apply {
@@ -29,8 +32,8 @@ class GradleKtsProjectTest(
 
     @Language("kts")
     var settingsGradleKts: String = """
-         rootProject.name = "kotest-plugin-test"
-      """.trimIndent()
+         rootProject.name = "functional-plugin-test"
+    """.trimIndent()
 
     @Language("kts")
     var buildGradleKts: String = ""
@@ -38,12 +41,11 @@ class GradleKtsProjectTest(
     @Language("properties")
     var gradleProperties: String = """
         kotlin.mpp.stability.nowarn=true
-        org.gradle.cache=true
-   """.trimIndent()
+    """.trimIndent()
 
     companion object {
         fun gradleKtsProjectTest(
-            projectDir: File = tempdir(),
+            projectDir: File,
             build: GradleKtsProjectTest.() -> Unit,
         ): GradleKtsProjectTest {
             val gradleTest = GradleKtsProjectTest(projectDir).apply(build)
@@ -68,8 +70,8 @@ class GradleGroovyProjectTest(
 
     @Language("groovy")
     var settingsGradle: String = """
-       rootProject.name = "kotest-plugin-test"
-   """.trimIndent()
+       rootProject.name = "functional-plugin-test"
+    """.trimIndent()
 
     @Language("groovy")
     var buildGradle: String = ""
@@ -77,12 +79,11 @@ class GradleGroovyProjectTest(
     @Language("properties")
     var gradleProperties: String = """
         kotlin.mpp.stability.nowarn=true
-        org.gradle.cache=true
-   """.trimIndent()
+    """.trimIndent()
 
     companion object {
-        fun TestConfiguration.gradleGroovyProjectTest(
-            projectDir: File = tempdir(),
+        fun gradleGroovyProjectTest(
+            projectDir: File,
             build: GradleGroovyProjectTest.() -> Unit,
         ): GradleGroovyProjectTest {
             val gradleTest = GradleGroovyProjectTest(projectDir).apply(build)
