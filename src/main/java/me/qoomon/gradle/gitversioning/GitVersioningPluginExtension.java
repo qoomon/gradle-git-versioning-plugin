@@ -42,10 +42,9 @@ import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
 import static org.apache.commons.lang3.StringUtils.leftPad;
 import static org.apache.commons.lang3.StringUtils.rightPad;
+import static org.eclipse.jgit.lib.Constants.HEAD;
 
 public abstract class GitVersioningPluginExtension {
-
-    public static final Logger LOGGER = LoggerFactory.getLogger(GitVersioningPluginExtension.class);
 
     private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?)|");
 
@@ -88,74 +87,75 @@ public abstract class GitVersioningPluginExtension {
         if (commandOptionDisable != null) {
             boolean disabled = parseBoolean(commandOptionDisable);
             if (disabled) {
-                LOGGER.info("skip - versioning is disabled by command option");
+                project.getLogger().warn("skip - versioning is disabled by command option");
                 return;
             }
         } else {
             // check if extension is disabled by config option
             if (config.disable) {
-                LOGGER.info("skip - versioning is disabled by config option");
+                project.getLogger().warn("skip - versioning is disabled by config option");
                 return;
             }
         }
 
         final GitSituation gitSituation = getGitSituation(project.getProjectDir());
         if (gitSituation == null) {
-            LOGGER.warn("skip - project is not part of a git repository");
+            project.getLogger().warn("skip - project is not part of a git repository");
             return;
         }
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("git situation:");
-            LOGGER.debug("  root directory: " + gitSituation.getRootDirectory());
-            LOGGER.debug("  head commit: " + gitSituation.getRev());
-            LOGGER.debug("  head commit timestamp: " + gitSituation.getTimestamp());
-            LOGGER.debug("  head branch: " + gitSituation.getBranch());
-            LOGGER.debug("  head tags: " + gitSituation.getTags());
-            LOGGER.debug("  head description: " + gitSituation.getDescription());
+        if (project.getLogger().isDebugEnabled()) {
+            project.getLogger().debug("git situation:");
+            project.getLogger().debug("  root directory: " + gitSituation.getRootDirectory());
+            project.getLogger().debug("  head commit: " + gitSituation.getRev());
+            project.getLogger().debug("  head commit timestamp: " + gitSituation.getTimestamp());
+            project.getLogger().debug("  head branch: " + gitSituation.getBranch());
+            project.getLogger().debug("  head tags: " + gitSituation.getTags());
+            project.getLogger().debug("  head description: " + gitSituation.getDescription());
         }
 
         // determine git version details
         gitVersionDetails = getGitVersionDetails(gitSituation, config);
         if (gitVersionDetails == null) {
-            LOGGER.warn("skip - no matching ref configuration and no rev configuration defined");
-            LOGGER.warn("git refs:");
-            LOGGER.warn("  branch: " + gitSituation.getBranch());
-            LOGGER.warn("  tags: " + gitSituation.getTags());
-            LOGGER.warn("defined ref configurations:");
-            config.refs.list.forEach(ref -> LOGGER.warn("  " + rightPad(ref.type.name(), 6) + " - pattern: " + ref.pattern));
+            project.getLogger().warn("skip - no matching ref configuration and no rev configuration defined");
+            project.getLogger().warn("git refs:");
+            project.getLogger().warn("  branch: " + gitSituation.getBranch());
+            project.getLogger().warn("  tags: " + gitSituation.getTags());
+            project.getLogger().warn("defined ref configurations:");
+            config.refs.list.forEach(ref -> project.getLogger().warn("  " + rightPad(ref.type.name(), 6) + " - pattern: " + ref.pattern));
             return;
         }
 
-        LOGGER.info("matching ref: " + gitVersionDetails.getRefType().name() + " - " + gitVersionDetails.getRefName());
+        project.getLogger().lifecycle("matching ref: " + gitVersionDetails.getRefType().name() + " - " + gitVersionDetails.getRefName());
         final RefPatchDescription patchDescription = gitVersionDetails.getPatchDescription();
-        LOGGER.info("ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
+        project.getLogger().lifecycle("ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
         if (patchDescription.describeTagPattern != null) {
-            LOGGER.info("  describeTagPattern: " + patchDescription.describeTagPattern);
+            project.getLogger().lifecycle("  describeTagPattern: " + patchDescription.describeTagPattern);
             gitSituation.setDescribeTagPattern(patchDescription.getDescribeTagPattern());
         }
         if (patchDescription.version != null) {
-            LOGGER.info("  version: " + patchDescription.version);
+            project.getLogger().lifecycle("  version: " + patchDescription.version);
         }
         if (!patchDescription.properties.isEmpty()) {
-            LOGGER.info("  properties: " + patchDescription.version);
-            patchDescription.properties.forEach((key, value) -> LOGGER.info("    " + key + " - " + value));
+            project.getLogger().lifecycle("  properties:");
+            patchDescription.properties.forEach((key, value) -> project.getLogger().lifecycle("    " + key + ": " + value));
         }
         boolean updateGradleProperties = getUpdateGradlePropertiesOption(patchDescription);
         if (updateGradleProperties) {
-            LOGGER.info("  updateGradleProperties: " + updateGradleProperties);
+            project.getLogger().lifecycle("  updateGradleProperties: " + updateGradleProperties);
         }
 
         globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, project);
         Map<String, String> gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
+        project.getLogger().lifecycle("");
         project.getAllprojects().forEach(project -> {
             final String originalProjectVersion = project.getVersion().toString();
 
             final String versionFormat = patchDescription.version;
             if (versionFormat != null) {
                 updateVersion(project, versionFormat);
-                LOGGER.info("project version: " + project.getVersion());
+                project.getLogger().lifecycle("project version: " + project.getVersion());
             }
 
             final Map<String, String> propertyFormats = patchDescription.properties;
@@ -198,14 +198,14 @@ public abstract class GitVersioningPluginExtension {
                             originalProjectVersion);
                     if (!gitPropertyValue.equals(projectPropertyValue)) {
                         if (logHeader) {
-                            LOGGER.info("properties:");
+                            project.getLogger().lifecycle("properties:");
                             logHeader = false;
                         }
-                        LOGGER.info("set property " + projectPropertyName + " to " + gitPropertyValue);
+                        project.getLogger().lifecycle("  " + projectPropertyName + ": " + gitPropertyValue);
                         project.setProperty(projectPropertyName, gitPropertyValue);
                     }
                 } else {
-                    LOGGER.warn("Can not update property " + projectPropertyName + "." +
+                    project.getLogger().warn("Can not update property " + projectPropertyName + "." +
                             " Expected value type is String, but was " + projectPropertyValue.getClass().getName());
                 }
             }
@@ -292,13 +292,21 @@ public abstract class GitVersioningPluginExtension {
                     }
                 }
 
+                // TODO
+                // skip if we are on a branch
+                // if (repository.getBranch() == null) {}
+
                 // GitHub Actions support
                 if (overrideBranch == null && overrideTag == null) {
                     final String githubEnv = System.getenv("GITHUB_ACTIONS");
                     if (githubEnv != null && githubEnv.equals("true")) {
-                        LOGGER.info("gather git situation from GitHub Actions environment variable: GITHUB_REF");
+                        // TODO
+                        // skip if head hash differs from GITHUB_SHA
+                        // if(System.getenv("GITHUB_SHA").equals(repository.resolve(HEAD).getName())) {}
+
+                        project.getLogger().lifecycle("gather git situation from GitHub Actions environment variable: GITHUB_REF");
                         String githubRef = System.getenv("GITHUB_REF");
-                        LOGGER.debug("  GITHUB_REF: " + githubRef);
+                        project.getLogger().debug("  GITHUB_REF: " + githubRef);
                         if (githubRef != null && githubRef.startsWith("refs/")) {
                             if (githubRef.startsWith("refs/tags/")) {
                                 overrideTag = githubRef;
@@ -315,13 +323,13 @@ public abstract class GitVersioningPluginExtension {
                 if (overrideBranch == null && overrideTag == null) {
                     final String gitlabEnv = System.getenv("GITLAB_CI");
                     if (gitlabEnv != null && gitlabEnv.equals("true")) {
-                        LOGGER.info("gather git situation from GitLab CI environment variables: CI_COMMIT_BRANCH, CI_COMMIT_TAG and CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
+                        project.getLogger().lifecycle("gather git situation from GitLab CI environment variables: CI_COMMIT_BRANCH, CI_COMMIT_TAG and CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
                         String commitBranch = System.getenv("CI_COMMIT_BRANCH");
                         String commitTag = System.getenv("CI_COMMIT_TAG");
                         String mrSourceBranch = System.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
-                        LOGGER.debug("  CI_COMMIT_BRANCH: " + commitBranch);
-                        LOGGER.debug("  CI_COMMIT_TAG: " + commitTag);
-                        LOGGER.debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: " + mrSourceBranch);
+                        project.getLogger().debug("  CI_COMMIT_BRANCH: " + commitBranch);
+                        project.getLogger().debug("  CI_COMMIT_TAG: " + commitTag);
+                        project.getLogger().debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: " + mrSourceBranch);
                         overrideBranch = commitBranch == null ? mrSourceBranch : commitBranch;
                         overrideTag = commitTag;
                     }
@@ -331,11 +339,11 @@ public abstract class GitVersioningPluginExtension {
                 if (overrideBranch == null && overrideTag == null) {
                     final String circleciEnv = System.getenv("CIRCLECI");
                     if (circleciEnv != null && circleciEnv.equals("true")) {
-                        LOGGER.info("gather git situation from Circle CI environment variables: CIRCLE_BRANCH and CIRCLE_TAG");
+                        project.getLogger().lifecycle("gather git situation from Circle CI environment variables: CIRCLE_BRANCH and CIRCLE_TAG");
                         String commitBranch = System.getenv("CIRCLE_BRANCH");
                         String commitTag = System.getenv("CIRCLE_TAG");
-                        LOGGER.debug("  CIRCLE_BRANCH: " + commitBranch);
-                        LOGGER.debug("  CIRCLE_TAG: " + commitTag);
+                        project.getLogger().debug("  CIRCLE_BRANCH: " + commitBranch);
+                        project.getLogger().debug("  CIRCLE_TAG: " + commitTag);
                         overrideBranch = System.getenv("CIRCLE_BRANCH");
                         overrideTag = System.getenv("CIRCLE_TAG");
                     }
@@ -345,11 +353,11 @@ public abstract class GitVersioningPluginExtension {
                 if (overrideBranch == null && overrideTag == null) {
                     final String jenkinsEnv = System.getenv("JENKINS_HOME");
                     if (jenkinsEnv != null && !jenkinsEnv.trim().isEmpty()) {
-                        LOGGER.info("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
+                        project.getLogger().lifecycle("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
                         String branchName = System.getenv("BRANCH_NAME");
                         String tagName = System.getenv("TAG_NAME");
-                        LOGGER.debug("  BRANCH_NAME: " + branchName);
-                        LOGGER.debug("  TAG_NAME: " + tagName);
+                        project.getLogger().debug("  BRANCH_NAME: " + branchName);
+                        project.getLogger().debug("  TAG_NAME: " + tagName);
                         if (branchName != null && branchName.equals(tagName)) {
                             overrideTag = tagName;
                             overrideBranch = "";
@@ -382,7 +390,7 @@ public abstract class GitVersioningPluginExtension {
                             .replaceFirst("^heads/", "");
                 }
 
-                LOGGER.debug("override git branch with: " + branch);
+                project.getLogger().debug("override git branch with: " + branch);
                 setBranch(branch);
             }
 
@@ -399,7 +407,7 @@ public abstract class GitVersioningPluginExtension {
                     tag = tag.replaceFirst("^refs/tags/", "");
                 }
 
-                LOGGER.debug("override git tags with: " + tag);
+                project.getLogger().debug("override git tags with: " + tag);
                 setTags(tag == null ? emptyList() : singletonList(tag));
             }
         };

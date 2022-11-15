@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.3.7
+
+##### Features
+-  add visible logging for relevant output
+
+
 ## 6.3.6
 
 ##### Fixes
