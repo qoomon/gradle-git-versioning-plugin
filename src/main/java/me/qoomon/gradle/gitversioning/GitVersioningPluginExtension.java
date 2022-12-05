@@ -14,8 +14,6 @@ import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -37,6 +35,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
@@ -272,143 +271,150 @@ public abstract class GitVersioningPluginExtension {
         final Repository repository = repositoryBuilder.build();
         return new GitSituation(repository) {
             {
-                String overrideBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
-                String overrideTag = getCommandOption(OPTION_NAME_GIT_TAG);
+                handleEnvironment(repository);
+            }
 
-                if (overrideBranch == null && overrideTag == null) {
-                    final String providedRef = getCommandOption(OPTION_NAME_GIT_REF);
-                    if (providedRef != null) {
-                        if (!providedRef.startsWith("refs/")) {
-                            throw new IllegalArgumentException("invalid provided ref " + providedRef + " -  needs to start with refs/");
+            private void handleEnvironment(Repository repository) throws IOException {
+                // --- commandline arguments and environment variables
+                {
+                    {
+                        String overrideBranch = getCommandOption(OPTION_NAME_GIT_BRANCH);
+                        String overrideTag = getCommandOption(OPTION_NAME_GIT_TAG);
+                        if (overrideBranch != null || overrideTag != null) {
+                            overrideBranch = overrideBranch == null || overrideBranch.trim().isEmpty() ? null : overrideBranch.trim();
+                            setBranch(overrideBranch);
+
+                            overrideTag = overrideTag == null || overrideTag.trim().isEmpty() ? null : overrideTag.trim();
+                            setTags(overrideTag == null ? emptyList() : singletonList(overrideTag));
+                            return;
                         }
+                    }
 
-                        if (providedRef.startsWith("refs/tags/")) {
-                            overrideTag = providedRef;
-                            overrideBranch = "";
-                        } else {
-                            overrideBranch = providedRef;
-                            overrideTag = "";
+                    {
+                        final String providedRef = getCommandOption(OPTION_NAME_GIT_REF);
+                        if (providedRef != null) {
+                            if (!providedRef.startsWith("refs/")) {
+                                throw new IllegalArgumentException("invalid provided ref " + providedRef + " -  needs to start with refs/");
+                            }
+
+                            if (providedRef.startsWith("refs/tags/")) {
+                                setBranch(null);
+                                setTags(singletonList(providedRef));
+                            } else {
+                                setBranch(providedRef);
+                                setTags(emptyList());
+                            }
+                            return;
                         }
                     }
                 }
 
-                // TODO
+                // --- try getting branch and tag situation from environment ---
                 // skip if we are on a branch
-                // if (repository.getBranch() == null) {}
+                if (repository.getBranch() == null) {
+                    return;
+                }
 
                 // GitHub Actions support
-                if (overrideBranch == null && overrideTag == null) {
-                    final String githubEnv = System.getenv("GITHUB_ACTIONS");
-                    if (githubEnv != null && githubEnv.equals("true")) {
-                        // TODO
-                        // skip if head hash differs from GITHUB_SHA
-                        // if(System.getenv("GITHUB_SHA").equals(repository.resolve(HEAD).getName())) {}
-
-                        project.getLogger().lifecycle("gather git situation from GitHub Actions environment variable: GITHUB_REF");
-                        String githubRef = System.getenv("GITHUB_REF");
-                        project.getLogger().debug("  GITHUB_REF: " + githubRef);
-                        if (githubRef != null && githubRef.startsWith("refs/")) {
-                            if (githubRef.startsWith("refs/tags/")) {
-                                overrideTag = githubRef;
-                                overrideBranch = "";
-                            } else {
-                                overrideBranch = githubRef;
-                                overrideTag = "";
-                            }
-                        }
+                if ("true".equalsIgnoreCase(System.getenv("GITHUB_ACTIONS"))) {
+                    if (!System.getenv("GITHUB_SHA").equals(this.getRev())) {
+                        return;
                     }
+
+                    project.getLogger().lifecycle("gather git situation from GitHub Actions environment variable: GITHUB_REF");
+                    String githubRef = System.getenv("GITHUB_REF");
+                    project.getLogger().debug("  GITHUB_REF: " + githubRef);
+
+                    if (githubRef.startsWith("refs/tags/")) {
+                        addTag(githubRef);
+                    } else {
+                        setBranch(githubRef);
+                    }
+                    return;
                 }
 
                 // GitLab CI support
-                if (overrideBranch == null && overrideTag == null) {
-                    final String gitlabEnv = System.getenv("GITLAB_CI");
-                    if (gitlabEnv != null && gitlabEnv.equals("true")) {
-                        project.getLogger().lifecycle("gather git situation from GitLab CI environment variables: CI_COMMIT_BRANCH, CI_COMMIT_TAG and CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
-                        String commitBranch = System.getenv("CI_COMMIT_BRANCH");
-                        String commitTag = System.getenv("CI_COMMIT_TAG");
-                        String mrSourceBranch = System.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
-                        project.getLogger().debug("  CI_COMMIT_BRANCH: " + commitBranch);
-                        project.getLogger().debug("  CI_COMMIT_TAG: " + commitTag);
-                        project.getLogger().debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: " + mrSourceBranch);
-                        overrideBranch = commitBranch == null ? mrSourceBranch : commitBranch;
-                        overrideTag = commitTag;
+                if ("true".equalsIgnoreCase(System.getenv("GITLAB_CI"))) {
+                    if (!System.getenv("CI_COMMIT_SHA").equals(this.getRev())) {
+                        return;
                     }
+
+                    project.getLogger().lifecycle("gather git situation from GitLab CI environment variables: CI_COMMIT_BRANCH, CI_MERGE_REQUEST_SOURCE_BRANCH_NAME and CI_COMMIT_TAG");
+                    String commitBranch = System.getenv("CI_COMMIT_BRANCH");
+                    String commitTag = System.getenv("CI_COMMIT_TAG");
+                    String mrSourceBranch = System.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
+                    project.getLogger().debug("  CI_COMMIT_BRANCH: " + commitBranch);
+                    project.getLogger().debug("  CI_COMMIT_TAG: " + commitTag);
+                    project.getLogger().debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: " + mrSourceBranch);
+
+                    if (commitBranch != null) {
+                        setBranch(commitBranch);
+                    } else if (mrSourceBranch != null) {
+                        setBranch(mrSourceBranch);
+                    } else if (commitTag != null) {
+                        addTag(commitTag);
+                    }
+                    return;
                 }
 
                 // Circle CI support
-                if (overrideBranch == null && overrideTag == null) {
-                    final String circleciEnv = System.getenv("CIRCLECI");
-                    if (circleciEnv != null && circleciEnv.equals("true")) {
-                        project.getLogger().lifecycle("gather git situation from Circle CI environment variables: CIRCLE_BRANCH and CIRCLE_TAG");
-                        String commitBranch = System.getenv("CIRCLE_BRANCH");
-                        String commitTag = System.getenv("CIRCLE_TAG");
-                        project.getLogger().debug("  CIRCLE_BRANCH: " + commitBranch);
-                        project.getLogger().debug("  CIRCLE_TAG: " + commitTag);
-                        overrideBranch = System.getenv("CIRCLE_BRANCH");
-                        overrideTag = System.getenv("CIRCLE_TAG");
+                if ("true".equalsIgnoreCase(System.getenv("CIRCLECI"))) {
+                    if (!System.getenv("CIRCLE_SHA1").equals(this.getRev())) {
+                        return;
                     }
+
+                    project.getLogger().lifecycle("gather git situation from Circle CI environment variables: CIRCLE_BRANCH and CIRCLE_TAG");
+                    String commitBranch = System.getenv("CIRCLE_BRANCH");
+                    String commitTag = System.getenv("CIRCLE_TAG");
+                    project.getLogger().debug("  CIRCLE_BRANCH: " + commitBranch);
+                    project.getLogger().debug("  CIRCLE_TAG: " + commitTag);
+
+                    if (commitBranch != null) {
+                        setBranch(commitBranch);
+                    } else if (commitTag != null) {
+                        addTag(commitTag);
+                    }
+                    return;
                 }
 
                 // Jenkins support
-                if (overrideBranch == null && overrideTag == null) {
-                    final String jenkinsEnv = System.getenv("JENKINS_HOME");
-                    if (jenkinsEnv != null && !jenkinsEnv.trim().isEmpty()) {
-                        project.getLogger().lifecycle("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
-                        String branchName = System.getenv("BRANCH_NAME");
-                        String tagName = System.getenv("TAG_NAME");
-                        project.getLogger().debug("  BRANCH_NAME: " + branchName);
-                        project.getLogger().debug("  TAG_NAME: " + tagName);
-                        if (branchName != null && branchName.equals(tagName)) {
-                            overrideTag = tagName;
-                            overrideBranch = "";
+                if (System.getenv("JENKINS_HOME") != null && !System.getenv("JENKINS_HOME").trim().isEmpty()) {
+                    if (System.getenv("GIT_COMMIT").equals(this.getRev())) {
+                        return;
+                    }
+                    project.getLogger().lifecycle("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
+                    String commitBranch = System.getenv("BRANCH_NAME");
+                    String commitTag = System.getenv("TAG_NAME");
+                    project.getLogger().debug("  BRANCH_NAME: " + commitBranch);
+                    project.getLogger().debug("  TAG_NAME: " + commitTag);
+
+                    if (commitBranch != null) {
+                        if (commitBranch.equals(commitTag)) {
+                            addTag(commitBranch);
                         } else {
-                            overrideBranch = branchName;
-                            overrideTag = tagName;
+                            setBranch(commitBranch);
                         }
+                    } else if (commitTag != null) {
+                        addTag(commitTag);
                     }
-                }
-
-                if (overrideBranch != null || overrideTag != null) {
-                    overrideBranch(overrideBranch);
-                    overrideTags(overrideTag);
+                    return;
                 }
             }
 
-            void overrideBranch(String branch) {
-                if (branch != null && branch.trim().isEmpty()) {
-                    branch = null;
-                }
 
-                if (branch != null) {
-                    if (branch.startsWith("refs/tags/")) {
-                        throw new IllegalArgumentException("invalid branch ref" + branch);
-                    }
-
-                    // two replacement steps to support default branches (heads)
-                    // and other refs e.g. GitHub pull requests refs/pull/1000/head
-                    branch = branch.replaceFirst("^refs/", "")
-                            .replaceFirst("^heads/", "");
-                }
-
-                project.getLogger().debug("override git branch with: " + branch);
-                setBranch(branch);
+            protected void setBranch(String branch) {
+                project.getLogger().debug("override git branch with " + branch);
+                super.setBranch(branch);
             }
 
-            void overrideTags(String tag) {
-                if (tag != null && tag.trim().isEmpty()) {
-                    tag = null;
-                }
+            protected void setTags(List<String> tags) {
+                project.getLogger().debug("override git tags with single tag " + tags);
+                super.setTags(tags);
+            }
 
-                if (tag != null) {
-                    if (tag.startsWith("refs/") && !tag.startsWith("refs/tags/")) {
-                        throw new IllegalArgumentException("invalid tag ref" + tag);
-                    }
-
-                    tag = tag.replaceFirst("^refs/tags/", "");
-                }
-
-                project.getLogger().debug("override git tags with: " + tag);
-                setTags(tag == null ? emptyList() : singletonList(tag));
+            protected void addTag(String tag) {
+                project.getLogger().debug("add git tag " + tag);
+                super.addTag(tag);
             }
         };
     }
@@ -488,7 +494,7 @@ public abstract class GitVersioningPluginExtension {
         }));
 
         // deprecated
-        placeholderMap.put("version.release",  Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
+        placeholderMap.put("version.release", Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
 
         final Pattern projectVersionPattern = config.projectVersionPattern();
         if (projectVersionPattern != null) {
@@ -579,7 +585,7 @@ public abstract class GitVersioningPluginExtension {
         final Lazy<Integer> descriptionDistance = Lazy.by(() -> description.get().getDistance());
         placeholderMap.put("describe.distance", Lazy.by(() -> String.valueOf(descriptionDistance.get())));
 
-        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get() )));
+        placeholderMap.put("describe.tag.version.patch.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.patch.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.patch.next").get(), descriptionDistance.get())));
 
         placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
@@ -605,7 +611,7 @@ public abstract class GitVersioningPluginExtension {
         Matcher matcher = VERSION_PATTERN.matcher(input);
         //noinspection ResultOfMethodCallIgnored
         matcher.find();
-        
+
         return matcher;
     }
 

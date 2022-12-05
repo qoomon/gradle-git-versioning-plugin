@@ -5,6 +5,9 @@
 ##### Features
 -  add visible logging for relevant output
 
+##### Fixes
+- ignore ci/cd environment if head SHA hash is not matching environment variable commit hash
+
 
 ## 6.3.6
 
