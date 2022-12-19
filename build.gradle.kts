@@ -50,7 +50,7 @@ val projectJvmTarget = "11"
 
 kotlin {
     jvmToolchain {
-        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(projectJvmTarget))
+        languageVersion.set(JavaLanguageVersion.of(projectJvmTarget))
     }
 }
 
