@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "me.qoomon"
-version = "6.3.5"
+version = "6.3.7"
 
 dependencies {
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
