@@ -28,7 +28,7 @@ This plugin can virtually set project version and properties, based on current *
 
 ```groovy
 plugins {
-    id 'me.qoomon.git-versioning' version '6.3.5'
+    id 'me.qoomon.git-versioning' version '6.3.6'
 }
 
 version = '0.0.0-SNAPSHOT'
@@ -41,7 +41,7 @@ gitVersioning.apply {
 
 ```kotlin
 plugins {
-    id("me.qoomon.git-versioning") version "6.3.5"
+    id("me.qoomon.git-versioning") version "6.3.6"
 }
 
 version = "0.0.0-SNAPSHOT"
@@ -294,7 +294,7 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
     - **Command Line Parameters**
      - `gradle … -Dversioning.disable`
 
-- Provide **branch** or **tag** name
+- Set **branch** or Add **tag** by environment variable
     - **Environment Variables**
      - `export VERSIONING_GIT_REF=$PROVIDED_REF` e.g. `refs/heads/main`, `refs/tags/v1.0.0` or `refs/pull/1000/head`
      - `export VERSIONING_GIT_BRANCH=$PROVIDED_BRANCH_NAME` e.g. `main` or `refs/heads/main`
