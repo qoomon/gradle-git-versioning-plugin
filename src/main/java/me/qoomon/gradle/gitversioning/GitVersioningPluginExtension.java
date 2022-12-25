@@ -317,7 +317,7 @@ public abstract class GitVersioningPluginExtension {
 
                 // GitHub Actions support
                 if ("true".equalsIgnoreCase(System.getenv("GITHUB_ACTIONS"))) {
-                    if (!System.getenv("GITHUB_SHA").equals(this.getRev())) {
+                    if (!this.getRev().equals(System.getenv("GITHUB_SHA"))) {
                         return;
                     }
 
@@ -335,7 +335,7 @@ public abstract class GitVersioningPluginExtension {
 
                 // GitLab CI support
                 if ("true".equalsIgnoreCase(System.getenv("GITLAB_CI"))) {
-                    if (!System.getenv("CI_COMMIT_SHA").equals(this.getRev())) {
+                    if (!this.getRev().equals(System.getenv("CI_COMMIT_SHA"))) {
                         return;
                     }
 
@@ -359,7 +359,7 @@ public abstract class GitVersioningPluginExtension {
 
                 // Circle CI support
                 if ("true".equalsIgnoreCase(System.getenv("CIRCLECI"))) {
-                    if (!System.getenv("CIRCLE_SHA1").equals(this.getRev())) {
+                    if (!this.getRev().equals(System.getenv("CIRCLE_SHA1"))) {
                         return;
                     }
 
@@ -379,7 +379,7 @@ public abstract class GitVersioningPluginExtension {
 
                 // Jenkins support
                 if (System.getenv("JENKINS_HOME") != null && !System.getenv("JENKINS_HOME").trim().isEmpty()) {
-                    if (System.getenv("GIT_COMMIT").equals(this.getRev())) {
+                    if (!this.getRev().equals(System.getenv("GIT_COMMIT"))) {
                         return;
                     }
                     project.getLogger().lifecycle("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
