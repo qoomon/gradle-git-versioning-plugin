@@ -2,6 +2,7 @@ package me.qoomon.gradle.gitversioning;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.tasks.TaskContainer;
 
 import javax.annotation.Nonnull;
 
@@ -14,7 +15,9 @@ public class GitVersioningPlugin implements Plugin<Project> {
 
         project.getExtensions().create("gitVersioning", GitVersioningPluginExtension.class, project);
 
-        project.getTasks().register("version", VersionTask.class);
+        TaskContainer tasks = project.getTasks();
+        if(tasks.findByName("version") == null) {
+            tasks.register("version", VersionTask.class);
+        }
     }
 }
-
