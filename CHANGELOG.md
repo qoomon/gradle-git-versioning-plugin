@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.3.8
+
+##### Fixes
+-prevent version task to be registered multiple times #111 (kudos to @taichi)
+
+
 ## 6.3.7
 
 ##### Features
