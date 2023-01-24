@@ -34,6 +34,7 @@ public class GitVersioningPluginConfig {
     }
 
     public String describeTagPattern = null;
+    public Boolean describeTagFirstParent = true;
 
     public Boolean updateGradleProperties;
 
@@ -58,6 +59,7 @@ public class GitVersioningPluginConfig {
     public static class PatchDescription {
 
         public String describeTagPattern;
+        public Boolean describeTagFirstParent = null;
 
         public Pattern getDescribeTagPattern() {
             return Pattern.compile(describeTagPattern);
@@ -93,6 +95,7 @@ public class GitVersioningPluginConfig {
         public RefPatchDescription(GitRefType type, Pattern pattern, PatchDescription patch) {
             this(type, pattern);
             this.describeTagPattern = patch.describeTagPattern;
+            this.describeTagFirstParent = patch.describeTagFirstParent;
             this.updateGradleProperties = patch.updateGradleProperties;
             this.version = patch.version;
             this.properties = patch.properties;

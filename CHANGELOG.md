@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.4.0
+
+##### Features
+- add option `describeTagFirstParent` option to disable follow first parent only
+
 ## 6.3.8
 
 ##### Fixes

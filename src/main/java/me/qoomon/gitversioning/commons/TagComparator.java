@@ -3,7 +3,9 @@ package me.qoomon.gitversioning.commons;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.revwalk.*;
+import org.eclipse.jgit.revwalk.RevObject;
+import org.eclipse.jgit.revwalk.RevTag;
+import org.eclipse.jgit.revwalk.RevWalk;
 
 import java.util.Comparator;
 import java.util.Date;

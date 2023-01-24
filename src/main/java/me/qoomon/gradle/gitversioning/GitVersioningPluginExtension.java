@@ -132,6 +132,10 @@ public abstract class GitVersioningPluginExtension {
             project.getLogger().lifecycle("  describeTagPattern: " + patchDescription.describeTagPattern);
             gitSituation.setDescribeTagPattern(patchDescription.getDescribeTagPattern());
         }
+        if (patchDescription.describeTagFirstParent != null) {
+            project.getLogger().info("  describeTagFirstParent: " + patchDescription.describeTagFirstParent);
+            gitSituation.setFirstParent(patchDescription.describeTagFirstParent);
+        }
         if (patchDescription.version != null) {
             project.getLogger().lifecycle("  version: " + patchDescription.version);
         }

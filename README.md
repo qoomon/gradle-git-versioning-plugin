@@ -103,7 +103,11 @@ gitVersioning.apply {
 - `disable` global disable(`true`)/enable(`false`) extension, default is `false`.
     - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables]
 
-- `describeTagPattern` An arbitrary regex to match tag names for git describe command (has to be a **full match pattern** e.g. `v.+`), default is `.*`
+- `describeTagPattern` An arbitrary regex to match tag names for git describe command
+  - has to be a **full match pattern** e.g. `v(.+)`, default is `.*`
+- `describeTagFirstParent` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
+  - default is `true`
+  
 - `updateGradleProperties` Enable(`true`)/disable(`false`) version and properties update in `gradle.properties` file, default is `false`
     - Can be overridden by command option, see (Parameters & Environment Variables)[#parameters-&-environment-variables]
 
@@ -123,6 +127,8 @@ gitVersioning.apply {
       - `describeTagPattern` An arbitrary regex to match tag names for git describe command
         - has to be a **full match pattern** e.g. `v.+`)
         - will override global `describeTagPattern` value
+      - `describeTagFirstParent` Enable(`true`) or disable(`false`) following only the first parent in a merge commit
+        - default is `true`
           <br><br>
 
       - `version` The new version format, see [Format Placeholders](#format-placeholders)
