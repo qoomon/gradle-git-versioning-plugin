@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.4.1
+
+##### Fixes
+- threat empty circleCI environment variables as not set
+
+
 ## 6.4.0
 
 ##### Features

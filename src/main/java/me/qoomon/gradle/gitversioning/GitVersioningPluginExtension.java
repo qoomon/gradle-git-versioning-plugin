@@ -39,8 +39,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
-import static org.apache.commons.lang3.StringUtils.leftPad;
-import static org.apache.commons.lang3.StringUtils.rightPad;
+import static org.apache.commons.lang3.StringUtils.*;
 import static org.eclipse.jgit.lib.Constants.HEAD;
 
 public abstract class GitVersioningPluginExtension {
@@ -351,11 +350,11 @@ public abstract class GitVersioningPluginExtension {
                     project.getLogger().debug("  CI_COMMIT_TAG: " + commitTag);
                     project.getLogger().debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: " + mrSourceBranch);
 
-                    if (commitBranch != null) {
+                    if (!isBlank(commitBranch)) {
                         setBranch(commitBranch);
-                    } else if (mrSourceBranch != null) {
+                    } else if (!isBlank(mrSourceBranch)) {
                         setBranch(mrSourceBranch);
-                    } else if (commitTag != null) {
+                    } else if (!isBlank(commitTag)) {
                         addTag(commitTag);
                     }
                     return;
@@ -373,10 +372,10 @@ public abstract class GitVersioningPluginExtension {
                     project.getLogger().debug("  CIRCLE_BRANCH: " + commitBranch);
                     project.getLogger().debug("  CIRCLE_TAG: " + commitTag);
 
-                    if (commitBranch != null) {
-                        setBranch(commitBranch);
-                    } else if (commitTag != null) {
-                        addTag(commitTag);
+                    if (!isBlank(commitBranch)) {
+                        setBranch(commitBranch.trim());
+                    } else if (!isBlank(commitTag)) {
+                        addTag(commitTag.trim());
                     }
                     return;
                 }
@@ -392,13 +391,13 @@ public abstract class GitVersioningPluginExtension {
                     project.getLogger().debug("  BRANCH_NAME: " + commitBranch);
                     project.getLogger().debug("  TAG_NAME: " + commitTag);
 
-                    if (commitBranch != null) {
+                    if (!isBlank(commitBranch)) {
                         if (commitBranch.equals(commitTag)) {
                             addTag(commitBranch);
                         } else {
                             setBranch(commitBranch);
                         }
-                    } else if (commitTag != null) {
+                    } else if (!isBlank(commitTag)) {
                         addTag(commitTag);
                     }
                     return;
