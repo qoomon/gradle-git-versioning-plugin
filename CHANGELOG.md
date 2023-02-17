@@ -1,5 +1,10 @@
 # Changelog
 
+## 6.4.2
+
+##### Fixes
+- handle tags within git worktrees directories
+
 ## 6.4.1
 
 ##### Fixes

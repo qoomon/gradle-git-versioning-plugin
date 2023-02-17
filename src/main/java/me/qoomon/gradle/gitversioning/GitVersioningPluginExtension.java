@@ -650,6 +650,9 @@ public abstract class GitVersioningPluginExtension {
             if (patchDescription.describeTagPattern == null) {
                 patchDescription.describeTagPattern = config.describeTagPattern;
             }
+            if (patchDescription.describeTagFirstParent == null) {
+                patchDescription.describeTagFirstParent = config.describeTagFirstParent;
+            }
             if (patchDescription.updateGradleProperties == null) {
                 patchDescription.updateGradleProperties = config.updateGradleProperties;
             }
