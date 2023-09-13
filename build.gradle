@@ -23,7 +23,7 @@ repositories {
 dependencies {
     implementation 'org.eclipse.jgit:org.eclipse.jgit:6.6.0.202305301015-r'
     implementation 'org.apache.maven:maven-artifact:3.8.6'
-    implementation 'org.apache.commons:commons-configuration2:2.8.0'
+    implementation 'org.apache.commons:commons-configuration2:2.9.0'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
