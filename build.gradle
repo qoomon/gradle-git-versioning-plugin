@@ -12,7 +12,7 @@ plugins {
 }
 
 group 'me.qoomon'
-version '6.4.2'
+version '6.4.3'
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
@@ -35,19 +35,17 @@ test {
 }
 
 gradlePlugin {
+    website = 'https://github.com/qoomon/gradle-git-versioning-plugin'
+    vcsUrl = 'https://github.com/qoomon/gradle-git-versioning-plugin.git'
+
     plugins {
         gitVersioning {
             id = 'me.qoomon.git-versioning'
             displayName= 'Git Versioning Plugin'
             description = 'This extension will adjust the project version, based on current git branch or tag.'
+            tags.set( ['git', 'versioning', 'version', 'commit', 'branch', 'tag', 'generated'])
             implementationClass = 'me.qoomon.gradle.gitversioning.GitVersioningPlugin'
         }
+
     }
-}
-
-
-pluginBundle {
-    website = 'https://github.com/qoomon/gradle-git-versioning-plugin'
-    vcsUrl = 'https://github.com/qoomon/gradle-git-versioning-plugin.git'
-    tags = ['git', 'versioning', 'version', 'commit', 'branch', 'tag', 'generated']
 }
