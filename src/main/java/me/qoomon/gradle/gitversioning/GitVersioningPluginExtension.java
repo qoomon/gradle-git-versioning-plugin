@@ -35,13 +35,12 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static me.qoomon.gitversioning.commons.GitRefType.*;
 import static me.qoomon.gitversioning.commons.StringUtil.*;
 import static org.apache.commons.lang3.StringUtils.*;
-import static org.eclipse.jgit.lib.Constants.HEAD;
 
+@SuppressWarnings("StringConcatenationArgumentToLogCall")
 public abstract class GitVersioningPluginExtension {
 
     private static final Pattern VERSION_PATTERN = Pattern.compile(".*?(?<version>(?<core>(?<major>\\d+)(?:\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?)?)(?:-(?<label>.*))?)|");
@@ -80,7 +79,7 @@ public abstract class GitVersioningPluginExtension {
     }
 
     private void apply() throws IOException {
-        // check if extension is disabled by command option
+        // check if the extension is disabled by command option
         final String commandOptionDisable = getCommandOption(OPTION_NAME_DISABLE);
         if (commandOptionDisable != null) {
             boolean disabled = parseBoolean(commandOptionDisable);
@@ -89,7 +88,7 @@ public abstract class GitVersioningPluginExtension {
                 return;
             }
         } else {
-            // check if extension is disabled by config option
+            // check if the extension is disabled by config option
             if (config.disable) {
                 project.getLogger().warn("skip - versioning is disabled by config option");
                 return;
@@ -126,25 +125,25 @@ public abstract class GitVersioningPluginExtension {
 
         project.getLogger().lifecycle("matching ref: " + gitVersionDetails.getRefType().name() + " - " + gitVersionDetails.getRefName());
         final RefPatchDescription patchDescription = gitVersionDetails.getPatchDescription();
-        project.getLogger().lifecycle("ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
+        project.getLogger().lifecycle("  ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
+        if (patchDescription.version != null) {
+            project.getLogger().lifecycle("    version: " + patchDescription.version);
+        }
+        if (!patchDescription.properties.isEmpty()) {
+            project.getLogger().lifecycle("    properties:");
+            patchDescription.properties.forEach((key, value) -> project.getLogger().lifecycle("    " + key + ": " + value));
+        }
         if (patchDescription.describeTagPattern != null) {
-            project.getLogger().lifecycle("  describeTagPattern: " + patchDescription.describeTagPattern);
+            project.getLogger().lifecycle("    describeTagPattern: " + patchDescription.describeTagPattern);
             gitSituation.setDescribeTagPattern(patchDescription.getDescribeTagPattern());
         }
         if (patchDescription.describeTagFirstParent != null) {
-            project.getLogger().info("  describeTagFirstParent: " + patchDescription.describeTagFirstParent);
+            project.getLogger().lifecycle("    describeTagFirstParent: " + patchDescription.describeTagFirstParent);
             gitSituation.setFirstParent(patchDescription.describeTagFirstParent);
-        }
-        if (patchDescription.version != null) {
-            project.getLogger().lifecycle("  version: " + patchDescription.version);
-        }
-        if (!patchDescription.properties.isEmpty()) {
-            project.getLogger().lifecycle("  properties:");
-            patchDescription.properties.forEach((key, value) -> project.getLogger().lifecycle("    " + key + ": " + value));
         }
         boolean updateGradleProperties = getUpdateGradlePropertiesOption(patchDescription);
         if (updateGradleProperties) {
-            project.getLogger().lifecycle("  updateGradleProperties: " + updateGradleProperties);
+            project.getLogger().lifecycle("    updateGradleProperties: true");
         }
 
         globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, project);
@@ -157,7 +156,11 @@ public abstract class GitVersioningPluginExtension {
             final String versionFormat = patchDescription.version;
             if (versionFormat != null) {
                 updateVersion(project, versionFormat);
-                project.getLogger().lifecycle("project version: " + project.getVersion());
+                if(project == project.getRootProject()) {
+                    project.getLogger().lifecycle("project version: " + project.getVersion());
+                } else if (!project.getVersion().equals(project.getRootProject().getVersion())) {
+                    project.getLogger().lifecycle(project.getName()+ " > project version: " + project.getVersion());
+                }
             }
 
             final Map<String, String> propertyFormats = patchDescription.properties;
@@ -312,7 +315,7 @@ public abstract class GitVersioningPluginExtension {
                     }
                 }
 
-                // --- try getting branch and tag situation from environment ---
+                // --- try getting the branch and tag situation from environment ---
                 // skip if we are on a branch
                 if (repository.getBranch() == null) {
                     return;
@@ -400,6 +403,7 @@ public abstract class GitVersioningPluginExtension {
                     } else if (!isBlank(commitTag)) {
                         addTag(commitTag);
                     }
+                    //noinspection UnnecessaryReturnStatement
                     return;
                 }
             }
@@ -678,11 +682,7 @@ public abstract class GitVersioningPluginExtension {
             return parseBoolean(updateGradlePropertiesOption);
         }
 
-        if (gitRefConfig.updateGradleProperties != null) {
-            return gitRefConfig.updateGradleProperties;
-        }
-
-        return false;
+        return Objects.requireNonNullElse(gitRefConfig.updateGradleProperties, false);
     }
 
 

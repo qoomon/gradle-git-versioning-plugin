@@ -3,7 +3,7 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.declaredMembers
 
 plugins {
-    id("me.qoomon.git-versioning") version "6.4.2"
+    id("me.qoomon.git-versioning") version "6.4.4"
 }
 
 gitVersioning.apply {
