@@ -162,6 +162,8 @@ gitVersioning.apply {
 
 - `rev` Rev configuration will be used if no ref configuration is matching current git situation.
     - same as `branch(pattern)`/`tag(pattern)` configuration, except `pattern` parameter.
+ 
+- `gitDir` Provide git directory instead of default project directory, useful when applied from git submodule
 
 ### Format Placeholders
 
