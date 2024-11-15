@@ -1,4 +1,4 @@
-# Gradle Git Versioning Plugin [![Sparkline](https://stars.medv.io/qoomon/gradle-git-versioning-plugin.svg)](https://stars.medv.io/qoomon/gradle-git-versioning-plugin)
+# Gradle Git Versioning Plugin [![starline](https://github-starline.vercel.app/qoomon/gradle-git-versioning-plugin)](https://github.com/qoomon/starline)
 
 [![Gradle Plugin Portal](https://img.shields.io/maven-metadata/v/https/plugins.gradle.org/m2/me/qoomon/gradle-git-versioning-plugin/maven-metadata.xml.svg?colorB=007ec6&label=gradle-plugin)](https://plugins.gradle.org/plugin/me.qoomon.git-versioning)
 [![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](CHANGELOG.md)
