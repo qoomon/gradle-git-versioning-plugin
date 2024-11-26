@@ -120,4 +120,6 @@ public class GitVersioningPluginConfig {
             this.list.add(ref);
         }
     }
+
+    public String gitDir = null;
 }

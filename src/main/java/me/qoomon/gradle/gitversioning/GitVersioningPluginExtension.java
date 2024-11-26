@@ -95,7 +95,14 @@ public abstract class GitVersioningPluginExtension {
             }
         }
 
-        final GitSituation gitSituation = getGitSituation(project.getProjectDir());
+        File gitDir;
+        if (config.gitDir != null) {
+            gitDir = new File(config.gitDir);
+            project.getLogger().lifecycle("git directory: " + gitDir);
+        } else {
+            gitDir = project.getProjectDir();
+        }
+        final GitSituation gitSituation = getGitSituation(gitDir);
         if (gitSituation == null) {
             project.getLogger().warn("skip - project is not part of a git repository");
             return;
