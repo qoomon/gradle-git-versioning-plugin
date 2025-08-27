@@ -100,6 +100,8 @@ gitVersioning.apply {
 }
 ```
 
+**Controlling Verbosity:** Use Gradle's `--info` flag to see detailed versioning configuration output.
+
 ### Configuration Options
 
 - `disable` global disable(`true`)/enable(`false`) extension, default is `false`.
