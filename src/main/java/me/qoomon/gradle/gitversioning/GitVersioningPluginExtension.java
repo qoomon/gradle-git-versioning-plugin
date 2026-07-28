@@ -191,11 +191,15 @@ public abstract class GitVersioningPluginExtension {
     private void updatePropertyValues(Project project, Map<String, String> propertyFormats, String originalProjectVersion) {
         boolean logHeader = true;
         // properties section
-        for (Entry<String, ?> projectProperty : project.getProperties().entrySet()) {
-            String projectPropertyName = projectProperty.getKey();
-            Object projectPropertyValue = projectProperty.getValue();
+        for (Entry<String, String> propertyFormatEntry : propertyFormats.entrySet()) {
+            String projectPropertyName = propertyFormatEntry.getKey();
+            // only update properties that actually exist on the project
+            if (!project.hasProperty(projectPropertyName)) {
+                continue;
+            }
+            Object projectPropertyValue = project.findProperty(projectPropertyName);
 
-            String propertyFormat = propertyFormats.get(projectPropertyName);
+            String propertyFormat = propertyFormatEntry.getValue();
             if (propertyFormat != null) {
                 if (projectPropertyValue == null || projectPropertyValue instanceof String) {
                     String gitPropertyValue = getGitPropertyValue(propertyFormat,
@@ -241,11 +245,10 @@ public abstract class GitVersioningPluginExtension {
         }
 
         // handle properties
-        Map<String, ?> projectProperties = project.getProperties();
         gitVersionDetails.getPatchDescription().properties.forEach((key, value) -> {
             if (gradlePropertiesConfig.containsKey(key)) {
                 Object gradlePropertyValue = gradlePropertiesConfig.getProperty(key);
-                Object projectPropertyValue = projectProperties.get(key);
+                Object projectPropertyValue = project.findProperty(key);
                 if (!Objects.equals(projectPropertyValue, gradlePropertyValue)) {
                     gradlePropertiesConfig.setProperty(key, projectPropertyValue);
                 }
@@ -516,6 +519,8 @@ public abstract class GitVersioningPluginExtension {
         return placeholderMap;
     }
 
+    // gradlePropertiesPrefixedBy is @Incubating in the compile-time Gradle API (8.1.1) but stable at runtime on Gradle 9.x
+    @SuppressWarnings("UnstableApiUsage")
     private Map<String, Supplier<String>> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, Project rootProject) {
 
         final Map<String, Supplier<String>> placeholderMap = new HashMap<>();
@@ -599,7 +604,9 @@ public abstract class GitVersioningPluginExtension {
         placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
 
         // command parameters e.g. gradle -Pfoo=123 will be available as ${property.foo}
-        for (Entry<String, ?> property : rootProject.getProperties().entrySet()) {
+        Map<String, Object> projectProperties = new HashMap<>(rootProject.getProviders().gradlePropertiesPrefixedBy("").get());
+        projectProperties.putAll(rootProject.getExtensions().getExtraProperties().getProperties());
+        for (Entry<String, Object> property : projectProperties.entrySet()) {
             if (property.getValue() != null) {
                 // filter complex properties
                 if (property.getValue() instanceof String || property.getValue() instanceof Number) {
