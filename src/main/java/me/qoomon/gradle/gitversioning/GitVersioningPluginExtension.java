@@ -123,33 +123,34 @@ public abstract class GitVersioningPluginExtension {
             return;
         }
 
-        project.getLogger().lifecycle("matching ref: " + gitVersionDetails.getRefType().name() + " - " + gitVersionDetails.getRefName());
+
+        project.getLogger().info("matching ref: " + gitVersionDetails.getRefType().name() + " - " + gitVersionDetails.getRefName());
         final RefPatchDescription patchDescription = gitVersionDetails.getPatchDescription();
-        project.getLogger().lifecycle("  ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
+        project.getLogger().info("  ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
         if (patchDescription.version != null) {
-            project.getLogger().lifecycle("    version: " + patchDescription.version);
+            project.getLogger().info("    version: " + patchDescription.version);
         }
         if (!patchDescription.properties.isEmpty()) {
-            project.getLogger().lifecycle("    properties:");
-            patchDescription.properties.forEach((key, value) -> project.getLogger().lifecycle("    " + key + ": " + value));
+            project.getLogger().info("    properties:");
+            patchDescription.properties.forEach((key, value) -> project.getLogger().info("    " + key + ": " + value));
         }
         if (patchDescription.describeTagPattern != null) {
-            project.getLogger().lifecycle("    describeTagPattern: " + patchDescription.describeTagPattern);
+            project.getLogger().info("    describeTagPattern: " + patchDescription.describeTagPattern);
             gitSituation.setDescribeTagPattern(patchDescription.getDescribeTagPattern());
         }
         if (patchDescription.describeTagFirstParent != null) {
-            project.getLogger().lifecycle("    describeTagFirstParent: " + patchDescription.describeTagFirstParent);
+            project.getLogger().info("    describeTagFirstParent: " + patchDescription.describeTagFirstParent);
             gitSituation.setFirstParent(patchDescription.describeTagFirstParent);
         }
         boolean updateGradleProperties = getUpdateGradlePropertiesOption(patchDescription);
         if (updateGradleProperties) {
-            project.getLogger().lifecycle("    updateGradleProperties: true");
+            project.getLogger().info("    updateGradleProperties: true");
         }
 
         globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, project);
         Map<String, String> gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
-        project.getLogger().lifecycle("");
+        project.getLogger().info("");
         project.getAllprojects().forEach(project -> {
             final String originalProjectVersion = project.getVersion().toString();
 
@@ -157,9 +158,9 @@ public abstract class GitVersioningPluginExtension {
             if (versionFormat != null) {
                 updateVersion(project, versionFormat);
                 if(project == project.getRootProject()) {
-                    project.getLogger().lifecycle("project version: " + project.getVersion());
+                    project.getLogger().info("project version: " + project.getVersion());
                 } else if (!project.getVersion().equals(project.getRootProject().getVersion())) {
-                    project.getLogger().lifecycle(project.getName()+ " > project version: " + project.getVersion());
+                    project.getLogger().info(project.getName()+ " > project version: " + project.getVersion());
                 }
             }
 
