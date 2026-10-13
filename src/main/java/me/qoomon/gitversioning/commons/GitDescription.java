@@ -28,8 +28,7 @@ public class GitDescription {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof GitDescription)) return false;
-        GitDescription that = (GitDescription) o;
+        if (!(o instanceof GitDescription that)) return false;
         return distance == that.distance && commit.equals(that.commit) && tag.equals(that.tag);
     }
 

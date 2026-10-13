@@ -48,8 +48,7 @@ public final class GitHead {
     @Override
     public boolean equals(@Nullable Object o) {
         if (this == o) return true;
-        if (!(o instanceof GitHead)) return false;
-        GitHead that = (GitHead) o;
+        if (!(o instanceof GitHead that)) return false;
         return timestamp == that.timestamp
                 && rootDirectory.equals(that.rootDirectory)
                 && rev.equals(that.rev)

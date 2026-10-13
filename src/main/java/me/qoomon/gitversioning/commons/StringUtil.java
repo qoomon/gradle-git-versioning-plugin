@@ -21,7 +21,7 @@ public final class StringUtil {
      * @return substituted text
      */
     public static String substituteText(String text, Function<String, Supplier<String>> replacements) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         Pattern placeholderPattern = Pattern.compile("\\$\\{(?<key>[^}:]+)(?::(?<modifier>[-+])(?<value>[^}]*))?}");
         Matcher placeholderMatcher = placeholderPattern.matcher(text);
         while (placeholderMatcher.find()) {

@@ -17,8 +17,6 @@ import static me.qoomon.gitversioning.commons.GitRefType.TAG;
 
 public class GitVersioningPluginConfig {
 
-    private static final Pattern MATCH_ALL = Pattern.compile(".*");
-
     @Inject
     protected @Nullable ObjectFactory getObjectFactory() {
         return null;
@@ -61,8 +59,10 @@ public class GitVersioningPluginConfig {
         public @Nullable String describeTagPattern;
         public @Nullable Boolean describeTagFirstParent = null;
 
-        public Pattern getDescribeTagPattern() {
-            return Pattern.compile(describeTagPattern);
+        public @Nullable Pattern getDescribeTagPattern() {
+            return describeTagPattern != null
+                    ? Pattern.compile(describeTagPattern)
+                    : null;
         }
 
         public @Nullable Boolean updateGradleProperties;
