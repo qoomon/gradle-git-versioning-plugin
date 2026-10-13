@@ -11,5 +11,4 @@ assertj-core = { module = "org.assertj:assertj-core", version = "3.27.7" }
 
 [plugins]
 plugin-publish = { id = "com.gradle.plugin-publish", version = "2.2.1" }
-test-logger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 versions = { id = "com.github.ben-manes.versions", version = "0.54.0" }
