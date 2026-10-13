@@ -6,6 +6,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.util.GradleVersion;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -51,6 +52,11 @@ class GitVersioningPluginConfigurationCacheTest {
         write("settings.gradle", "rootProject.name = 'test'\n");
     }
 
+    @AfterEach
+    void closeGit() {
+        git.close();
+    }
+
     static Stream<String> gradleVersions() {
         return Stream.of(GradleVersion.current().getVersion(), MINIMUM_TESTED_GRADLE_VERSION);
     }
@@ -60,7 +66,7 @@ class GitVersioningPluginConfigurationCacheTest {
     void versionIsReusedFromCacheUntilHeadChanges(String gradleVersion) throws Exception {
         // given
         writeBuildFile("refs { branch('.+') { version = '${ref}-${commit.short}' } }");
-        RevCommit firstCommit = commitAll("initial commit");
+        RevCommit firstCommit = commitAll();
 
         // when / then
         BuildResult stored = runner("version").withGradleVersion(gradleVersion).build();
@@ -81,7 +87,7 @@ class GitVersioningPluginConfigurationCacheTest {
     void versionIsRecalculatedWhenTagIsCreated() throws Exception {
         // given
         writeBuildFile("refs { branch('.+') { version = '${describe.tag}-${describe.distance}' } }");
-        commitAll("initial commit");
+        commitAll();
 
         // when / then
         assertThat(versionOf(runVersionTask())).isEqualTo("root-1");
@@ -97,7 +103,7 @@ class GitVersioningPluginConfigurationCacheTest {
     void versionIsRecalculatedWhenWorkingTreeGetsDirty() throws Exception {
         // given
         writeBuildFile("refs { branch('.+') { version = '1.0.0${dirty}' } }");
-        commitAll("initial commit");
+        commitAll();
 
         // when / then
         assertThat(versionOf(runVersionTask())).isEqualTo("1.0.0");
@@ -113,7 +119,7 @@ class GitVersioningPluginConfigurationCacheTest {
     void onlyUsedEnvironmentVariablesInvalidateCache() throws Exception {
         // given
         writeBuildFile("refs { branch('.+') { version = '1.0.${env.BUILD_NUMBER}' } }");
-        commitAll("initial commit");
+        commitAll();
 
         // when / then
         assertThat(versionOf(runVersionTask(Map.of("BUILD_NUMBER", "1")))).isEqualTo("1.0.1");
@@ -129,23 +135,28 @@ class GitVersioningPluginConfigurationCacheTest {
     @Test
     void multiProjectBuildWithoutImplicitParentLookup() throws Exception {
         // given
-        write("settings.gradle", "rootProject.name = 'test'\n"
-                + "include 'sub'\n"
+        write("settings.gradle", """
+                rootProject.name = 'test'
+                include 'sub'
                 // opt into the Gradle 10 behaviour
-                + "enableFeaturePreview('NO_IMPLICIT_LOOKUP_IN_PARENT_PROJECTS')\n");
+                enableFeaturePreview('NO_IMPLICIT_LOOKUP_IN_PARENT_PROJECTS')
+                """);
         write("gradle.properties", "foo=foo@properties\n");
-        writeBuildFile("refs { branch('.+') {\n"
-                + "    version = '${ref}-SNAPSHOT'\n"
-                + "    properties = ['foo': '${value}-${ref}', 'commandLine': '${property.commandLine}']\n"
-                + "} }");
-        write("sub/build.gradle", "def projectVersion = project.version.toString()\n"
-                + "def foo = project.property('foo')\n"
-                + "def commandLine = project.property('commandLine')\n"
-                + "def gitRef = project.property('git.ref')\n"
-                + "tasks.register('printProperties') {\n"
-                + "    doLast { println(\"sub: $projectVersion $foo $commandLine $gitRef\") }\n"
-                + "}\n");
-        commitAll("initial commit");
+        writeBuildFile("""
+                refs { branch('.+') {
+                    version = '${ref}-SNAPSHOT'
+                    properties = ['foo': '${value}-${ref}', 'commandLine': '${property.commandLine}']
+                } }""");
+        write("sub/build.gradle", """
+                def projectVersion = project.version.toString()
+                def foo = project.property('foo')
+                def commandLine = project.property('commandLine')
+                def gitRef = project.property('git.ref')
+                tasks.register('printProperties') {
+                    doLast { println("sub: $projectVersion $foo $commandLine $gitRef") }
+                }
+                """);
+        commitAll();
 
         // when
         BuildResult result = runner("version", ":sub:printProperties", "-PcommandLine=cli").build();
@@ -160,23 +171,25 @@ class GitVersioningPluginConfigurationCacheTest {
         // given
         Files.delete(projectDir.resolve("settings.gradle"));
         write("settings.gradle.kts", "rootProject.name = \"test\"\n");
-        write("build.gradle.kts", "plugins { id(\"me.qoomon.git-versioning\") }\n"
-                + "version = \"0.0.0\"\n"
-                + "gitVersioning.apply {\n"
-                + "    refs {\n"
-                + "        branch(\".+\") {\n"
-                + "            version = \"\\${ref}-SNAPSHOT\"\n"
-                + "            properties[\"foo\"] = \"\\${commit.short}\"\n"
-                + "        }\n"
-                + "    }\n"
-                + "    rev { version = \"\\${commit}\" }\n"
-                + "}\n"
-                // nullable API, null if versioning was skipped
-                + "tasks.register(\"printRef\") {\n"
-                + "    val refName: String? = gitVersioning.gitVersionDetails?.refName\n"
-                + "    doLast { println(\"ref: $refName\") }\n"
-                + "}\n");
-        commitAll("initial commit");
+        write("build.gradle.kts", """
+                plugins { id("me.qoomon.git-versioning") }
+                version = "0.0.0"
+                gitVersioning.apply {
+                    refs {
+                        branch(".+") {
+                            version = "\\${ref}-SNAPSHOT"
+                            properties["foo"] = "\\${commit.short}"
+                        }
+                    }
+                    rev { version = "\\${commit}" }
+                }
+                tasks.register("printRef") {
+                    // nullable API, null if versioning was skipped
+                    val refName: String? = gitVersioning.gitVersionDetails?.refName
+                    doLast { println("ref: $refName") }
+                }
+                """);
+        commitAll();
 
         // when
         BuildResult result = runner("version", "printRef").build();
@@ -189,11 +202,13 @@ class GitVersioningPluginConfigurationCacheTest {
     // ---- helpers ----------------------------------------------------------------------------------------------------
 
     private void writeBuildFile(String gitVersioningConfig) throws IOException {
-        write("build.gradle", "plugins { id 'me.qoomon.git-versioning' }\n"
-                + "version = '0.0.0'\n"
-                + "gitVersioning.apply {\n"
-                + "    " + gitVersioningConfig + "\n"
-                + "}\n");
+        write("build.gradle", """
+                plugins { id 'me.qoomon.git-versioning' }
+                version = '0.0.0'
+                gitVersioning.apply {
+                %s
+                }
+                """.formatted(gitVersioningConfig));
     }
 
     private void write(String path, String content) throws IOException {
@@ -202,9 +217,9 @@ class GitVersioningPluginConfigurationCacheTest {
         Files.writeString(file, content);
     }
 
-    private RevCommit commitAll(String message) throws GitAPIException {
+    private RevCommit commitAll() throws GitAPIException {
         git.add().addFilepattern(".").call();
-        return git.commit().setMessage(message).call();
+        return git.commit().setMessage("initial commit").call();
     }
 
     private BuildResult runVersionTask() {
@@ -214,7 +229,7 @@ class GitVersioningPluginConfigurationCacheTest {
     private BuildResult runVersionTask(Map<String, String> environment) {
         Map<String, String> fullEnvironment = new HashMap<>(System.getenv());
         // don't pick up the git situation of the CI system running these tests
-        fullEnvironment.keySet().removeAll(asList("GITHUB_ACTIONS", "GITLAB_CI", "CIRCLECI", "JENKINS_HOME"));
+        List.of("GITHUB_ACTIONS", "GITLAB_CI", "CIRCLECI", "JENKINS_HOME").forEach(fullEnvironment::remove);
         fullEnvironment.putAll(environment);
         return runner("version").withEnvironment(fullEnvironment).build();
     }

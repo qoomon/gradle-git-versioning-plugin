@@ -6,8 +6,10 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.gradle.api.Project;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -24,10 +26,19 @@ class GitVersioningPluginTest {
     @TempDir
     Path projectDir;
 
+    Git git;
+
+    @AfterEach
+    void closeGit() {
+        if (git != null) {
+            git.close();
+        }
+    }
+
     @Test
     void runVersionTask() throws GitAPIException, IOException {
         // given
-        Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
 
         String givenVersion = "1.2.3";
         Files.writeString(projectDir.resolve("build.gradle"),
@@ -41,9 +52,8 @@ class GitVersioningPluginTest {
                 .build();
 
         // then
-        assertThat(buildresult.task(":version")).satisfies(it ->
-                assertThat(it.getOutcome()).isEqualTo(TaskOutcome.SUCCESS)
-        );
+        assertThat(buildresult.task(":version")).isNotNull()
+                .extracting(BuildTask::getOutcome).isEqualTo(TaskOutcome.SUCCESS);
         assertThat(buildresult.getOutput()).isEqualTo(givenVersion + System.lineSeparator());
     }
 
@@ -51,7 +61,7 @@ class GitVersioningPluginTest {
     void apply() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         RevCommit commit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
@@ -78,7 +88,7 @@ class GitVersioningPluginTest {
     void apply_with_extension_commit_description() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
         Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
@@ -89,9 +99,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "branch-gitVersioning";
-            });
+            refs.branch(".*", patch -> patch.version = "branch-gitVersioning");
         }};
 
         // when
@@ -105,7 +113,7 @@ class GitVersioningPluginTest {
     void apply_with_extension_branch_description() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenBranch = "feature/sandbox";
         git.branchCreate().setName(givenBranch).call();
@@ -119,9 +127,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "${ref}-gitVersioning";
-            });
+            refs.branch(".*", patch -> patch.version = "${ref}-gitVersioning");
         }};
 
         // when
@@ -135,7 +141,7 @@ class GitVersioningPluginTest {
     void apply_with_extension_tag_description() throws GitAPIException, IOException {
 
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v1";
         git.tag().setName(givenTag).call();
@@ -149,9 +155,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.tag(".*", patch -> {
-                patch.version = "${ref}-gitVersioning";
-            });
+            refs.tag(".*", patch -> patch.version = "${ref}-gitVersioning");
         }};
 
         // when
@@ -165,7 +169,7 @@ class GitVersioningPluginTest {
     void apply_normalizeVersion() throws GitAPIException, IOException {
 
         // given
-        Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
 
         Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
 
@@ -175,9 +179,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "a/b/c";
-            });
+            refs.branch(".*", patch -> patch.version = "a/b/c");
         }};
 
         // when
@@ -191,7 +193,7 @@ class GitVersioningPluginTest {
     void apply_emptyRepoGivesExpectedPlusDistanceResult() throws GitAPIException, IOException {
         // This can only be a local build so the specifics of the build number don't really matter, but 0 makes reasonable sense
         // given
-        Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
 
         project.getPluginManager().apply(GitVersioningPlugin.class);
@@ -200,9 +202,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "${describe.tag.version.label.plus.describe.distance}";
-            });
+            refs.branch(".*", patch -> patch.version = "${describe.tag.version.label.plus.describe.distance}");
         }};
 
         // when
@@ -215,7 +215,7 @@ class GitVersioningPluginTest {
     @Test
     void apply_singleCommitUntaggedRepoGivesExpectedPlusDistanceResult() throws GitAPIException, IOException {
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         Project project = ProjectBuilder.builder().withProjectDir(projectDir.toFile()).build();
 
@@ -225,9 +225,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "${describe.tag.version.label.plus.describe.distance}";
-            });
+            refs.branch(".*", patch -> patch.version = "${describe.tag.version.label.plus.describe.distance}");
         }};
 
         // when
@@ -240,7 +238,7 @@ class GitVersioningPluginTest {
     @Test
     void apply_NoCommitsSinceLastTagGivesExpectedPlusDistanceResult() throws GitAPIException, IOException {
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "2.0.4-677";
         git.tag().setName(givenTag).call();
@@ -253,9 +251,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "${describe.tag.version.label.plus.describe.distance}";
-            });
+            refs.branch(".*", patch -> patch.version = "${describe.tag.version.label.plus.describe.distance}");
         }};
 
         // when
@@ -267,7 +263,7 @@ class GitVersioningPluginTest {
     @Test
     void apply_TwoCommitsSinceLastTagGivesExpectedPlusDistanceResult() throws GitAPIException, IOException {
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "2.0.4-677";
         git.tag().setName(givenTag).call();
@@ -282,9 +278,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "${describe.tag.version.label.plus.describe.distance}";
-            });
+            refs.branch(".*", patch -> patch.version = "${describe.tag.version.label.plus.describe.distance}");
         }};
 
         // when
@@ -297,7 +291,7 @@ class GitVersioningPluginTest {
     @Test
     void apply_CommitWithLabelTagGivesExpectedLabel() throws GitAPIException, IOException {
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "2.0.4-677-SNAPSHOT";
         git.tag().setName(givenTag).call();
@@ -310,9 +304,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "${describe.tag.version.label}";
-            });
+            refs.branch(".*", patch -> patch.version = "${describe.tag.version.label}");
         }};
 
         // when
@@ -325,7 +317,7 @@ class GitVersioningPluginTest {
     @Test
     void apply_TagWithInvalidFormatGiveInitialVersion() throws GitAPIException, IOException {
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "successfulBuild";
         git.tag().setName(givenTag).call();
@@ -338,9 +330,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch}";
-            });
+            refs.branch(".*", patch -> patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch}");
         }};
 
         // when
@@ -353,7 +343,7 @@ class GitVersioningPluginTest {
     @Test
     void apply_TagWithSingleNonDigitPrefixGivesExpectedVersion() throws GitAPIException, IOException {
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v2.0.4";
         git.tag().setName(givenTag).call();
@@ -366,9 +356,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch}";
-            });
+            refs.branch(".*", patch -> patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch}");
         }};
 
         // when
@@ -381,7 +369,7 @@ class GitVersioningPluginTest {
     @Test
     void apply_TagWithSingleWordPrefixGivesExpectedVersion() throws GitAPIException, IOException {
         // given
-        Git git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "alpha1.2.3";
         git.tag().setName(givenTag).call();
@@ -394,9 +382,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch}";
-            });
+            refs.branch(".*", patch -> patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch}");
         }};
 
         // when
@@ -409,7 +395,7 @@ class GitVersioningPluginTest {
     @Test
     void apply_TwoCommitsSinceLastTagGivesExpectedPatchDistanceAndBranch() throws GitAPIException, IOException {
         // given
-        Git git = Git.init().setInitialBranch("featureA").setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch("featureA").setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v2.0.4";
         git.tag().setName(givenTag).call();
@@ -424,9 +410,7 @@ class GitVersioningPluginTest {
                 .getByName("gitVersioning");
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
-            refs.branch(".*", patch -> {
-                patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch.next}-${describe.distance}-${ref.slug}";
-            });
+            refs.branch(".*", patch -> patch.version = "${describe.tag.version.major}.${describe.tag.version.minor}.${describe.tag.version.patch.next}-${describe.distance}-${ref.slug}");
         }};
 
         // when
@@ -439,7 +423,7 @@ class GitVersioningPluginTest {
     @Test
     void apply_GivenTwoVersionTagsUseTagMatchingDescribePattern() throws GitAPIException, IOException {
         // given
-        Git git = Git.init().setInitialBranch("featureA").setDirectory(projectDir.toFile()).call();
+        git = Git.init().setInitialBranch("featureA").setDirectory(projectDir.toFile()).call();
         git.commit().setMessage("initial commit").setAllowEmpty(true).call();
         String givenTag = "v2.0.4";
         git.tag().setName(givenTag).call();
@@ -455,9 +439,7 @@ class GitVersioningPluginTest {
 
         GitVersioningPluginConfig config = new GitVersioningPluginConfig() {{
             describeTagPattern = "v2.0.*";
-            refs.branch(".*", patch -> {
-                patch.version = "${describe.tag.version.core}";
-            });
+            refs.branch(".*", patch -> patch.version = "${describe.tag.version.core}");
         }};
 
         // when
