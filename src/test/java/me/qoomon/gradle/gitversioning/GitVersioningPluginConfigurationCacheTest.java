@@ -5,9 +5,12 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
+import org.gradle.util.GradleVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,6 +34,11 @@ class GitVersioningPluginConfigurationCacheTest {
     private static final String CACHE_REUSED = "Reusing configuration cache.";
     private static final String CACHE_INVALIDATED = "configuration cache cannot be reused";
 
+    /**
+     * oldest Gradle version the plugin is tested with
+     */
+    private static final String MINIMUM_TESTED_GRADLE_VERSION = "8.14.5";
+
     @TempDir
     Path projectDir;
 
@@ -42,23 +51,28 @@ class GitVersioningPluginConfigurationCacheTest {
         write("settings.gradle", "rootProject.name = 'test'\n");
     }
 
-    @Test
-    void versionIsReusedFromCacheUntilHeadChanges() throws Exception {
+    static Stream<String> gradleVersions() {
+        return Stream.of(GradleVersion.current().getVersion(), MINIMUM_TESTED_GRADLE_VERSION);
+    }
+
+    @ParameterizedTest(name = "Gradle {0}")
+    @MethodSource("gradleVersions")
+    void versionIsReusedFromCacheUntilHeadChanges(String gradleVersion) throws Exception {
         // given
         writeBuildFile("refs { branch('.+') { version = '${ref}-${commit.short}' } }");
         RevCommit firstCommit = commitAll("initial commit");
 
         // when / then
-        BuildResult stored = runVersionTask();
+        BuildResult stored = runner("version").withGradleVersion(gradleVersion).build();
         assertThat(stored.getOutput()).contains(CACHE_STORED);
         assertThat(versionOf(stored)).isEqualTo("master-" + firstCommit.abbreviate(7).name());
 
-        BuildResult reused = runVersionTask();
+        BuildResult reused = runner("version").withGradleVersion(gradleVersion).build();
         assertThat(reused.getOutput()).contains(CACHE_REUSED);
         assertThat(versionOf(reused)).isEqualTo("master-" + firstCommit.abbreviate(7).name());
 
         RevCommit secondCommit = git.commit().setMessage("second commit").setAllowEmpty(true).call();
-        BuildResult invalidated = runVersionTask();
+        BuildResult invalidated = runner("version").withGradleVersion(gradleVersion).build();
         assertThat(invalidated.getOutput()).contains(CACHE_INVALIDATED);
         assertThat(versionOf(invalidated)).isEqualTo("master-" + secondCommit.abbreviate(7).name());
     }

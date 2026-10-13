@@ -22,7 +22,7 @@ This plugin can virtually set project version and properties, based on current *
 ## Usage
 
 ### Add Plugin to Gradle Project
-⚠️ Minimum required Java version `17` 
+⚠️ Minimum required Java version `17`, tested with Gradle `8.14` and newer 
 
 ⚠️ You should apply git versioning (`gitVersioning.apply{...}`) directly after `version` declaration at root project only.
 

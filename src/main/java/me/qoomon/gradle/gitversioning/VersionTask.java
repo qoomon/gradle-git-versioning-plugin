@@ -14,6 +14,6 @@ public abstract class VersionTask extends DefaultTask {
 
     @TaskAction
     void printProjectVersion() {
-        System.out.println(getProjectVersion().get());
+        getLogger().quiet(getProjectVersion().get());
     }
 }

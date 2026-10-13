@@ -3,7 +3,7 @@
 ## Unreleased
 
 ##### Breaking Changes
-- require Java 17 (and therefore Gradle running on Java 17 or newer)
+- require Java 17 (and therefore Gradle running on Java 17 or newer), tested with Gradle 8.14 and newer
 
 ##### Features
 - support the configuration cache: git information is read through value sources,
@@ -13,10 +13,11 @@
 ##### Fixes
 - remove usages of APIs deprecated for removal in Gradle 10 (`Project.getProperties()`, task project access at execution time)
 - no longer start external `git` processes at configuration time (via JGit)
+- `version` task no longer realizes an existing `version` task, has a group and description and prints through Gradle's logger
 
 ##### Dependencies
 - build with Gradle 9.8.1
-- update JGit to 7.8.0
+- update JGit to 7.8.0, maven-artifact to 3.10.0
 
 ## 6.4.2
 

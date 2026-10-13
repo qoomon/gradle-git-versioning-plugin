@@ -1,46 +1,41 @@
 plugins {
-    id "com.github.ben-manes.versions" version "0.54.0"
-
-    id "java"
-    id "java-gradle-plugin"
-    id 'com.adarshr.test-logger' version '4.0.0'
-
-    id "com.gradle.plugin-publish" version "2.2.1"
-    id "maven-publish" // for local testing only
-
-    id "idea"
+    id 'java-gradle-plugin'
+    alias(libs.plugins.plugin.publish)
+    alias(libs.plugins.test.logger)
+    alias(libs.plugins.versions)
 }
 
 group = 'me.qoomon'
 version = '6.4.5'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.release = 17
     options.compilerArgs.add('-Xlint:deprecation')
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
-    implementation 'org.eclipse.jgit:org.eclipse.jgit:7.8.0.202609011348-r'
-    implementation 'org.apache.maven:maven-artifact:3.9.16'
-    implementation 'org.apache.commons:commons-configuration2:2.15.1'
+    implementation libs.jgit
+    implementation libs.maven.artifact
+    implementation libs.commons.configuration2
 
-    testImplementation platform('org.junit:junit-bom:6.1.3')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation 'org.assertj:assertj-core:3.27.7'
+    testImplementation libs.assertj.core
 }
 
-tasks.named('test', Test) {
-    useJUnitPlatform()
+testing {
+    suites {
+        test {
+            useJUnitJupiter(libs.versions.junit)
+        }
+    }
+}
+
+tasks.named('validatePlugins') {
+    enableStricterValidation = true
 }
 
 gradlePlugin {
@@ -52,7 +47,7 @@ gradlePlugin {
             id = 'me.qoomon.git-versioning'
             displayName = 'Git Versioning Plugin'
             description = 'This extension will adjust the project version, based on current git branch or tag.'
-            tags.set(['git', 'versioning', 'version', 'commit', 'branch', 'tag', 'generated'])
+            tags = ['git', 'versioning', 'version', 'commit', 'branch', 'tag', 'generated']
             implementationClass = 'me.qoomon.gradle.gitversioning.GitVersioningPlugin'
         }
     }
