@@ -25,6 +25,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -149,34 +150,34 @@ public abstract class GitVersioningPluginExtension {
             project.getLogger().lifecycle("    updateGradleProperties: true");
         }
 
-        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, project);
+        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails);
         Map<String, String> gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         project.getLogger().lifecycle("");
-        project.getAllprojects().forEach(project -> {
-            final String originalProjectVersion = project.getVersion().toString();
+        project.getAllprojects().forEach(currentProject -> {
+            final String originalProjectVersion = currentProject.getVersion().toString();
 
             final String versionFormat = patchDescription.version;
             if (versionFormat != null) {
-                updateVersion(project, versionFormat);
-                if(project == project.getRootProject()) {
-                    project.getLogger().lifecycle("project version: " + project.getVersion());
-                } else if (!project.getVersion().equals(project.getRootProject().getVersion())) {
-                    project.getLogger().lifecycle(project.getName()+ " > project version: " + project.getVersion());
+                updateVersion(currentProject, versionFormat);
+                if (currentProject.equals(currentProject.getRootProject())) {
+                    currentProject.getLogger().lifecycle("project version: " + currentProject.getVersion());
+                } else if (!currentProject.getVersion().equals(currentProject.getRootProject().getVersion())) {
+                    currentProject.getLogger().lifecycle(currentProject.getName() + " > project version: " + currentProject.getVersion());
                 }
             }
 
             final Map<String, String> propertyFormats = patchDescription.properties;
             if (propertyFormats != null && !propertyFormats.isEmpty()) {
-                updatePropertyValues(project, propertyFormats, originalProjectVersion);
+                updatePropertyValues(currentProject, propertyFormats, originalProjectVersion);
             }
 
-            addGitProjectProperties(project, gitProjectProperties);
+            addGitProjectProperties(currentProject, gitProjectProperties);
 
             if (updateGradleProperties) {
-                File gradleProperties = project.file("gradle.properties");
+                File gradleProperties = currentProject.file("gradle.properties");
                 if (gradleProperties.exists()) {
-                    updateGradlePropertiesFile(gradleProperties, project);
+                    updateGradlePropertiesFile(gradleProperties, currentProject);
                 }
             }
         });
@@ -194,12 +195,12 @@ public abstract class GitVersioningPluginExtension {
     private void updatePropertyValues(Project project, Map<String, String> propertyFormats, String originalProjectVersion) {
         boolean logHeader = true;
         // properties section
-        for (Entry<String, ?> projectProperty : project.getProperties().entrySet()) {
-            String projectPropertyName = projectProperty.getKey();
-            Object projectPropertyValue = projectProperty.getValue();
+        for (Entry<String, String> propertyFormatEntry : propertyFormats.entrySet()) {
+            String projectPropertyName = propertyFormatEntry.getKey();
+            String propertyFormat = propertyFormatEntry.getValue();
 
-            String propertyFormat = propertyFormats.get(projectPropertyName);
-            if (propertyFormat != null) {
+            if (propertyFormat != null && project.hasProperty(projectPropertyName)) {
+                Object projectPropertyValue = project.findProperty(projectPropertyName);
                 if (projectPropertyValue == null || projectPropertyValue instanceof String) {
                     String gitPropertyValue = getGitPropertyValue(propertyFormat,
                             projectPropertyValue != null ? projectPropertyValue.toString() : null,
@@ -244,11 +245,10 @@ public abstract class GitVersioningPluginExtension {
         }
 
         // handle properties
-        Map<String, ?> projectProperties = project.getProperties();
         gitVersionDetails.getPatchDescription().properties.forEach((key, value) -> {
             if (gradlePropertiesConfig.containsKey(key)) {
                 Object gradlePropertyValue = gradlePropertiesConfig.getProperty(key);
-                Object projectPropertyValue = projectProperties.get(key);
+                Object projectPropertyValue = project.findProperty(key);
                 if (!Objects.equals(projectPropertyValue, gradlePropertyValue)) {
                     gradlePropertiesConfig.setProperty(key, projectPropertyValue);
                 }
@@ -464,13 +464,39 @@ public abstract class GitVersioningPluginExtension {
     private String getGitVersion(String versionFormat, String projectVersion) {
         final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(projectVersion);
 
-        return slugify(substituteText(versionFormat, placeholderMap));
+        return slugify(substituteText(versionFormat, placeholderResolver(placeholderMap)));
     }
 
     private String getGitPropertyValue(String propertyFormat, String originalValue, String projectVersion) {
         final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(projectVersion);
         placeholderMap.put("value", () -> originalValue);
-        return substituteText(propertyFormat, placeholderMap);
+        return substituteText(propertyFormat, placeholderResolver(placeholderMap));
+    }
+
+    /**
+     * Resolves {@code env.*} and {@code property.*} placeholders on demand,
+     * so only the environment variables and properties actually used become configuration cache inputs.
+     */
+    private Function<String, Supplier<String>> placeholderResolver(Map<String, Supplier<String>> placeholderMap) {
+        return key -> {
+            Supplier<String> replacement = placeholderMap.get(key);
+            if (replacement != null) {
+                return replacement;
+            }
+            // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
+            if (key.startsWith("env.")) {
+                return () -> getEnvironmentVariable(key.substring("env.".length()));
+            }
+            // command parameters e.g. gradle -Pfoo=123 will be available as ${property.foo}
+            if (key.startsWith("property.")) {
+                return () -> {
+                    Object value = project.findProperty(key.substring("property.".length()));
+                    // filter complex properties
+                    return value instanceof String || value instanceof Number ? value.toString() : null;
+                };
+            }
+            return null;
+        };
     }
 
     private Map<String, Supplier<String>> generateFormatPlaceholderMap(String projectVersion) {
@@ -513,7 +539,7 @@ public abstract class GitVersioningPluginExtension {
         return placeholderMap;
     }
 
-    private Map<String, Supplier<String>> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, Project rootProject) {
+    private Map<String, Supplier<String>> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
 
         final Map<String, Supplier<String>> placeholderMap = new HashMap<>();
 
@@ -594,19 +620,6 @@ public abstract class GitVersioningPluginExtension {
 
         placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
-
-        // command parameters e.g. gradle -Pfoo=123 will be available as ${property.foo}
-        for (Entry<String, ?> property : rootProject.getProperties().entrySet()) {
-            if (property.getValue() != null) {
-                // filter complex properties
-                if (property.getValue() instanceof String || property.getValue() instanceof Number) {
-                    placeholderMap.put("property." + property.getKey(), () -> property.getValue().toString());
-                }
-            }
-        }
-
-        // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
-        System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
 
         return placeholderMap;
     }
