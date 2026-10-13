@@ -1,7 +1,3 @@
-import kotlin.reflect.full.declaredMemberExtensionProperties
-import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.declaredMembers
-
 plugins {
     id("me.qoomon.git-versioning") version "6.4.4"
 }
@@ -23,11 +19,15 @@ gitVersioning.apply {
 }
 
 tasks.register("debug") {
+    // capture values at configuration time, the project is not available at execution time with the configuration cache
+    val values = listOf(
+        project.version,
+        project.property("foo"),
+        project.property("bar"),
+        project.property("git.commit"),
+        project.property("git.ref"),
+    )
     doLast {
-        println(project.version)
-        println(project.property("foo"))
-        println(project.property("bar"))
-        println(project.property("git.commit"))
-        println(project.property("git.ref"))
+        values.forEach { println(it) }
     }
 }

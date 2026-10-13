@@ -22,7 +22,7 @@ This plugin can virtually set project version and properties, based on current *
 ## Usage
 
 ### Add Plugin to Gradle Project
-⚠️ Minimum required Java version `11` 
+⚠️ Minimum required Java version `17` 
 
 ⚠️ You should apply git versioning (`gitVersioning.apply{...}`) directly after `version` declaration at root project only.
 
@@ -330,6 +330,20 @@ e.g `${dirty:-SNAPSHOT}` resolves to `-SNAPSHOT` instead of `-DIRTY`
 - `git.ref` `git.ref.slug` HEAD ref name (branch or tag name or commit hash)
 
 ---
+
+## Configuration Cache
+
+The plugin is compatible with the [configuration cache](https://docs.gradle.org/current/userguide/configuration_cache.html).
+All git information is read through value sources, so a cached configuration is reused as long as
+the git information used by your version and property formats stays the same, and recalculated as soon as it changes
+(e.g. a new commit, a new tag or a dirty working tree if `${dirty}` is used).
+Likewise, only the environment variables and properties referenced by `${env.*}` and `${property.*}` placeholders are configuration cache inputs.
+
+- The plugin's log output (e.g. `matching ref: ...`) is only printed when the configuration is calculated, not when it is reused from the cache.
+- With `updateGradleProperties` enabled, `gradle.properties` files are rewritten during configuration.
+  As Gradle tracks these files, a rewrite causes one additional configuration cache miss.
+- The plugin applies the version to all projects from the root project,
+  so it is not compatible with [isolated projects](https://docs.gradle.org/current/userguide/isolated_projects.html) yet.
 
 ## Gradle Tasks
 

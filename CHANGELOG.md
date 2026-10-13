@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+##### Breaking Changes
+- require Java 17 (and therefore Gradle running on Java 17 or newer)
+
+##### Features
+- support the configuration cache: git information is read through value sources,
+  so the cache is invalidated on new commits, tags or working tree changes and reused otherwise
+- `${env.*}` and `${property.*}` placeholders are resolved on demand, only used variables and properties become configuration cache inputs
+
+##### Fixes
+- remove usages of APIs deprecated for removal in Gradle 10 (`Project.getProperties()`, task project access at execution time)
+- no longer start external `git` processes at configuration time (via JGit)
+
+##### Dependencies
+- build with Gradle 9.8.1
+- update JGit to 7.8.0
+
 ## 6.4.2
 
 ##### Fixes
