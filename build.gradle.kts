@@ -15,6 +15,10 @@ java {
     }
 }
 
+repositories {
+    mavenCentral()
+}
+
 tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Xlint:deprecation")
 }
@@ -27,18 +31,14 @@ dependencies {
     implementation(libs.maven.artifact)
     implementation(libs.commons.configuration2)
 
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.assertj.core)
 }
 
-testing {
-    suites {
-        named<JvmTestSuite>("test") {
-            useJUnitJupiter(libs.versions.junit)
-        }
-    }
-}
-
 tasks.test {
+    useJUnitPlatform()
     testLogging {
         events("passed", "skipped", "failed")
         exceptionFormat = TestExceptionFormat.FULL
