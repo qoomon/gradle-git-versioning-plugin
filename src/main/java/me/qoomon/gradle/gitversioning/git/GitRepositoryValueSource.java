@@ -8,6 +8,7 @@ import org.gradle.api.Describable;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.ValueSource;
 import org.gradle.api.provider.ValueSourceParameters;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +32,7 @@ public abstract class GitRepositoryValueSource<T, P extends GitRepositoryValueSo
     }
 
     @Override
-    public T obtain() {
+    public @Nullable T obtain() {
         FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(getProjectDirectory());
         if (repositoryBuilder.getGitDir() == null) {
             return null;

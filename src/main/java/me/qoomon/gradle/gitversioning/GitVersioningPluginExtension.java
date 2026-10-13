@@ -14,6 +14,7 @@ import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
 import org.gradle.api.provider.ProviderFactory;
+import org.jspecify.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -60,11 +61,17 @@ public abstract class GitVersioningPluginExtension {
 
     private final Project project;
 
-    private GitVersioningPluginConfig config;
+    private @Nullable GitVersioningPluginConfig config;
 
-    public GitVersionDetails gitVersionDetails;
+    /**
+     * {@code null} until versioning is applied, or if it was skipped
+     */
+    public @Nullable GitVersionDetails gitVersionDetails;
 
-    public Map<String, Supplier<String>> globalFormatPlaceholderMap;
+    /**
+     * {@code null} until versioning is applied, or if it was skipped
+     */
+    public @Nullable Map<String, Supplier<String>> globalFormatPlaceholderMap;
 
     public GitVersioningPluginExtension(Project project) {
         this.project = project;
@@ -183,7 +190,6 @@ public abstract class GitVersioningPluginExtension {
         });
     }
 
-
     // ---- project processing -----------------------------------------------------------------------------------------
 
     private void updateVersion(Project project, String versionFormat) {
@@ -268,10 +274,9 @@ public abstract class GitVersioningPluginExtension {
         }
     }
 
-
     // ---- versioning -------------------------------------------------------------------------------------------------
 
-    private GitSituation getGitSituation(File projectDirectory) throws IOException {
+    private @Nullable GitSituation getGitSituation(File projectDirectory) throws IOException {
         final ProviderGitRepositoryReader reader = new ProviderGitRepositoryReader(getProviders(), projectDirectory);
         if (!reader.isGitRepository()) {
             return null;
@@ -405,7 +410,6 @@ public abstract class GitVersioningPluginExtension {
                 }
             }
 
-
             protected void setBranch(String branch) {
                 project.getLogger().debug("override git branch with " + branch);
                 super.setBranch(branch);
@@ -423,7 +427,7 @@ public abstract class GitVersioningPluginExtension {
         };
     }
 
-    private static GitVersionDetails getGitVersionDetails(GitSituation gitSituation, GitVersioningPluginConfig config) {
+    private static @Nullable GitVersionDetails getGitVersionDetails(GitSituation gitSituation, GitVersioningPluginConfig config) {
         final Lazy<List<String>> sortedTags = Lazy.by(() -> gitSituation.getTags().stream()
                 .sorted(comparing(DefaultArtifactVersion::new)).collect(toList()));
         for (RefPatchDescription refConfig : config.refs.list) {
@@ -457,7 +461,6 @@ public abstract class GitVersioningPluginExtension {
                     new RefPatchDescription(COMMIT, null, config.rev));
         }
 
-
         return null;
     }
 
@@ -467,7 +470,7 @@ public abstract class GitVersioningPluginExtension {
         return slugify(substituteText(versionFormat, placeholderResolver(placeholderMap)));
     }
 
-    private String getGitPropertyValue(String propertyFormat, String originalValue, String projectVersion) {
+    private String getGitPropertyValue(String propertyFormat, @Nullable String originalValue, String projectVersion) {
         final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(projectVersion);
         placeholderMap.put("value", () -> originalValue);
         return substituteText(propertyFormat, placeholderResolver(placeholderMap));
@@ -477,7 +480,7 @@ public abstract class GitVersioningPluginExtension {
      * Resolves {@code env.*} and {@code property.*} placeholders on demand,
      * so only the environment variables and properties actually used become configuration cache inputs.
      */
-    private Function<String, Supplier<String>> placeholderResolver(Map<String, Supplier<String>> placeholderMap) {
+    private Function<String, @Nullable Supplier<@Nullable String>> placeholderResolver(Map<String, Supplier<String>> placeholderMap) {
         return key -> {
             Supplier<String> replacement = placeholderMap.get(key);
             if (replacement != null) {
@@ -651,7 +654,6 @@ public abstract class GitVersioningPluginExtension {
         return properties;
     }
 
-
     // ---- configuration ----------------------------------------------------------------------------------------------
 
     private void normalizeConfig(GitVersioningPluginConfig config) {
@@ -673,7 +675,7 @@ public abstract class GitVersioningPluginExtension {
         }
     }
 
-    private String getCommandOption(final String name) {
+    private @Nullable String getCommandOption(final String name) {
         String plainName = name.replaceFirst("^versioning\\.", "");
         String environmentVariableName = "VERSIONING_"
                 + String.join("_", plainName.split("(?=\\p{Lu})"))
@@ -684,7 +686,7 @@ public abstract class GitVersioningPluginExtension {
                 .getOrNull();
     }
 
-    private String getEnvironmentVariable(final String name) {
+    private @Nullable String getEnvironmentVariable(final String name) {
         return getProviders().environmentVariable(name).getOrNull();
     }
 
@@ -697,10 +699,9 @@ public abstract class GitVersioningPluginExtension {
         return Objects.requireNonNullElse(gitRefConfig.updateGradleProperties, false);
     }
 
-
     // ---- misc -------------------------------------------------------------------------------------------------------
 
-    private static String slugify(String value) {
+    private static String slugify(@Nullable String value) {
         if (value == null) {
             return "";
         }
@@ -712,7 +713,7 @@ public abstract class GitVersioningPluginExtension {
         return String.format("%0" + sanitized.length() + "d", Long.parseLong(number.isEmpty() ? "0" : number) + increment);
     }
 
-    public static <T> T notNullOrDefault(T obj, T defaultObj) {
+    public static <T> T notNullOrDefault(@Nullable T obj, T defaultObj) {
         return (obj != null) ? obj : defaultObj;
     }
 }

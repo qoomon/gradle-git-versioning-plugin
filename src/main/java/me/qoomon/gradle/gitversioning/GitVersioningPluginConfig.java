@@ -3,6 +3,7 @@ package me.qoomon.gradle.gitversioning;
 import me.qoomon.gitversioning.commons.GitRefType;
 import org.gradle.api.Action;
 import org.gradle.api.model.ObjectFactory;
+import org.jspecify.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -19,30 +20,30 @@ public class GitVersioningPluginConfig {
     private static final Pattern MATCH_ALL = Pattern.compile(".*");
 
     @Inject
-    protected ObjectFactory getObjectFactory() {
+    protected @Nullable ObjectFactory getObjectFactory() {
         return null;
     }
 
     public Boolean disable = false;
 
-    public String projectVersionPattern = null;
+    public @Nullable String projectVersionPattern = null;
 
-    public Pattern projectVersionPattern() {
+    public @Nullable Pattern projectVersionPattern() {
         return projectVersionPattern != null
                 ? Pattern.compile(projectVersionPattern)
                 : null;
     }
 
-    public String describeTagPattern = null;
+    public @Nullable String describeTagPattern = null;
     public Boolean describeTagFirstParent = true;
 
-    public Boolean updateGradleProperties;
+    public @Nullable Boolean updateGradleProperties;
 
     public final RefPatchDescriptionList refs = getObjectFactory() != null
             ? getObjectFactory().newInstance(RefPatchDescriptionList.class)
             : new RefPatchDescriptionList();
 
-    public PatchDescription rev;
+    public @Nullable PatchDescription rev;
 
     public void refs(Action<RefPatchDescriptionList> action) {
         action.execute(this.refs);
@@ -55,19 +56,18 @@ public class GitVersioningPluginConfig {
         action.execute(this.rev);
     }
 
-
     public static class PatchDescription {
 
-        public String describeTagPattern;
-        public Boolean describeTagFirstParent = null;
+        public @Nullable String describeTagPattern;
+        public @Nullable Boolean describeTagFirstParent = null;
 
         public Pattern getDescribeTagPattern() {
             return Pattern.compile(describeTagPattern);
         }
 
-        public Boolean updateGradleProperties;
+        public @Nullable Boolean updateGradleProperties;
 
-        public String version;
+        public @Nullable String version;
 
         public Map<String, String> properties = new HashMap<>();
 
@@ -85,14 +85,17 @@ public class GitVersioningPluginConfig {
     public static class RefPatchDescription extends PatchDescription {
 
         public final GitRefType type;
-        public final Pattern pattern;
+        /**
+         * {@code null} matches any ref
+         */
+        public final @Nullable Pattern pattern;
 
-        public RefPatchDescription(GitRefType type, Pattern pattern) {
+        public RefPatchDescription(GitRefType type, @Nullable Pattern pattern) {
             this.type = type;
             this.pattern = pattern;
         }
 
-        public RefPatchDescription(GitRefType type, Pattern pattern, PatchDescription patch) {
+        public RefPatchDescription(GitRefType type, @Nullable Pattern pattern, PatchDescription patch) {
             this(type, pattern);
             this.describeTagPattern = patch.describeTagPattern;
             this.describeTagFirstParent = patch.describeTagFirstParent;

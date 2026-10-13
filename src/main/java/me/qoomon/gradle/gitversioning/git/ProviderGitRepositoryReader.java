@@ -5,6 +5,7 @@ import me.qoomon.gitversioning.commons.GitRepositoryReader;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.provider.ValueSource;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.time.ZonedDateTime;
@@ -50,7 +51,7 @@ public class ProviderGitRepositoryReader implements GitRepositoryReader {
     }
 
     @Override
-    public String getBranch() {
+    public @Nullable String getBranch() {
         return head.get().getBranch();
     }
 

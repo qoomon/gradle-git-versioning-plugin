@@ -6,6 +6,7 @@ junit = "6.1.3"
 jgit = { module = "org.eclipse.jgit:org.eclipse.jgit", version = "7.8.0.202609011348-r" }
 maven-artifact = { module = "org.apache.maven:maven-artifact", version = "3.10.0" }
 commons-configuration2 = { module = "org.apache.commons:commons-configuration2", version = "2.15.1" }
+jspecify = { module = "org.jspecify:jspecify", version = "1.0.1" }
 assertj-core = { module = "org.assertj:assertj-core", version = "3.27.7" }
 
 [plugins]

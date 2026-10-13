@@ -155,6 +155,37 @@ class GitVersioningPluginConfigurationCacheTest {
         assertThat(result.getOutput()).contains("sub: master-SNAPSHOT foo@properties-master cli master");
     }
 
+    @Test
+    void kotlinDsl() throws Exception {
+        // given
+        Files.delete(projectDir.resolve("settings.gradle"));
+        write("settings.gradle.kts", "rootProject.name = \"test\"\n");
+        write("build.gradle.kts", "plugins { id(\"me.qoomon.git-versioning\") }\n"
+                + "version = \"0.0.0\"\n"
+                + "gitVersioning.apply {\n"
+                + "    refs {\n"
+                + "        branch(\".+\") {\n"
+                + "            version = \"\\${ref}-SNAPSHOT\"\n"
+                + "            properties[\"foo\"] = \"\\${commit.short}\"\n"
+                + "        }\n"
+                + "    }\n"
+                + "    rev { version = \"\\${commit}\" }\n"
+                + "}\n"
+                // nullable API, null if versioning was skipped
+                + "tasks.register(\"printRef\") {\n"
+                + "    val refName: String? = gitVersioning.gitVersionDetails?.refName\n"
+                + "    doLast { println(\"ref: $refName\") }\n"
+                + "}\n");
+        commitAll("initial commit");
+
+        // when
+        BuildResult result = runner("version", "printRef").build();
+
+        // then
+        assertThat(versionOf(result)).isEqualTo("master-SNAPSHOT");
+        assertThat(result.getOutput()).contains("ref: master");
+    }
+
     // ---- helpers ----------------------------------------------------------------------------------------------------
 
     private void writeBuildFile(String gitVersioningConfig) throws IOException {

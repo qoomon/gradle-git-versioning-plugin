@@ -5,6 +5,8 @@
 ##### Breaking Changes
 - require Java 17 (and therefore Gradle running on Java 17 or newer), tested with Gradle 8.14 and newer
 
+- the public API is annotated with JSpecify nullness annotations, Kotlin now sees e.g. `gitVersioning.gitVersionDetails` as nullable
+
 ##### Features
 - support the configuration cache: git information is read through value sources,
   so the cache is invalidated on new commits, tags or working tree changes and reused otherwise

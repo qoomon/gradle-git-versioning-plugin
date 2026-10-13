@@ -19,6 +19,9 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 dependencies {
+    // nullness annotations of the public API, e.g. understood by the Kotlin compiler
+    api libs.jspecify
+
     implementation libs.jgit
     implementation libs.maven.artifact
     implementation libs.commons.configuration2
