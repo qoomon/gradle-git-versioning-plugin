@@ -1,14 +1,19 @@
 package me.qoomon.gradle.gitversioning;
 
 import org.gradle.api.DefaultTask;
-import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.work.DisableCachingByDefault;
 
-public class VersionTask extends DefaultTask {
-    private final Provider<Object> projectVersion = getProject().provider(() -> getProject().getVersion());
+@DisableCachingByDefault(because = "Only prints the project version")
+public abstract class VersionTask extends DefaultTask {
+
+    @Input
+    public abstract Property<String> getProjectVersion();
 
     @TaskAction
     void printProjectVersion() {
-        System.out.println(projectVersion.get());
+        System.out.println(getProjectVersion().get());
     }
 }

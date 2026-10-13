@@ -16,8 +16,9 @@ public class GitVersioningPlugin implements Plugin<Project> {
         project.getExtensions().create("gitVersioning", GitVersioningPluginExtension.class, project);
 
         TaskContainer tasks = project.getTasks();
-        if(tasks.findByName("version") == null) {
-            tasks.register("version", VersionTask.class);
+        if (tasks.findByName("version") == null) {
+            tasks.register("version", VersionTask.class, task -> task.getProjectVersion()
+                    .convention(project.provider(() -> project.getVersion().toString())));
         }
     }
 }

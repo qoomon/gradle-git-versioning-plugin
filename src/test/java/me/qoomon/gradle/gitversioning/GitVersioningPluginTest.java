@@ -11,13 +11,13 @@ import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.jgit.lib.Constants.MASTER;
-import static org.gradle.util.GFileUtils.writeFile;
+
 
 class GitVersioningPluginTest {
 
@@ -25,13 +25,13 @@ class GitVersioningPluginTest {
     Path projectDir;
 
     @Test
-    void runVersionTask() throws GitAPIException {
+    void runVersionTask() throws GitAPIException, IOException {
         // given
         Git.init().setInitialBranch(MASTER).setDirectory(projectDir.toFile()).call();
 
-        File buildFile = projectDir.resolve("build.gradle").toFile();
         String givenVersion = "1.2.3";
-        writeFile("plugins { id 'me.qoomon.git-versioning' }\nversion = '" + givenVersion + "'", buildFile);
+        Files.writeString(projectDir.resolve("build.gradle"),
+                "plugins { id 'me.qoomon.git-versioning' }\nversion = '" + givenVersion + "'");
 
         // when
         BuildResult buildresult = GradleRunner.create()
