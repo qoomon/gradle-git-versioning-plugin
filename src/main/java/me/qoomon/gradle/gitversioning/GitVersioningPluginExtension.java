@@ -5,15 +5,15 @@ import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.Lazy;
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.PatchDescription;
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.RefPatchDescription;
+import me.qoomon.gradle.gitversioning.git.ProviderGitRepositoryReader;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
+import org.gradle.api.provider.ProviderFactory;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -53,6 +53,9 @@ public abstract class GitVersioningPluginExtension {
 
     @Inject
     protected abstract ObjectFactory getObjectFactory();
+
+    @Inject
+    protected abstract ProviderFactory getProviders();
 
     private final Project project;
 
@@ -268,19 +271,18 @@ public abstract class GitVersioningPluginExtension {
 
     // ---- versioning -------------------------------------------------------------------------------------------------
 
-    private GitSituation getGitSituation(File executionRootDirectory) throws IOException {
-        final FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(executionRootDirectory);
-        if (repositoryBuilder.getGitDir() == null) {
+    private GitSituation getGitSituation(File projectDirectory) throws IOException {
+        final ProviderGitRepositoryReader reader = new ProviderGitRepositoryReader(getProviders(), projectDirectory);
+        if (!reader.isGitRepository()) {
             return null;
         }
 
-        final Repository repository = repositoryBuilder.build();
-        return new GitSituation(repository) {
+        return new GitSituation(reader) {
             {
-                handleEnvironment(repository);
+                handleEnvironment();
             }
 
-            private void handleEnvironment(Repository repository) throws IOException {
+            private void handleEnvironment() {
                 // --- commandline arguments and environment variables
                 {
                     {
@@ -316,19 +318,14 @@ public abstract class GitVersioningPluginExtension {
                 }
 
                 // --- try getting the branch and tag situation from environment ---
-                // skip if we are on a branch
-                if (repository.getBranch() == null) {
-                    return;
-                }
-
                 // GitHub Actions support
-                if ("true".equalsIgnoreCase(System.getenv("GITHUB_ACTIONS"))) {
-                    if (!this.getRev().equals(System.getenv("GITHUB_SHA"))) {
+                if ("true".equalsIgnoreCase(getEnvironmentVariable("GITHUB_ACTIONS"))) {
+                    if (!this.getRev().equals(getEnvironmentVariable("GITHUB_SHA"))) {
                         return;
                     }
 
                     project.getLogger().lifecycle("gather git situation from GitHub Actions environment variable: GITHUB_REF");
-                    String githubRef = System.getenv("GITHUB_REF");
+                    String githubRef = getEnvironmentVariable("GITHUB_REF");
                     project.getLogger().debug("  GITHUB_REF: " + githubRef);
 
                     if (githubRef.startsWith("refs/tags/")) {
@@ -340,15 +337,15 @@ public abstract class GitVersioningPluginExtension {
                 }
 
                 // GitLab CI support
-                if ("true".equalsIgnoreCase(System.getenv("GITLAB_CI"))) {
-                    if (!this.getRev().equals(System.getenv("CI_COMMIT_SHA"))) {
+                if ("true".equalsIgnoreCase(getEnvironmentVariable("GITLAB_CI"))) {
+                    if (!this.getRev().equals(getEnvironmentVariable("CI_COMMIT_SHA"))) {
                         return;
                     }
 
                     project.getLogger().lifecycle("gather git situation from GitLab CI environment variables: CI_COMMIT_BRANCH, CI_MERGE_REQUEST_SOURCE_BRANCH_NAME and CI_COMMIT_TAG");
-                    String commitBranch = System.getenv("CI_COMMIT_BRANCH");
-                    String commitTag = System.getenv("CI_COMMIT_TAG");
-                    String mrSourceBranch = System.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
+                    String commitBranch = getEnvironmentVariable("CI_COMMIT_BRANCH");
+                    String commitTag = getEnvironmentVariable("CI_COMMIT_TAG");
+                    String mrSourceBranch = getEnvironmentVariable("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
                     project.getLogger().debug("  CI_COMMIT_BRANCH: " + commitBranch);
                     project.getLogger().debug("  CI_COMMIT_TAG: " + commitTag);
                     project.getLogger().debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: " + mrSourceBranch);
@@ -364,14 +361,14 @@ public abstract class GitVersioningPluginExtension {
                 }
 
                 // Circle CI support
-                if ("true".equalsIgnoreCase(System.getenv("CIRCLECI"))) {
-                    if (!this.getRev().equals(System.getenv("CIRCLE_SHA1"))) {
+                if ("true".equalsIgnoreCase(getEnvironmentVariable("CIRCLECI"))) {
+                    if (!this.getRev().equals(getEnvironmentVariable("CIRCLE_SHA1"))) {
                         return;
                     }
 
                     project.getLogger().lifecycle("gather git situation from Circle CI environment variables: CIRCLE_BRANCH and CIRCLE_TAG");
-                    String commitBranch = System.getenv("CIRCLE_BRANCH");
-                    String commitTag = System.getenv("CIRCLE_TAG");
+                    String commitBranch = getEnvironmentVariable("CIRCLE_BRANCH");
+                    String commitTag = getEnvironmentVariable("CIRCLE_TAG");
                     project.getLogger().debug("  CIRCLE_BRANCH: " + commitBranch);
                     project.getLogger().debug("  CIRCLE_TAG: " + commitTag);
 
@@ -384,13 +381,13 @@ public abstract class GitVersioningPluginExtension {
                 }
 
                 // Jenkins support
-                if (System.getenv("JENKINS_HOME") != null && !System.getenv("JENKINS_HOME").trim().isEmpty()) {
-                    if (!this.getRev().equals(System.getenv("GIT_COMMIT"))) {
+                if (getEnvironmentVariable("JENKINS_HOME") != null && !getEnvironmentVariable("JENKINS_HOME").trim().isEmpty()) {
+                    if (!this.getRev().equals(getEnvironmentVariable("GIT_COMMIT"))) {
                         return;
                     }
                     project.getLogger().lifecycle("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
-                    String commitBranch = System.getenv("BRANCH_NAME");
-                    String commitTag = System.getenv("TAG_NAME");
+                    String commitBranch = getEnvironmentVariable("BRANCH_NAME");
+                    String commitTag = getEnvironmentVariable("TAG_NAME");
                     project.getLogger().debug("  BRANCH_NAME: " + commitBranch);
                     project.getLogger().debug("  TAG_NAME: " + commitTag);
 
@@ -664,16 +661,18 @@ public abstract class GitVersioningPluginExtension {
     }
 
     private String getCommandOption(final String name) {
-        String value = System.getProperty(name);
-        if (value == null) {
-            String plainName = name.replaceFirst("^versioning\\.", "");
-            String environmentVariableName = "VERSIONING_"
-                    + String.join("_", plainName.split("(?=\\p{Lu})"))
-                    .replaceAll("\\.", "_")
-                    .toUpperCase();
-            value = System.getenv(environmentVariableName);
-        }
-        return value;
+        String plainName = name.replaceFirst("^versioning\\.", "");
+        String environmentVariableName = "VERSIONING_"
+                + String.join("_", plainName.split("(?=\\p{Lu})"))
+                .replaceAll("\\.", "_")
+                .toUpperCase();
+        return getProviders().systemProperty(name)
+                .orElse(getProviders().environmentVariable(environmentVariableName))
+                .getOrNull();
+    }
+
+    private String getEnvironmentVariable(final String name) {
+        return getProviders().environmentVariable(name).getOrNull();
     }
 
     private boolean getUpdateGradlePropertiesOption(final RefPatchDescription gitRefConfig) {

@@ -1,5 +1,7 @@
 package me.qoomon.gitversioning.commons;
 
+import java.util.Objects;
+
 public class GitDescription {
     private final String commit;
     private final String tag;
@@ -21,6 +23,19 @@ public class GitDescription {
 
     public int getDistance() {
         return distance;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof GitDescription)) return false;
+        GitDescription that = (GitDescription) o;
+        return distance == that.distance && commit.equals(that.commit) && tag.equals(that.tag);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(commit, tag, distance);
     }
 
     @Override
