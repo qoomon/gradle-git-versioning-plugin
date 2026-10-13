@@ -15,12 +15,14 @@ import java.util.regex.Pattern;
 import static me.qoomon.gitversioning.commons.GitRefType.BRANCH;
 import static me.qoomon.gitversioning.commons.GitRefType.TAG;
 
-public class GitVersioningPluginConfig {
+/**
+ * Create instances with {@link ObjectFactory#newInstance(Class, Object...)},
+ * Gradle injects the services and adds the Groovy DSL closure support.
+ */
+public abstract class GitVersioningPluginConfig {
 
     @Inject
-    protected @Nullable ObjectFactory getObjectFactory() {
-        return null;
-    }
+    protected abstract ObjectFactory getObjectFactory();
 
     public Boolean disable = false;
 
@@ -37,9 +39,7 @@ public class GitVersioningPluginConfig {
 
     public @Nullable Boolean updateGradleProperties;
 
-    public final RefPatchDescriptionList refs = getObjectFactory() != null
-            ? getObjectFactory().newInstance(RefPatchDescriptionList.class)
-            : new RefPatchDescriptionList();
+    public final RefPatchDescriptionList refs = getObjectFactory().newInstance(RefPatchDescriptionList.class);
 
     public @Nullable PatchDescription rev;
 
@@ -48,9 +48,7 @@ public class GitVersioningPluginConfig {
     }
 
     public void rev(Action<PatchDescription> action) {
-        this.rev = getObjectFactory() != null
-                ? getObjectFactory().newInstance(PatchDescription.class)
-                : new PatchDescription();
+        this.rev = getObjectFactory().newInstance(PatchDescription.class);
         action.execute(this.rev);
     }
 

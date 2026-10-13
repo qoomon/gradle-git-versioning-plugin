@@ -5,6 +5,8 @@
 ##### Breaking Changes
 - require Java 17 (and therefore Gradle running on Java 17 or newer), tested with Gradle 8.14 and newer
 
+- `GitVersioningPluginConfig` is abstract, create it with `project.objects.newInstance(GitVersioningPluginConfig)`
+  instead of `new GitVersioningPluginConfig()` when using `gitVersioning.apply(config)`
 - the public API is annotated with JSpecify nullness annotations, Kotlin now sees e.g. `gitVersioning.gitVersionDetails` as nullable
 
 ##### Features
