@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "me.qoomon"
-version = "6.4.5"
+version = "7.0.0"
 
 java {
     toolchain {
