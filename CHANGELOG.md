@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+##### Breaking Changes
+- require Java 17 (and therefore Gradle running on Java 17 or newer), tested with Gradle 8.14 and newer
+
+- `GitVersioningPluginConfig` is abstract, create it with `project.objects.newInstance(GitVersioningPluginConfig)`
+  instead of `new GitVersioningPluginConfig()` when using `gitVersioning.apply(config)`
+- the public API is annotated with JSpecify nullness annotations, Kotlin now sees e.g. `gitVersioning.gitVersionDetails` as nullable
+
+##### Features
+- support the configuration cache: git information is read through value sources,
+  so the cache is invalidated on new commits, tags or working tree changes and reused otherwise
+- `${env.*}` and `${property.*}` placeholders are resolved on demand, only used variables and properties become configuration cache inputs
+
+##### Fixes
+- remove usages of APIs deprecated for removal in Gradle 10 (`Project.getProperties()`, task project access at execution time)
+- no longer start external `git` processes at configuration time (via JGit)
+- `version` task no longer realizes an existing `version` task, has a group and description and prints through Gradle's logger
+
+##### Dependencies
+- build with Gradle 9.8.1
+- update JGit to 7.8.0, maven-artifact to 3.10.0
+
 ## 6.4.2
 
 ##### Fixes

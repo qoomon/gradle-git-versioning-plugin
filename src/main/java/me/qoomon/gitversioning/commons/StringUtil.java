@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,12 +12,21 @@ import java.util.regex.Pattern;
 public final class StringUtil {
 
     public static String substituteText(String text, Map<String, Supplier<String>> replacements) {
-        StringBuffer result = new StringBuffer();
+        return substituteText(text, replacements::get);
+    }
+
+    /**
+     * @param text         to substitute placeholders in
+     * @param replacements resolves a placeholder key to its replacement, or to {@code null} for unknown placeholders
+     * @return substituted text
+     */
+    public static String substituteText(String text, Function<String, Supplier<String>> replacements) {
+        StringBuilder result = new StringBuilder();
         Pattern placeholderPattern = Pattern.compile("\\$\\{(?<key>[^}:]+)(?::(?<modifier>[-+])(?<value>[^}]*))?}");
         Matcher placeholderMatcher = placeholderPattern.matcher(text);
         while (placeholderMatcher.find()) {
             String placeholderKey = placeholderMatcher.group("key");
-            Supplier<String> replacementSupplier = replacements.get(placeholderKey);
+            Supplier<String> replacementSupplier = replacements.apply(placeholderKey);
             String replacement = replacementSupplier != null ? replacementSupplier.get() : null;
             String placeholderModifier = placeholderMatcher.group("modifier");
             if(placeholderModifier != null){

@@ -7,8 +7,8 @@ import org.eclipse.jgit.revwalk.RevObject;
 import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevWalk;
 
+import java.time.Instant;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.concurrent.Callable;
 
 public class TagComparator implements Comparator<Ref> {
@@ -59,8 +59,8 @@ public class TagComparator implements Comparator<Ref> {
     }
 
     private static int compareTaggerDate(RevTag rev1, RevTag rev2) {
-        Date revTag1Date = rev1.getTaggerIdent().getWhen();
-        Date revTag2Date = rev2.getTaggerIdent().getWhen();
+        Instant revTag1Date = rev1.getTaggerIdent().getWhenAsInstant();
+        Instant revTag2Date = rev2.getTaggerIdent().getWhenAsInstant();
         // sort the most recent tags first
         return -revTag1Date.compareTo(revTag2Date);
     }

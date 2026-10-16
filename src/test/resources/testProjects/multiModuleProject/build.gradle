@@ -30,12 +30,16 @@ allprojects {
 //    }
 }
 
-task debug {
+tasks.register('debug') {
+    // capture values at configuration time, the project is not available at execution time with the configuration cache
+    def values = [
+            project.version,
+            project.property("foo"),
+            project.property("bar"),
+            project.property("git.commit"),
+            project.property("git.ref"),
+    ]
     doLast {
-        println(project.version)
-        println(project.property("foo"))
-        println(project.property("bar"))
-        println(project.property("git.commit"))
-        println(project.property("git.ref"))
+        values.each { println(it) }
     }
 }

@@ -1,0 +1,73 @@
+import com.adarshr.gradle.testlogger.theme.ThemeType
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+
+plugins {
+    `java-gradle-plugin`
+    alias(libs.plugins.plugin.publish)
+    alias(libs.plugins.versions)
+    alias(libs.plugins.test.logger)
+}
+
+group = "me.qoomon"
+version = "6.4.5"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-Xlint:deprecation")
+}
+
+tasks.javadoc {
+    // report broken docs, but don't require every member to be documented
+    // adapted from https://docs.gradle.org/current/userguide/publishing_maven.html#publishing_maven:complete_example
+    (options as StandardJavadocDocletOptions).addBooleanOption("Xdoclint:all,-missing", true)
+}
+
+dependencies {
+    // nullness annotations of the public API, e.g. understood by the Kotlin compiler
+    api(libs.jspecify)
+
+    implementation(libs.jgit)
+    implementation(libs.maven.artifact)
+    implementation(libs.commons.configuration2)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.assertj.core)
+}
+
+testlogger {
+    theme = ThemeType.MOCHA_PARALLEL
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+tasks.validatePlugins {
+    enableStricterValidation = true
+}
+
+gradlePlugin {
+    website = "https://github.com/qoomon/gradle-git-versioning-plugin"
+    vcsUrl = "https://github.com/qoomon/gradle-git-versioning-plugin.git"
+
+    plugins {
+        register("gitVersioning") {
+            id = "me.qoomon.git-versioning"
+            displayName = "Git Versioning Plugin"
+            description = "This extension will adjust the project version, based on current git branch or tag."
+            tags = listOf("git", "versioning", "version", "commit", "branch", "tag", "generated")
+            implementationClass = "me.qoomon.gradle.gitversioning.GitVersioningPlugin"
+        }
+    }
+}

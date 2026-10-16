@@ -1,7 +1,5 @@
 package me.qoomon.gitversioning.commons;
 
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 
 import java.io.File;
@@ -12,19 +10,15 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-import static java.time.Instant.EPOCH;
-import static java.time.ZoneOffset.UTC;
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
-import static me.qoomon.gitversioning.commons.GitUtil.*;
 
 public class GitSituation {
 
-    private final Repository repository;
+    private final GitRepositoryReader reader;
     private final File rootDirectory;
 
-    private final ObjectId head;
+    private final String rev;
     private final Supplier<ZonedDateTime> timestamp = Lazy.by(this::timestamp);
     private Supplier<String> branch = Lazy.by(this::branch);
 
@@ -39,9 +33,13 @@ public class GitSituation {
     private Supplier<GitDescription> description = Lazy.by(this::describe);
 
     public GitSituation(Repository repository) throws IOException {
-        this.repository = repository;
-        this.rootDirectory = worktreesFix_getWorkTree(repository);
-        this.head = worktreesFix_resolveHead(repository);
+        this(new JGitRepositoryReader(repository));
+    }
+
+    public GitSituation(GitRepositoryReader reader) throws IOException {
+        this.reader = reader;
+        this.rootDirectory = reader.getRootDirectory();
+        this.rev = reader.getRev();
     }
 
     public File getRootDirectory() {
@@ -49,7 +47,7 @@ public class GitSituation {
     }
 
     public String getRev() {
-        return head != null ? head.getName() : NO_COMMIT;
+        return rev;
     }
 
     public ZonedDateTime getTimestamp() {
@@ -136,6 +134,7 @@ public class GitSituation {
 
     public void setFirstParent(boolean firstParent) {
         this.firstParent = firstParent;
+        this.description = Lazy.by(this::describe);
     }
 
     public GitDescription getDescription() {
@@ -145,24 +144,22 @@ public class GitSituation {
     // ----- initialization methods ------------------------------------------------------------------------------------
 
     private ZonedDateTime timestamp() throws IOException {
-        return head != null
-                ? GitUtil.revTimestamp(repository, head)
-                : ZonedDateTime.ofInstant(EPOCH, UTC);
+        return reader.getTimestamp();
     }
 
     private String branch() throws IOException {
-        return GitUtil.branch(repository);
+        return reader.getBranch();
     }
 
     private List<String> tags() throws IOException {
-        return head != null ? GitUtil.tagsPointAt(head, repository) : emptyList();
+        return reader.getTags();
     }
 
-    private boolean clean() throws GitAPIException {
-        return GitUtil.status(repository).isClean();
+    private boolean clean() throws IOException {
+        return reader.isClean();
     }
 
     private GitDescription describe() throws IOException {
-        return GitUtil.describe(head, describeTagPattern, repository, firstParent);
+        return reader.describe(describeTagPattern, firstParent);
     }
 }

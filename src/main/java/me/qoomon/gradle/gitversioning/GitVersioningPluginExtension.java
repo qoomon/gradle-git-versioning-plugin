@@ -5,15 +5,16 @@ import me.qoomon.gitversioning.commons.GitSituation;
 import me.qoomon.gitversioning.commons.Lazy;
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.PatchDescription;
 import me.qoomon.gradle.gitversioning.GitVersioningPluginConfig.RefPatchDescription;
+import me.qoomon.gradle.gitversioning.git.ProviderGitRepositoryReader;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
+import org.gradle.api.provider.ProviderFactory;
+import org.jspecify.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -25,6 +26,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,13 +56,22 @@ public abstract class GitVersioningPluginExtension {
     @Inject
     protected abstract ObjectFactory getObjectFactory();
 
+    @Inject
+    protected abstract ProviderFactory getProviders();
+
     private final Project project;
 
-    private GitVersioningPluginConfig config;
+    private @Nullable GitVersioningPluginConfig config;
 
-    public GitVersionDetails gitVersionDetails;
+    /**
+     * {@code null} until versioning is applied, or if it was skipped
+     */
+    public @Nullable GitVersionDetails gitVersionDetails;
 
-    public Map<String, Supplier<String>> globalFormatPlaceholderMap;
+    /**
+     * {@code null} until versioning is applied, or if it was skipped
+     */
+    public @Nullable Map<String, Supplier<String>> globalFormatPlaceholderMap;
 
     public GitVersioningPluginExtension(Project project) {
         this.project = project;
@@ -75,10 +86,10 @@ public abstract class GitVersioningPluginExtension {
     public void apply(GitVersioningPluginConfig config) throws IOException {
         this.config = config;
         normalizeConfig(config);
-        apply();
+        applyVersioning(config);
     }
 
-    private void apply() throws IOException {
+    private void applyVersioning(GitVersioningPluginConfig config) throws IOException {
         // check if the extension is disabled by command option
         final String commandOptionDisable = getCommandOption(OPTION_NAME_DISABLE);
         if (commandOptionDisable != null) {
@@ -135,7 +146,7 @@ public abstract class GitVersioningPluginExtension {
         }
         if (patchDescription.describeTagPattern != null) {
             project.getLogger().lifecycle("    describeTagPattern: " + patchDescription.describeTagPattern);
-            gitSituation.setDescribeTagPattern(patchDescription.getDescribeTagPattern());
+            gitSituation.setDescribeTagPattern(Pattern.compile(patchDescription.describeTagPattern));
         }
         if (patchDescription.describeTagFirstParent != null) {
             project.getLogger().lifecycle("    describeTagFirstParent: " + patchDescription.describeTagFirstParent);
@@ -146,39 +157,38 @@ public abstract class GitVersioningPluginExtension {
             project.getLogger().lifecycle("    updateGradleProperties: true");
         }
 
-        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails, project);
+        globalFormatPlaceholderMap = generateGlobalFormatPlaceholderMap(gitSituation, gitVersionDetails);
         Map<String, String> gitProjectProperties = generateGitProjectProperties(gitSituation, gitVersionDetails);
 
         project.getLogger().lifecycle("");
-        project.getAllprojects().forEach(project -> {
-            final String originalProjectVersion = project.getVersion().toString();
+        project.getAllprojects().forEach(currentProject -> {
+            final String originalProjectVersion = currentProject.getVersion().toString();
 
             final String versionFormat = patchDescription.version;
             if (versionFormat != null) {
-                updateVersion(project, versionFormat);
-                if(project == project.getRootProject()) {
-                    project.getLogger().lifecycle("project version: " + project.getVersion());
-                } else if (!project.getVersion().equals(project.getRootProject().getVersion())) {
-                    project.getLogger().lifecycle(project.getName()+ " > project version: " + project.getVersion());
+                updateVersion(currentProject, versionFormat);
+                if (currentProject.equals(currentProject.getRootProject())) {
+                    currentProject.getLogger().lifecycle("project version: " + currentProject.getVersion());
+                } else if (!currentProject.getVersion().equals(currentProject.getRootProject().getVersion())) {
+                    currentProject.getLogger().lifecycle(currentProject.getName() + " > project version: " + currentProject.getVersion());
                 }
             }
 
             final Map<String, String> propertyFormats = patchDescription.properties;
             if (propertyFormats != null && !propertyFormats.isEmpty()) {
-                updatePropertyValues(project, propertyFormats, originalProjectVersion);
+                updatePropertyValues(currentProject, propertyFormats, originalProjectVersion);
             }
 
-            addGitProjectProperties(project, gitProjectProperties);
+            addGitProjectProperties(currentProject, gitProjectProperties);
 
             if (updateGradleProperties) {
-                File gradleProperties = project.file("gradle.properties");
+                File gradleProperties = currentProject.file("gradle.properties");
                 if (gradleProperties.exists()) {
-                    updateGradlePropertiesFile(gradleProperties, project);
+                    updateGradlePropertiesFile(gradleProperties, currentProject, patchDescription);
                 }
             }
         });
     }
-
 
     // ---- project processing -----------------------------------------------------------------------------------------
 
@@ -191,12 +201,12 @@ public abstract class GitVersioningPluginExtension {
     private void updatePropertyValues(Project project, Map<String, String> propertyFormats, String originalProjectVersion) {
         boolean logHeader = true;
         // properties section
-        for (Entry<String, ?> projectProperty : project.getProperties().entrySet()) {
-            String projectPropertyName = projectProperty.getKey();
-            Object projectPropertyValue = projectProperty.getValue();
+        for (Entry<String, String> propertyFormatEntry : propertyFormats.entrySet()) {
+            String projectPropertyName = propertyFormatEntry.getKey();
+            String propertyFormat = propertyFormatEntry.getValue();
 
-            String propertyFormat = propertyFormats.get(projectPropertyName);
-            if (propertyFormat != null) {
+            if (propertyFormat != null && project.hasProperty(projectPropertyName)) {
+                Object projectPropertyValue = project.findProperty(projectPropertyName);
                 if (projectPropertyValue == null || projectPropertyValue instanceof String) {
                     String gitPropertyValue = getGitPropertyValue(propertyFormat,
                             projectPropertyValue != null ? projectPropertyValue.toString() : null,
@@ -222,7 +232,7 @@ public abstract class GitVersioningPluginExtension {
         gitProjectProperties.forEach(extraProperties::set);
     }
 
-    private void updateGradlePropertiesFile(File gradleProperties, Project project) {
+    private void updateGradlePropertiesFile(File gradleProperties, Project project, RefPatchDescription patchDescription) {
         // read existing gradle.properties
         PropertiesConfiguration gradlePropertiesConfig = new PropertiesConfiguration();
         try (FileReader reader = new FileReader(gradleProperties)) {
@@ -241,11 +251,10 @@ public abstract class GitVersioningPluginExtension {
         }
 
         // handle properties
-        Map<String, ?> projectProperties = project.getProperties();
-        gitVersionDetails.getPatchDescription().properties.forEach((key, value) -> {
+        patchDescription.properties.forEach((key, value) -> {
             if (gradlePropertiesConfig.containsKey(key)) {
                 Object gradlePropertyValue = gradlePropertiesConfig.getProperty(key);
-                Object projectPropertyValue = projectProperties.get(key);
+                Object projectPropertyValue = project.findProperty(key);
                 if (!Objects.equals(projectPropertyValue, gradlePropertyValue)) {
                     gradlePropertiesConfig.setProperty(key, projectPropertyValue);
                 }
@@ -265,22 +274,20 @@ public abstract class GitVersioningPluginExtension {
         }
     }
 
-
     // ---- versioning -------------------------------------------------------------------------------------------------
 
-    private GitSituation getGitSituation(File executionRootDirectory) throws IOException {
-        final FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder().findGitDir(executionRootDirectory);
-        if (repositoryBuilder.getGitDir() == null) {
+    private @Nullable GitSituation getGitSituation(File projectDirectory) throws IOException {
+        final ProviderGitRepositoryReader reader = new ProviderGitRepositoryReader(getProviders(), projectDirectory);
+        if (!reader.isGitRepository()) {
             return null;
         }
 
-        final Repository repository = repositoryBuilder.build();
-        return new GitSituation(repository) {
+        return new GitSituation(reader) {
             {
-                handleEnvironment(repository);
+                handleEnvironment();
             }
 
-            private void handleEnvironment(Repository repository) throws IOException {
+            private void handleEnvironment() {
                 // --- commandline arguments and environment variables
                 {
                     {
@@ -316,21 +323,19 @@ public abstract class GitVersioningPluginExtension {
                 }
 
                 // --- try getting the branch and tag situation from environment ---
-                // skip if we are on a branch
-                if (repository.getBranch() == null) {
-                    return;
-                }
-
                 // GitHub Actions support
-                if ("true".equalsIgnoreCase(System.getenv("GITHUB_ACTIONS"))) {
-                    if (!this.getRev().equals(System.getenv("GITHUB_SHA"))) {
+                if ("true".equalsIgnoreCase(getEnvironmentVariable("GITHUB_ACTIONS"))) {
+                    if (!this.getRev().equals(getEnvironmentVariable("GITHUB_SHA"))) {
                         return;
                     }
 
                     project.getLogger().lifecycle("gather git situation from GitHub Actions environment variable: GITHUB_REF");
-                    String githubRef = System.getenv("GITHUB_REF");
+                    String githubRef = getEnvironmentVariable("GITHUB_REF");
                     project.getLogger().debug("  GITHUB_REF: " + githubRef);
 
+                    if (isBlank(githubRef)) {
+                        return;
+                    }
                     if (githubRef.startsWith("refs/tags/")) {
                         addTag(githubRef);
                     } else {
@@ -340,15 +345,15 @@ public abstract class GitVersioningPluginExtension {
                 }
 
                 // GitLab CI support
-                if ("true".equalsIgnoreCase(System.getenv("GITLAB_CI"))) {
-                    if (!this.getRev().equals(System.getenv("CI_COMMIT_SHA"))) {
+                if ("true".equalsIgnoreCase(getEnvironmentVariable("GITLAB_CI"))) {
+                    if (!this.getRev().equals(getEnvironmentVariable("CI_COMMIT_SHA"))) {
                         return;
                     }
 
                     project.getLogger().lifecycle("gather git situation from GitLab CI environment variables: CI_COMMIT_BRANCH, CI_MERGE_REQUEST_SOURCE_BRANCH_NAME and CI_COMMIT_TAG");
-                    String commitBranch = System.getenv("CI_COMMIT_BRANCH");
-                    String commitTag = System.getenv("CI_COMMIT_TAG");
-                    String mrSourceBranch = System.getenv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
+                    String commitBranch = getEnvironmentVariable("CI_COMMIT_BRANCH");
+                    String commitTag = getEnvironmentVariable("CI_COMMIT_TAG");
+                    String mrSourceBranch = getEnvironmentVariable("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME");
                     project.getLogger().debug("  CI_COMMIT_BRANCH: " + commitBranch);
                     project.getLogger().debug("  CI_COMMIT_TAG: " + commitTag);
                     project.getLogger().debug("  CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: " + mrSourceBranch);
@@ -364,14 +369,14 @@ public abstract class GitVersioningPluginExtension {
                 }
 
                 // Circle CI support
-                if ("true".equalsIgnoreCase(System.getenv("CIRCLECI"))) {
-                    if (!this.getRev().equals(System.getenv("CIRCLE_SHA1"))) {
+                if ("true".equalsIgnoreCase(getEnvironmentVariable("CIRCLECI"))) {
+                    if (!this.getRev().equals(getEnvironmentVariable("CIRCLE_SHA1"))) {
                         return;
                     }
 
                     project.getLogger().lifecycle("gather git situation from Circle CI environment variables: CIRCLE_BRANCH and CIRCLE_TAG");
-                    String commitBranch = System.getenv("CIRCLE_BRANCH");
-                    String commitTag = System.getenv("CIRCLE_TAG");
+                    String commitBranch = getEnvironmentVariable("CIRCLE_BRANCH");
+                    String commitTag = getEnvironmentVariable("CIRCLE_TAG");
                     project.getLogger().debug("  CIRCLE_BRANCH: " + commitBranch);
                     project.getLogger().debug("  CIRCLE_TAG: " + commitTag);
 
@@ -384,13 +389,13 @@ public abstract class GitVersioningPluginExtension {
                 }
 
                 // Jenkins support
-                if (System.getenv("JENKINS_HOME") != null && !System.getenv("JENKINS_HOME").trim().isEmpty()) {
-                    if (!this.getRev().equals(System.getenv("GIT_COMMIT"))) {
+                if (!isBlank(getEnvironmentVariable("JENKINS_HOME"))) {
+                    if (!this.getRev().equals(getEnvironmentVariable("GIT_COMMIT"))) {
                         return;
                     }
                     project.getLogger().lifecycle("gather git situation from jenkins environment variables: BRANCH_NAME and TAG_NAME");
-                    String commitBranch = System.getenv("BRANCH_NAME");
-                    String commitTag = System.getenv("TAG_NAME");
+                    String commitBranch = getEnvironmentVariable("BRANCH_NAME");
+                    String commitTag = getEnvironmentVariable("TAG_NAME");
                     project.getLogger().debug("  BRANCH_NAME: " + commitBranch);
                     project.getLogger().debug("  TAG_NAME: " + commitTag);
 
@@ -408,8 +413,7 @@ public abstract class GitVersioningPluginExtension {
                 }
             }
 
-
-            protected void setBranch(String branch) {
+            protected void setBranch(@Nullable String branch) {
                 project.getLogger().debug("override git branch with " + branch);
                 super.setBranch(branch);
             }
@@ -426,7 +430,7 @@ public abstract class GitVersioningPluginExtension {
         };
     }
 
-    private static GitVersionDetails getGitVersionDetails(GitSituation gitSituation, GitVersioningPluginConfig config) {
+    private static @Nullable GitVersionDetails getGitVersionDetails(GitSituation gitSituation, GitVersioningPluginConfig config) {
         final Lazy<List<String>> sortedTags = Lazy.by(() -> gitSituation.getTags().stream()
                 .sorted(comparing(DefaultArtifactVersion::new)).collect(toList()));
         for (RefPatchDescription refConfig : config.refs.list) {
@@ -460,24 +464,48 @@ public abstract class GitVersioningPluginExtension {
                     new RefPatchDescription(COMMIT, null, config.rev));
         }
 
-
         return null;
     }
 
     private String getGitVersion(String versionFormat, String projectVersion) {
         final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(projectVersion);
 
-        return slugify(substituteText(versionFormat, placeholderMap));
+        return slugify(substituteText(versionFormat, placeholderResolver(placeholderMap)));
     }
 
-    private String getGitPropertyValue(String propertyFormat, String originalValue, String projectVersion) {
-        final Map<String, Supplier<String>> placeholderMap = generateFormatPlaceholderMap(projectVersion);
-        placeholderMap.put("value", () -> originalValue);
-        return substituteText(propertyFormat, placeholderMap);
+    private String getGitPropertyValue(String propertyFormat, @Nullable String originalValue, String projectVersion) {
+        final Function<String, @Nullable Supplier<@Nullable String>> resolver = placeholderResolver(generateFormatPlaceholderMap(projectVersion));
+        return substituteText(propertyFormat, key -> key.equals("value") ? () -> originalValue : resolver.apply(key));
+    }
+
+    /**
+     * Resolves {@code env.*} and {@code property.*} placeholders on demand,
+     * so only the environment variables and properties actually used become configuration cache inputs.
+     */
+    private Function<String, @Nullable Supplier<@Nullable String>> placeholderResolver(Map<String, Supplier<String>> placeholderMap) {
+        return key -> {
+            Supplier<String> replacement = placeholderMap.get(key);
+            if (replacement != null) {
+                return replacement;
+            }
+            // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
+            if (key.startsWith("env.")) {
+                return () -> getEnvironmentVariable(key.substring("env.".length()));
+            }
+            // command parameters e.g. gradle -Pfoo=123 will be available as ${property.foo}
+            if (key.startsWith("property.")) {
+                return () -> {
+                    Object value = project.findProperty(key.substring("property.".length()));
+                    // filter complex properties
+                    return value instanceof String || value instanceof Number ? value.toString() : null;
+                };
+            }
+            return null;
+        };
     }
 
     private Map<String, Supplier<String>> generateFormatPlaceholderMap(String projectVersion) {
-        final Map<String, Supplier<String>> placeholderMap = new HashMap<>(globalFormatPlaceholderMap);
+        final Map<String, Supplier<String>> placeholderMap = new HashMap<>(Objects.requireNonNull(globalFormatPlaceholderMap));
 
         placeholderMap.put("version", Lazy.of(projectVersion));
 
@@ -503,7 +531,7 @@ public abstract class GitVersioningPluginExtension {
         // deprecated
         placeholderMap.put("version.release", Lazy.by(() -> projectVersion.replaceFirst("-.*$", "")));
 
-        final Pattern projectVersionPattern = config.projectVersionPattern();
+        final Pattern projectVersionPattern = Objects.requireNonNull(config).projectVersionPattern();
         if (projectVersionPattern != null) {
             // ref pattern groups
             for (Entry<String, String> patternGroup : patternGroupValues(projectVersionPattern, projectVersion).entrySet()) {
@@ -516,7 +544,7 @@ public abstract class GitVersioningPluginExtension {
         return placeholderMap;
     }
 
-    private Map<String, Supplier<String>> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails, Project rootProject) {
+    private Map<String, Supplier<String>> generateGlobalFormatPlaceholderMap(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
 
         final Map<String, Supplier<String>> placeholderMap = new HashMap<>();
 
@@ -598,19 +626,6 @@ public abstract class GitVersioningPluginExtension {
         placeholderMap.put("describe.tag.version.label.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label").get(), descriptionDistance.get())));
         placeholderMap.put("describe.tag.version.label.next.plus.describe.distance", Lazy.by(() -> increase(placeholderMap.get("describe.tag.version.label.next").get(), descriptionDistance.get())));
 
-        // command parameters e.g. gradle -Pfoo=123 will be available as ${property.foo}
-        for (Entry<String, ?> property : rootProject.getProperties().entrySet()) {
-            if (property.getValue() != null) {
-                // filter complex properties
-                if (property.getValue() instanceof String || property.getValue() instanceof Number) {
-                    placeholderMap.put("property." + property.getKey(), () -> property.getValue().toString());
-                }
-            }
-        }
-
-        // environment variables e.g. BUILD_NUMBER=123 will be available as ${env.BUILD_NUMBER}
-        System.getenv().forEach((key, value) -> placeholderMap.put("env." + key, () -> value));
-
         return placeholderMap;
     }
 
@@ -641,7 +656,6 @@ public abstract class GitVersioningPluginExtension {
         return properties;
     }
 
-
     // ---- configuration ----------------------------------------------------------------------------------------------
 
     private void normalizeConfig(GitVersioningPluginConfig config) {
@@ -663,17 +677,19 @@ public abstract class GitVersioningPluginExtension {
         }
     }
 
-    private String getCommandOption(final String name) {
-        String value = System.getProperty(name);
-        if (value == null) {
-            String plainName = name.replaceFirst("^versioning\\.", "");
-            String environmentVariableName = "VERSIONING_"
-                    + String.join("_", plainName.split("(?=\\p{Lu})"))
-                    .replaceAll("\\.", "_")
-                    .toUpperCase();
-            value = System.getenv(environmentVariableName);
-        }
-        return value;
+    private @Nullable String getCommandOption(final String name) {
+        String plainName = name.replaceFirst("^versioning\\.", "");
+        String environmentVariableName = "VERSIONING_"
+                + String.join("_", plainName.split("(?=\\p{Lu})"))
+                .replaceAll("\\.", "_")
+                .toUpperCase();
+        return getProviders().systemProperty(name)
+                .orElse(getProviders().environmentVariable(environmentVariableName))
+                .getOrNull();
+    }
+
+    private @Nullable String getEnvironmentVariable(final String name) {
+        return getProviders().environmentVariable(name).getOrNull();
     }
 
     private boolean getUpdateGradlePropertiesOption(final RefPatchDescription gitRefConfig) {
@@ -685,10 +701,9 @@ public abstract class GitVersioningPluginExtension {
         return Objects.requireNonNullElse(gitRefConfig.updateGradleProperties, false);
     }
 
-
     // ---- misc -------------------------------------------------------------------------------------------------------
 
-    private static String slugify(String value) {
+    private static String slugify(@Nullable String value) {
         if (value == null) {
             return "";
         }
@@ -700,7 +715,7 @@ public abstract class GitVersioningPluginExtension {
         return String.format("%0" + sanitized.length() + "d", Long.parseLong(number.isEmpty() ? "0" : number) + increment);
     }
 
-    public static <T> T notNullOrDefault(T obj, T defaultObj) {
+    public static <T> T notNullOrDefault(@Nullable T obj, T defaultObj) {
         return (obj != null) ? obj : defaultObj;
     }
 }
