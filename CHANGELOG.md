@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 7.0.0
 
 ##### Breaking Changes
 - require Java 17 (and therefore Gradle running on Java 17 or newer), tested with Gradle 8.14 and newer
