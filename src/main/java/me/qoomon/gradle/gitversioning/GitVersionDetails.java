@@ -21,19 +21,19 @@ public final class GitVersionDetails {
         this.patchDescription = requireNonNull(patchDescription);
     }
 
-    public String commit() {
+    public String getCommit() {
         return commit;
     }
 
-    public GitRefType refType() {
+    public GitRefType getRefType() {
         return refType;
     }
 
-    public String refName() {
+    public String getRefName() {
         return refName;
     }
 
-    public RefPatchDescription patchDescription() {
+    public RefPatchDescription getPatchDescription() {
         return patchDescription;
     }
 
