@@ -23,6 +23,12 @@ tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.add("-Xlint:deprecation")
 }
 
+tasks.javadoc {
+    // report broken docs, but don't require every member to be documented
+    // adapted from https://docs.gradle.org/current/userguide/publishing_maven.html#publishing_maven:complete_example
+    (options as StandardJavadocDocletOptions).addBooleanOption("Xdoclint:all,-missing", true)
+}
+
 dependencies {
     // nullness annotations of the public API, e.g. understood by the Kotlin compiler
     api(libs.jspecify)

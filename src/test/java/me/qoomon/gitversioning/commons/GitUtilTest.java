@@ -5,6 +5,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -12,6 +13,9 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -136,18 +140,20 @@ class GitUtilTest {
 
         RevCommit givenCommit = git.commit().setMessage("initial commit").setAllowEmpty(true).call();
 
+        // explicit tagger dates, git stores them in seconds so tags created in a row may or may not share one
+        Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
         String givenTagName1 = "v21";
-        git.tag().setName(givenTagName1).setObjectId(givenCommit).call();
+        git.tag().setName(givenTagName1).setObjectId(givenCommit).setTagger(tagger(now.minusSeconds(2))).call();
         String givenTagName2 = "v1";
-        git.tag().setName(givenTagName2).setObjectId(givenCommit).call();
+        git.tag().setName(givenTagName2).setObjectId(givenCommit).setTagger(tagger(now.minusSeconds(1))).call();
         String givenTagName3 = "v2.1";
-        git.tag().setName(givenTagName3).setObjectId(givenCommit).call();
+        git.tag().setName(givenTagName3).setObjectId(givenCommit).setTagger(tagger(now)).call();
 
         // when
         List<String> tags = GitUtil.tagsPointAt(head(git), git.getRepository());
 
-        // then
-        assertThat(tags).containsExactly(givenTagName2, givenTagName3, givenTagName1);
+        // then annotated tags are sorted by tagger date, most recent first
+        assertThat(tags).containsExactly(givenTagName3, givenTagName2, givenTagName1);
     }
 
     @Test
@@ -166,6 +172,10 @@ class GitUtilTest {
 
         // then
         assertThat(tags).containsExactlyInAnyOrder(givenTagName);
+    }
+
+    private static PersonIdent tagger(Instant when) {
+        return new PersonIdent("Max Mustermann", "user@example.com", when, ZoneOffset.UTC);
     }
 
     private static ObjectId head(Git git) throws IOException {
