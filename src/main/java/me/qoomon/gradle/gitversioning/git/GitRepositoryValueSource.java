@@ -1,6 +1,5 @@
 package me.qoomon.gradle.gitversioning.git;
 
-import me.qoomon.gitversioning.commons.GitRepositoryReader;
 import me.qoomon.gitversioning.commons.JGitRepositoryReader;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -44,7 +43,7 @@ public abstract class GitRepositoryValueSource<T, P extends GitRepositoryValueSo
         }
     }
 
-    protected abstract T read(GitRepositoryReader reader) throws IOException;
+    protected abstract T read(JGitRepositoryReader reader) throws IOException;
 
     /**
      * @return what is read, used in configuration cache invalidation messages

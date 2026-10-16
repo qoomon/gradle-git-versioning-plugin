@@ -1,6 +1,6 @@
 package me.qoomon.gradle.gitversioning.git;
 
-import me.qoomon.gitversioning.commons.GitRepositoryReader;
+import me.qoomon.gitversioning.commons.JGitRepositoryReader;
 
 import java.io.IOException;
 
@@ -10,7 +10,7 @@ import java.io.IOException;
 public abstract class GitStatusValueSource extends GitRepositoryValueSource<Boolean, GitRepositoryValueSource.Parameters> {
 
     @Override
-    protected Boolean read(GitRepositoryReader reader) throws IOException {
+    protected Boolean read(JGitRepositoryReader reader) throws IOException {
         return reader.isClean();
     }
 

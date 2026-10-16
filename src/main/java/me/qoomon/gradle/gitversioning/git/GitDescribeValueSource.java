@@ -1,7 +1,7 @@
 package me.qoomon.gradle.gitversioning.git;
 
 import me.qoomon.gitversioning.commons.GitDescription;
-import me.qoomon.gitversioning.commons.GitRepositoryReader;
+import me.qoomon.gitversioning.commons.JGitRepositoryReader;
 import org.gradle.api.provider.Property;
 
 import java.io.IOException;
@@ -16,7 +16,7 @@ public abstract class GitDescribeValueSource extends GitRepositoryValueSource<Gi
     }
 
     @Override
-    protected GitDescription read(GitRepositoryReader reader) throws IOException {
+    protected GitDescription read(JGitRepositoryReader reader) throws IOException {
         return reader.describe(Pattern.compile(getParameters().getTagPattern().get()), getParameters().getFirstParent().get());
     }
 
