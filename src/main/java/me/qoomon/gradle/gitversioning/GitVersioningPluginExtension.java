@@ -134,9 +134,9 @@ public abstract class GitVersioningPluginExtension {
             return;
         }
 
-        project.getLogger().lifecycle("matching ref: " + gitVersionDetails.getRefType().name() + " - " + gitVersionDetails.getRefName());
-        final RefPatchDescription patchDescription = gitVersionDetails.getPatchDescription();
-        project.getLogger().lifecycle("  ref configuration: " + gitVersionDetails.getRefType().name() + " - pattern: " + patchDescription.pattern);
+        project.getLogger().lifecycle("matching ref: " + gitVersionDetails.refType().name() + " - " + gitVersionDetails.refName());
+        final RefPatchDescription patchDescription = gitVersionDetails.patchDescription();
+        project.getLogger().lifecycle("  ref configuration: " + gitVersionDetails.refType().name() + " - pattern: " + patchDescription.pattern);
         if (patchDescription.version != null) {
             project.getLogger().lifecycle("    version: " + patchDescription.version);
         }
@@ -564,12 +564,12 @@ public abstract class GitVersioningPluginExtension {
         placeholderMap.put("commit.timestamp.datetime", Lazy.by(() -> headCommitDateTime.get().toEpochSecond() > 0
                 ? headCommitDateTime.get().format(DateTimeFormatter.ofPattern("yyyyMMdd.HHmmss")) : "00000000.000000"));
 
-        final String refName = gitVersionDetails.getRefName();
+        final String refName = gitVersionDetails.refName();
         final Lazy<String> refNameSlug = Lazy.by(() -> slugify(refName));
         placeholderMap.put("ref", () -> refName);
         placeholderMap.put("ref" + ".slug", refNameSlug);
 
-        final Pattern refPattern = gitVersionDetails.getPatchDescription().pattern;
+        final Pattern refPattern = gitVersionDetails.patchDescription().pattern;
         if (refPattern != null) {
             // ref pattern groups
             for (Entry<String, String> patternGroup : patternGroupValues(refPattern, refName).entrySet()) {
@@ -640,15 +640,15 @@ public abstract class GitVersioningPluginExtension {
     private static Map<String, String> generateGitProjectProperties(GitSituation gitSituation, GitVersionDetails gitVersionDetails) {
         final Map<String, String> properties = new HashMap<>();
 
-        properties.put("git.commit", gitVersionDetails.getCommit());
-        properties.put("git.commit.short", gitVersionDetails.getCommit().substring(0, 7));
+        properties.put("git.commit", gitVersionDetails.commit());
+        properties.put("git.commit.short", gitVersionDetails.commit().substring(0, 7));
 
         final ZonedDateTime headCommitDateTime = gitSituation.getTimestamp();
         properties.put("git.commit.timestamp", String.valueOf(headCommitDateTime.toEpochSecond()));
         properties.put("git.commit.timestamp.datetime", headCommitDateTime.toEpochSecond() > 0
                 ? headCommitDateTime.format(ISO_INSTANT) : "0000-00-00T00:00:00Z");
 
-        final String refName = gitVersionDetails.getRefName();
+        final String refName = gitVersionDetails.refName();
         final String refNameSlug = slugify(refName);
         properties.put("git.ref", refName);
         properties.put("git.ref" + ".slug", refNameSlug);

@@ -1,9 +1,11 @@
+import com.adarshr.gradle.testlogger.theme.ThemeType
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
     `java-gradle-plugin`
     alias(libs.plugins.plugin.publish)
     alias(libs.plugins.versions)
+    alias(libs.plugins.test.logger)
 }
 
 group = "me.qoomon"
@@ -43,12 +45,12 @@ dependencies {
     testImplementation(libs.assertj.core)
 }
 
+testlogger {
+    theme = ThemeType.MOCHA_PARALLEL
+}
+
 tasks.test {
     useJUnitPlatform()
-    testLogging {
-        events("passed", "skipped", "failed")
-        exceptionFormat = TestExceptionFormat.FULL
-    }
 }
 
 tasks.validatePlugins {
